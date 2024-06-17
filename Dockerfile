@@ -1,64 +1,30 @@
-FROM node:18-alpine AS base
+ARG NODE_BASEIMAGE=docker-dbc.artifacts.dbccloud.dk/dbc-node:latest
+# ---- Base Node ----
+FROM  $NODE_BASEIMAGE AS build
+# set working directory
+WORKDIR /home/node/app
+# copy project file
+COPY --chown=node:node . .
+USER node
 
-FROM base AS deps
+RUN npm version
 
-RUN apk add --no-cache libc6-compat
+# install dependencies
+RUN npm set progress=false && npm config set depth 0 && \
+    npm install
 
-WORKDIR /app
+# build for production (f is formatted)
+RUN npm run build && \
+    npm prune --production
 
-COPY package.json yarn.lock ./
-
-RUN yarn config set registry 'https://registry.npmmirror.com/'
-RUN yarn install
-
-FROM base AS builder
-
-RUN apk update && apk add --no-cache git
-
-ENV OPENAI_API_KEY=""
-ENV GOOGLE_API_KEY=""
-ENV CODE=""
-
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-RUN yarn build
-
-FROM base AS runner
-WORKDIR /app
-
-RUN apk add proxychains-ng
-
-ENV PROXY_URL=""
-ENV OPENAI_API_KEY=""
-ENV GOOGLE_API_KEY=""
-ENV CODE=""
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/.next/server ./.next/server
+# ---- Release ----
+FROM $NODE_BASEIMAGE AS release
+WORKDIR /home/node/app
+COPY --chown=node:node --from=build /home/node/app/.next ./.next
+COPY --chown=node:node --from=build /home/node/app/public ./public
+COPY --chown=node:node --from=build /home/node/app/node_modules ./node_modules
+COPY --chown=node:node --from=build /home/node/app/package.json ./
 
 EXPOSE 3000
-
-CMD if [ -n "$PROXY_URL" ]; then \
-    export HOSTNAME="127.0.0.1"; \
-    protocol=$(echo $PROXY_URL | cut -d: -f1); \
-    host=$(echo $PROXY_URL | cut -d/ -f3 | cut -d: -f1); \
-    port=$(echo $PROXY_URL | cut -d: -f3); \
-    conf=/etc/proxychains.conf; \
-    echo "strict_chain" > $conf; \
-    echo "proxy_dns" >> $conf; \
-    echo "remote_dns_subnet 224" >> $conf; \
-    echo "tcp_read_time_out 15000" >> $conf; \
-    echo "tcp_connect_time_out 8000" >> $conf; \
-    echo "localnet 127.0.0.0/255.0.0.0" >> $conf; \
-    echo "localnet ::1/128" >> $conf; \
-    echo "[ProxyList]" >> $conf; \
-    echo "$protocol $host $port" >> $conf; \
-    cat /etc/proxychains.conf; \
-    proxychains -f $conf node server.js --host 0.0.0.0; \
-    else \
-    node server.js; \
-    fi
+USER node
+CMD npm run start
