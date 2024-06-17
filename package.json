@@ -13,7 +13,8 @@
     "app:build": "yarn tauri build",
     "prompts": "node ./scripts/fetch-prompts.mjs",
     "prepare": "husky install",
-    "proxy-dev": "sh ./scripts/init-proxy.sh && proxychains -f ./scripts/proxychains.conf yarn dev"
+    "proxy-dev": "sh ./scripts/init-proxy.sh && proxychains -f ./scripts/proxychains.conf yarn dev",
+    "prettier": "prettier --write 'app/**/*.{ts,tsx}'"
   },
   "dependencies": {
     "@fortaine/fetch-event-source": "^3.0.6",
@@ -58,7 +59,7 @@
     "eslint-plugin-prettier": "^5.1.3",
     "husky": "^8.0.0",
     "lint-staged": "^13.2.2",
-    "prettier": "^3.0.2",
+    "prettier": "^3.3.2",
     "typescript": "5.2.2",
     "webpack": "^5.88.1"
   },

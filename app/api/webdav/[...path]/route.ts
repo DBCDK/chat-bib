@@ -24,8 +24,8 @@ async function handle(
 
   // Validate the endpoint to prevent potential SSRF attacks
   if (
-    !mergedAllowedWebDavEndpoints.some(
-      (allowedEndpoint) => endpoint?.startsWith(allowedEndpoint),
+    !mergedAllowedWebDavEndpoints.some((allowedEndpoint) =>
+      endpoint?.startsWith(allowedEndpoint),
     )
   ) {
     return NextResponse.json(
