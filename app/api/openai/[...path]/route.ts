@@ -45,12 +45,14 @@ async function handle(
     );
   }
 
-  const authResult = auth(req, ModelProvider.GPT);
-  if (authResult.error) {
-    return NextResponse.json(authResult, {
-      status: 401,
-    });
-  }
+  // We need to find out how to protect this path
+
+  // const authResult = auth(req, ModelProvider.GPT);
+  // if (authResult.error) {
+  //   return NextResponse.json(authResult, {
+  //     status: 401,
+  //   });
+  // }
 
   try {
     const response = await requestOpenai(req);

@@ -1,9 +1,8 @@
 import { getClientConfig } from "../config/client";
 import { SubmitKey } from "../store/config";
-import { LocaleType } from "./index";
 
 const isApp = !!getClientConfig()?.isApp;
-const da: LocaleType = {
+const da = {
   WIP: "Kommer snart...",
   Error: {
     Unauthorized: isApp
@@ -493,5 +492,7 @@ const da: LocaleType = {
     Settings: "Registreret indstillinger fra URL, bekræft anvendelse?",
   },
 };
+
+export type LocaleType = typeof da;
 
 export default da;

@@ -1,5 +1,5 @@
 import en from "./en";
-import da from "./da";
+import da, { LocaleType } from "./da";
 
 import { merge } from "../utils/merge";
 
@@ -12,7 +12,6 @@ type DeepPartial<T> = T extends object
     }
   : T;
 
-export type LocaleType = typeof da;
 export type PartialLocaleType = DeepPartial<typeof da>;
 const ALL_LANGS = {
   da,
