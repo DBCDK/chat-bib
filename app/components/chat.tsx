@@ -1219,7 +1219,7 @@ function _Chat() {
           </div>
         </div>
         <div className="window-actions">
-          {!isMobileScreen && (
+          {/* {!isMobileScreen && (
             <div className="window-action-button">
               <IconButton
                 icon={<RenameIcon />}
@@ -1227,7 +1227,7 @@ function _Chat() {
                 onClick={() => setIsEditingMessage(true)}
               />
             </div>
-          )}
+          )} */}
           <div className="window-action-button">
             <IconButton
               icon={<ExportIcon />}
@@ -1238,7 +1238,7 @@ function _Chat() {
               }}
             />
           </div>
-          {showMaxIcon && (
+          {/* {showMaxIcon && (
             <div className="window-action-button">
               <IconButton
                 icon={config.tightBorder ? <MinIcon /> : <MaxIcon />}
@@ -1250,7 +1250,7 @@ function _Chat() {
                 }}
               />
             </div>
-          )}
+          )} */}
         </div>
 
         <PromptToast
