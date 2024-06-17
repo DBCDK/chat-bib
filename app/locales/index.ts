@@ -17,12 +17,15 @@ import ko from "./ko";
 import ar from "./ar";
 import bn from "./bn";
 import sk from "./sk";
+import da from "./da";
+
 import { merge } from "../utils/merge";
 
 import type { LocaleType } from "./cn";
 export type { LocaleType, PartialLocaleType } from "./cn";
 
 const ALL_LANGS = {
+  da,
   cn,
   en,
   tw,
@@ -49,25 +52,10 @@ export type Lang = keyof typeof ALL_LANGS;
 export const AllLangs = Object.keys(ALL_LANGS) as Lang[];
 
 export const ALL_LANG_OPTIONS: Record<Lang, string> = {
+  da: "Dansk",
   cn: "简体中文",
   en: "English",
-  pt: "Português",
-  tw: "繁體中文",
-  jp: "日本語",
-  ko: "한국어",
-  id: "Indonesia",
-  fr: "Français",
-  es: "Español",
-  it: "Italiano",
-  tr: "Türkçe",
-  de: "Deutsch",
-  vi: "Tiếng Việt",
-  ru: "Русский",
-  cs: "Čeština",
   no: "Nynorsk",
-  ar: "العربية",
-  bn: "বাংলা",
-  sk: "Slovensky",
 };
 
 const LANG_KEY = "lang";
