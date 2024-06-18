@@ -463,7 +463,7 @@ const da = {
     More: "Find flere",
     NotShow: "Vis aldrig igen",
     Close: "Luk",
-    EmptyChat: "Ny chat",
+    EmptyChat: "Start en ny chat",
 
     ConfirmNoShow:
       "Bekræft deaktivering? Du kan aktivere det i indstillinger senere.",

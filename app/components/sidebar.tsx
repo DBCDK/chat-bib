@@ -200,7 +200,7 @@ export function SideBar(props: { className?: string }) {
       </div>
 
       <div className={styles["sidebar-tail"]}>
-        <div className={styles["sidebar-actions"]}>
+        {/* <div className={styles["sidebar-actions"]}>
           <div className={styles["sidebar-action"] + " " + styles.mobile}>
             <IconButton
               icon={<DeleteIcon />}
@@ -215,28 +215,30 @@ export function SideBar(props: { className?: string }) {
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
-          </div>
-          {/* <div className={styles["sidebar-action"]}>
+          </div> 
+           <div className={styles["sidebar-action"]}>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
               <IconButton icon={<GithubIcon />} shadow />
             </a>
-          </div> */}
-        </div>
-        <div>
-          <IconButton
-            icon={<AddIcon />}
-            text={shouldNarrow ? undefined : Locale.Home.NewChat}
-            onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
-                chatStore.newSession();
-                navigate(Path.Chat);
-              } else {
-                navigate(Path.NewChat);
-              }
-            }}
-            shadow
-          />
-        </div>
+          </div> 
+        </div> */}
+        <IconButton
+          className={styles.newChatButton}
+          size={4}
+          //    icon={<AddIcon  />}
+          text={shouldNarrow ? undefined : Locale.Home.NewChat}
+          onClick={() => {
+            navigate(Path.NewChat);
+
+            // if (config.dontShowMaskSplashScreen) {
+            //   chatStore.newSession();
+            //   navigate(Path.Chat);
+            // } else {
+            //   navigate(Path.NewChat);
+            // }
+          }}
+          shadow
+        />
       </div>
 
       <div

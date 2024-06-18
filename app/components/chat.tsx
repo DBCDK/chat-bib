@@ -81,7 +81,7 @@ import {
   showPrompt,
   showToast,
 } from "./ui-lib";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
   LAST_INPUT_KEY,
@@ -1235,6 +1235,19 @@ function _Chat() {
               title={Locale.Chat.Actions.Export}
               onClick={() => {
                 setShowExport(true);
+              }}
+            />
+          </div>
+          <div className="window-action-button">
+            <IconButton
+              icon={<SettingsIcon />}
+              bordered
+              title={Locale.Chat.Actions.Export}
+              onClick={() => {
+                navigate(Path.Settings);
+
+                // to={Path.Settings}>
+                // setShowExport(true);
               }}
             />
           </div>
