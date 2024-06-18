@@ -23,6 +23,7 @@ import { createPersistStore } from "../utils/store";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
+import { MessageRole } from "../typing";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -36,7 +37,7 @@ export function createMessage(override: Partial<ChatMessage>): ChatMessage {
   return {
     id: nanoid(),
     date: new Date().toLocaleString(),
-    role: "user",
+    role: MessageRole.User,
     content: "",
     ...override,
   };
@@ -64,7 +65,7 @@ export interface ChatSession {
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
 export const BOT_HELLO: ChatMessage = createMessage({
-  role: "assistant",
+  role: MessageRole.Assistant,
   content: Locale.Store.BotHello,
 });
 
@@ -336,12 +337,12 @@ export const useChatStore = createPersistStore(
           );
         }
         let userMessage: ChatMessage = createMessage({
-          role: "user",
+          role: MessageRole.User,
           content: mContent,
         });
 
         const botMessage: ChatMessage = createMessage({
-          role: "assistant",
+          role: MessageRole.Assistant,
           streaming: true,
           model: modelConfig.model,
         });
@@ -456,7 +457,7 @@ export const useChatStore = createPersistStore(
         systemPrompts = shouldInjectSystemPrompts
           ? [
               createMessage({
-                role: "system",
+                role: MessageRole.System,
                 content: fillTemplateWith("", {
                   ...modelConfig,
                   template: DEFAULT_SYSTEM_TEMPLATE,
@@ -568,7 +569,7 @@ export const useChatStore = createPersistStore(
         ) {
           const topicMessages = messages.concat(
             createMessage({
-              role: "user",
+              role: MessageRole.User,
               content: Locale.Store.Prompt.Topic,
             }),
           );
@@ -629,7 +630,7 @@ export const useChatStore = createPersistStore(
           api.llm.chat({
             messages: toBeSummarizedMsgs.concat(
               createMessage({
-                role: "system",
+                role: MessageRole.System,
                 content: Locale.Store.Prompt.Summarize,
                 date: "",
               }),
