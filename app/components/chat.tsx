@@ -1284,6 +1284,10 @@ function _Chat() {
         }}
       >
         {messages.map((message, i) => {
+          console.log("message", message);
+          if (message.role === "system") {
+            return;
+          }
           const isUser = message.role === "user";
           const isContext = i < context.length;
           const showActions =
