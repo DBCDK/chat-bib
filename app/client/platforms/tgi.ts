@@ -55,15 +55,18 @@ type Message = {
   content: string | MultimodalContent[];
 };
 
-const llmFormat = (sysPrompt: string, msgs: Message[]): string => {
+const llmFormat = (msgs: Message[]): string => {
   let result = "<s>[INST] <<SYS>>\n";
-  result += sysPrompt;
+  if (msgs[0]?.role === "system") {
+    result += msgs.shift()?.content || "";
+  }
   result += "\n<</SYS>>\n\n";
 
-  for (const msg of msgs) {
+  msgs.forEach((msg) => {
     result += msg.content;
     result += msg.role === "assistant" ? "</s><s>[INST]" : "[/INST]";
-  }
+  });
+
   return result;
 };
 
@@ -203,10 +206,7 @@ export class TGIApi implements LLMApi {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            inputs: llmFormat(
-              "Du er en sød bot der svarer på dansk.",
-              messages,
-            ),
+            inputs: llmFormat(messages),
             parameters: {
               temperature: modelConfig.temperature,
               max_tokens: 4000,
