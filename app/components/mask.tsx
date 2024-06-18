@@ -44,7 +44,7 @@ import {
   getMessageImages,
   readFromFile,
 } from "../utils";
-import { Updater } from "../typing";
+import { MessageRole, Updater } from "../typing";
 import { ModelConfigList } from "./model-config";
 import { FileName, Path } from "../constant";
 import { BUILTIN_MASK_STORE } from "../masks";
@@ -353,7 +353,7 @@ export function ContextPrompts(props: {
                           onClick={() => {
                             addContextPrompt(
                               createMessage({
-                                role: "user",
+                                role: MessageRole.User,
                                 content: "",
                                 date: new Date().toLocaleString(),
                               }),
@@ -383,7 +383,7 @@ export function ContextPrompts(props: {
               onClick={() =>
                 addContextPrompt(
                   createMessage({
-                    role: "user",
+                    role: MessageRole.User,
                     content: "",
                     date: "",
                   }),

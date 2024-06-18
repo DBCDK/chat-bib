@@ -98,6 +98,7 @@ import { ExportMessageModal } from "./exporter";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
 import { MultimodalContent } from "../client/api";
+import { MessageRole } from "../typing";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -963,7 +964,7 @@ function _Chat() {
         ? [
             {
               ...createMessage({
-                role: "assistant",
+                role: MessageRole.Assistant,
                 content: "……",
               }),
               preview: true,
@@ -1284,7 +1285,6 @@ function _Chat() {
         }}
       >
         {messages.map((message, i) => {
-          console.log("message", message);
           if (message.role === "system") {
             return;
           }
