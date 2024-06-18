@@ -6,6 +6,7 @@ import {
   ServiceProvider,
 } from "../constant";
 import { ChatMessage, ModelType, useAccessStore, useChatStore } from "../store";
+import { TGIApi } from "./platforms/tgi";
 import { ChatGPTApi } from "./platforms/openai";
 import { GeminiProApi } from "./platforms/google";
 import { ClaudeApi } from "./platforms/anthropic";
@@ -103,6 +104,9 @@ export class ClientApi {
       case ModelProvider.Claude:
         this.llm = new ClaudeApi();
         break;
+      case ModelProvider.TGI:
+        this.llm = new TGIApi();
+        break;
       default:
         this.llm = new ChatGPTApi();
     }
@@ -165,8 +169,8 @@ export function getHeaders() {
   const apiKey = isGoogle
     ? accessStore.googleApiKey
     : isAzure
-      ? accessStore.azureApiKey
-      : accessStore.openaiApiKey;
+    ? accessStore.azureApiKey
+    : accessStore.openaiApiKey;
   const clientConfig = getClientConfig();
   const makeBearer = (s: string) => `${isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
