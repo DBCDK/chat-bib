@@ -10,7 +10,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
-  title: "BibChat",
+  title: "ChatBib",
   description: "Bibliotekets AI-chat",
   viewport: {
     width: "device-width",

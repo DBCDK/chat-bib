@@ -431,7 +431,7 @@ export const useChatStore = createPersistStore(
 
         if (session.memoryPrompt.length) {
           return {
-            role: "system",
+            role: MessageRole.System,
             content: Locale.Store.Prompt.History(session.memoryPrompt),
             date: "",
           } as ChatMessage;

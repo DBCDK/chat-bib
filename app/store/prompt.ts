@@ -148,16 +148,18 @@ export const usePromptStore = createPersistStore(
 
     onRehydrateStorage(state) {
       const PROMPT_URL = "./prompts.json";
-
+      console.log("state", state);
       type PromptList = Array<[string, string]>;
 
       fetch(PROMPT_URL)
         .then((res) => res.json())
         .then((res) => {
-          let fetchPrompts = [res.en];
+          console.log("res", res);
 
+          let fetchPrompts = [res.da];
+          console.log("fetchPrompts", fetchPrompts);
           const builtinPrompts = fetchPrompts.map((promptList: PromptList) => {
-            return promptList.map(
+            return promptList?.map(
               ([title, content]) =>
                 ({
                   id: nanoid(),
@@ -173,7 +175,11 @@ export const usePromptStore = createPersistStore(
           const allPromptsForSearch = builtinPrompts
             .reduce((pre, cur) => pre.concat(cur), [])
             .filter((v) => !!v.title && !!v.content);
-          SearchService.count.builtin = res.en.length + res.cn.length;
+          console.log("SearchService", SearchService.count);
+          console.log("res", res);
+          console.log("allPromptsForSearch", allPromptsForSearch);
+
+          SearchService.count.builtin = res?.da.length; //+ res.cn.length;
           SearchService.init(allPromptsForSearch, userPrompts);
         });
     },

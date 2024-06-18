@@ -41,6 +41,7 @@ import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
 import { getMessageTextContent } from "../utils";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
+import { MessageRole } from "../typing";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -673,7 +674,7 @@ export function JsonPreviewer(props: {
   const msgs = {
     messages: [
       {
-        role: "system",
+        role: MessageRole.System,
         content: `${Locale.FineTuned.Sysmessage} ${props.topic}`,
       },
       ...props.messages.map((m) => ({

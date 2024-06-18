@@ -159,9 +159,9 @@ export function SideBar(props: { className?: string }) {
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
-            BIB chat
+            ChatBIB
           </div>
-          <div className={styles["sidebar-sub-title"]}>DBC Digital A/S</div>
+          <div className={styles["sidebar-sub-title"]}>Biblioteks AI-chat</div>
         </div>
       </div>
       {/* 

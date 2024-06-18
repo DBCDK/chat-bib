@@ -3,7 +3,7 @@ import { ChatOptions, LLMApi, MultimodalContent } from "../api";
 import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
 import { getClientConfig } from "@/app/config/client";
 import { DEFAULT_API_HOST } from "@/app/constant";
-import { RequestMessage } from "@/app/typing";
+import { MessageRole, RequestMessage } from "@/app/typing";
 import {
   EventStreamContentType,
   fetchEventSource,
@@ -105,7 +105,7 @@ export class ClaudeApi implements LLMApi {
         messages[i] = [
           message,
           {
-            role: "assistant",
+            role: MessageRole.Assistant,
             content: ";",
           },
         ] as any;
@@ -163,7 +163,7 @@ export class ClaudeApi implements LLMApi {
 
     if (prompt[0]?.role === "assistant") {
       prompt.unshift({
-        role: "user",
+        role: MessageRole.User,
         content: ";",
       });
     }
