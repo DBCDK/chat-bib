@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Path, PERSONAS, SlotID } from "../constant";
+import { Path, SlotID } from "../constant";
 import { IconButton } from "./button";
 import { EmojiAvatar } from "./emoji";
 import styles from "./new-chat.module.scss";
 
 import CloseIcon from "../icons/close.svg";
-import LightningIcon from "../icons/lightning.svg";
-import ChatIcon from "../icons/chat.svg";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mask, useMaskStore } from "../store/mask";
@@ -16,6 +14,7 @@ import { MaskAvatar } from "./mask";
 import { useCommand } from "../command";
 import { showConfirm } from "./ui-lib";
 import { BUILTIN_MASK_STORE } from "../masks";
+import { Persona, PERSONAS } from "../personas";
 
 function MaskItem(props: { mask: Mask; onClick?: () => void }) {
   return (
