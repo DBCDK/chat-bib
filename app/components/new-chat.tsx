@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Path, SlotID } from "../constant";
+import { Path, PERSONAS, SlotID } from "../constant";
 import { IconButton } from "./button";
 import { EmojiAvatar } from "./emoji";
 import styles from "./new-chat.module.scss";
 
-import LeftIcon from "../icons/left.svg";
+import CloseIcon from "../icons/close.svg";
 import LightningIcon from "../icons/lightning.svg";
-import EyeIcon from "../icons/eye.svg";
+import ChatIcon from "../icons/chat.svg";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mask, useMaskStore } from "../store/mask";
@@ -76,6 +76,9 @@ export function NewChat() {
   const maskStore = useMaskStore();
 
   const masks = maskStore.getAll();
+  const exam = masks.find((msk) => msk.lang === "en");
+  console.log("exam", exam);
+
   const groups = useMaskGroup(masks);
 
   const navigate = useNavigate();
@@ -113,12 +116,17 @@ export function NewChat() {
   return (
     <div className={styles["new-chat"]}>
       <div className={styles["mask-header"]}>
-        <IconButton
+        {/* <IconButton
           icon={<LeftIcon />}
           text={Locale.NewChat.Return}
           onClick={() => navigate(Path.Home)}
+        ></IconButton> */}
+        <IconButton
+          icon={<CloseIcon />}
+          text={Locale.NewChat.Close}
+          onClick={() => navigate(Path.Home)}
         ></IconButton>
-        {!state?.fromHome && (
+        {/* {!state?.fromHome && (
           <IconButton
             text={Locale.NewChat.NotShow}
             onClick={async () => {
@@ -130,9 +138,9 @@ export function NewChat() {
               }
             }}
           ></IconButton>
-        )}
+        )} */}
       </div>
-      <div className={styles["mask-cards"]}>
+      {/* <div className={styles["mask-cards"]}>
         <div className={styles["mask-card"]}>
           <EmojiAvatar avatar="1f606" size={24} />
         </div>
@@ -142,31 +150,52 @@ export function NewChat() {
         <div className={styles["mask-card"]}>
           <EmojiAvatar avatar="1f479" size={24} />
         </div>
+      </div> */}
+      <div className={styles["title-header"]}>
+        <div className={styles["title"]}>{Locale.NewChat.Title}</div>
+        <div className={styles["sub-title"]}>{Locale.NewChat.SubTitle}</div>
       </div>
 
-      <div className={styles["title"]}>{Locale.NewChat.Title}</div>
-      <div className={styles["sub-title"]}>{Locale.NewChat.SubTitle}</div>
+      {
+        <div className={styles["personaContainer"]}>
+          {PERSONAS.map((persona) => {
+            return (
+              <div
+                key={persona.name}
+                className={styles["persona"]}
+                onClick={() => startChat(persona.mask)}
+              >
+                <h2>{persona.name}</h2>
+                <p>{persona.description}</p>
+
+                {/* <img src={`/avatar/${persona.image}`} /> */}
+              </div>
+            );
+          })}
+        </div>
+      }
 
       <div className={styles["actions"]}>
-        <IconButton
+        {/* <IconButton
           text={Locale.NewChat.More}
           onClick={() => navigate(Path.Masks)}
           icon={<EyeIcon />}
           bordered
           shadow
-        />
+        /> */}
 
         <IconButton
-          text={Locale.NewChat.Skip}
+          size={5}
+          text={Locale.NewChat.EmptyChat}
           onClick={() => startChat()}
-          icon={<LightningIcon />}
+          //  icon={<ChatIcon />}
           type="primary"
           shadow
-          className={styles["skip"]}
+          className={styles["new-default-chat"]}
         />
       </div>
 
-      <div className={styles["masks"]} ref={maskRef}>
+      {/* <div className={styles["masks"]} ref={maskRef}>
         {groups.map((masks, i) => (
           <div key={i} className={styles["mask-row"]}>
             {masks.map((mask, index) => (
@@ -178,7 +207,7 @@ export function NewChat() {
             ))}
           </div>
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }

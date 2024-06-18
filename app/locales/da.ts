@@ -459,10 +459,13 @@ const da: LocaleType = {
   NewChat: {
     Return: "Tilbage",
     Skip: "Start bare",
-    Title: "Vælg en maske",
-    SubTitle: "Chat med sjælen bag masken",
+    Title: "Vælg en persona",
+    SubTitle: "Du kan vælge en persona eller starte en tom chat",
     More: "Find flere",
     NotShow: "Vis aldrig igen",
+    Close: "Luk",
+    EmptyChat: "Ny chat",
+
     ConfirmNoShow:
       "Bekræft deaktivering? Du kan aktivere det i indstillinger senere.",
   },
