@@ -62,11 +62,12 @@ export async function requestOpenai(req: NextRequest) {
   }
 
   const fetchUrl = `${baseUrl}/${path}`;
+
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      [authHeaderName]: authValue,
+      // [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
         "OpenAI-Organization": serverConfig.openaiOrgId,
       }),
@@ -79,6 +80,14 @@ export async function requestOpenai(req: NextRequest) {
     duplex: "half",
     signal: controller.signal,
   };
+
+  // Remove top_p from body, as we have temperature
+  try {
+    const b = await req.text();
+    const jsonBody = JSON.parse(b);
+    delete jsonBody.top_p;
+    fetchOptions.body = JSON.stringify(jsonBody);
+  } catch (e) {}
 
   // #1815 try to refuse gpt4 request
   if (serverConfig.customModels && req.body) {

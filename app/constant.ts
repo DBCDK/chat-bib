@@ -134,10 +134,10 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   // it's now easier to add "KnowledgeCutOffDate" instead of stupid hardcoding it, as was done previously.
   "gemini-pro": "2023-12",
   "gemini-pro-vision": "2023-12",
-  "/data/Mixtral-8x7B-Instruct-v0.1-GPTQ": "2023-12",
+  tgi: "2023-12",
 };
 
-const dbcModels = ["/data/Mixtral-8x7B-Instruct-v0.1-GPTQ"];
+const dbcModels = ["tgi"];
 
 export const DEFAULT_MODELS = [
   ...dbcModels.map((name) => ({
