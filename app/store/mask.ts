@@ -9,7 +9,7 @@ import { createPersistStore } from "../utils/store";
 export type Mask = {
   id: string;
   createdAt: number;
-  avatar: string;
+  avatar?: string;
   name: string;
   hideContext?: boolean;
   context: ChatMessage[];

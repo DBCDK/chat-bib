@@ -3,18 +3,25 @@
 .new-chat {
   height: 100%;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  // display: flex;
+  // align-items: center;
+  // justify-content: center;
+  // flex-direction: column;
 
   .mask-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     width: 100%;
     padding: 10px;
     box-sizing: border-box;
     animation: slide-in-from-top ease 0.3s;
+  }
+  .title-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin-bottom: 50px;
   }
 
   .mask-cards {
@@ -60,8 +67,8 @@
     justify-content: center;
     font-size: 12px;
 
-    .skip {
-      margin-left: 10px;
+    .new-default-chat {
+      margin-top: 100px;
     }
   }
 
@@ -122,4 +129,50 @@
       }
     }
   }
+}
+.personaContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 50px;
+  justify-content: center;
+  padding: 0 200px;
+}
+
+.persona {
+  border: 1px solid var(--black);
+  border-radius: 20px;
+  padding: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: center;
+}
+
+.persona:hover {
+  background-color: var(--hover-color);
+}
+
+@media (max-width: 800px) {
+  .personaContainer {
+    grid-template-columns: 1fr;
+  }
+}
+
+.persona img {
+  width: 100px;
+  left: 0;
+  top: 0px;
+  position: relative;
+  left: 50px;
+  top: -24px;
+}
+
+.persona h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.persona p {
+  margin-top: 0px;
+
+  font-size: 15px;
 }

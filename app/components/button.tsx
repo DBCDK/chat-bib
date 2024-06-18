@@ -1,5 +1,4 @@
 import * as React from "react";
-
 import styles from "./button.module.scss";
 
 export type ButtonType = "primary" | "danger" | null;
@@ -16,14 +15,17 @@ export function IconButton(props: {
   disabled?: boolean;
   tabIndex?: number;
   autoFocus?: boolean;
+  size?: 1 | 2 | 3 | 4 | 5;
 }) {
+  const size = props.size ?? 2; // Default size is 2
+
   return (
     <button
       className={
         styles["icon-button"] +
         ` ${props.bordered && styles.border} ${props.shadow && styles.shadow} ${
           props.className ?? ""
-        } clickable ${styles[props.type ?? ""]}`
+        } clickable ${styles[props.type ?? ""]} ${styles[`size-${size}`]}`
       }
       onClick={props.onClick}
       title={props.title}
@@ -36,7 +38,7 @@ export function IconButton(props: {
         <div
           className={
             styles["icon-button-icon"] +
-            ` ${props.type === "primary" && "no-dark"}`
+            ` ${props.type === "primary" && "no-dark"} ${styles[`icon-size-${size}`]}`
           }
         >
           {props.icon}
@@ -44,7 +46,11 @@ export function IconButton(props: {
       )}
 
       {props.text && (
-        <div className={styles["icon-button-text"]}>{props.text}</div>
+        <div
+          className={`${styles["icon-button-text"]} ${styles[`text-size-${size}`]}`}
+        >
+          {props.text}
+        </div>
       )}
     </button>
   );

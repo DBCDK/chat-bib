@@ -463,6 +463,8 @@ const en: LocaleType = {
     SubTitle: "Chat with the Soul behind the Mask",
     More: "Find More",
     NotShow: "Never Show Again",
+    Close: "Close",
+    EmptyChat: "New chat",
     ConfirmNoShow: "Confirm to disable？You can enable it in settings later.",
   },
 
