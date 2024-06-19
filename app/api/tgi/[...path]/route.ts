@@ -7,6 +7,7 @@ import { log } from "dbc-node-logger";
  * using the generate_stream endpoint
  *
  * TODO implement some kind of auth mechanism
+ *
  */
 async function handle(
   req: NextRequest,
