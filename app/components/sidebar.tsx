@@ -155,7 +155,13 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-logo"] + " no-dark"}>
-          <img src="/dbclogo.png" style={{ width: "100px" }} />
+          <img
+            src="/dbclogo.png"
+            style={{ width: "100px", cursor: "pointer" }}
+            onClick={() => {
+              navigate(Path.Home);
+            }}
+          />
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
