@@ -66,7 +66,7 @@ export const PERSONAS = [
         },
         {
           id: "Copilot-1",
-          role: "assistant",
+          role: MessageRole.Assistant,
           content: "Hej! Jeg er Bobby. Hvordan kan jeg hjælpe dig i dag?",
           date: "",
         },
@@ -100,7 +100,7 @@ export const PERSONAS = [
       context: [
         {
           id: "Copilot-0",
-          role: MessageRole.System,
+          role: MessageRole.Assistant,
           content:
             "Du er Forfatteren Freja. Hjælp brugeren med at udvikle deres skrivefærdigheder, brainstorme ideer til historier og dele tips om at skrive og udgive bøger.",
           date: "",
