@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSideConfig } from "@/app/config/server";
+import { log } from "dbc-node-logger";
 
 /**
  * This is a route handler for accessing models running on DBC's infrastructure
@@ -37,7 +38,6 @@ async function handle(
       "Cache-Control": "no-store",
     },
     method: req.method,
-    body: req.body,
     // to fix #2485: https://stackoverflow.com/questions/55920957/cloudflare-worker-typeerror-one-time-use-body
     redirect: "manual",
     // @ts-ignore
@@ -46,14 +46,56 @@ async function handle(
   };
 
   try {
-    const res = await fetch(fetchUrl, fetchOptions);
+    const decoder = new TextDecoder();
+
+    const clonedRequestBody = await req.text();
+
+    const res = await fetch(fetchUrl, {
+      ...fetchOptions,
+      body: clonedRequestBody,
+    });
     // to prevent browser prompt for credentials
     const newHeaders = new Headers(res.headers);
     newHeaders.delete("www-authenticate");
     // to disable nginx buffering
     newHeaders.set("X-Accel-Buffering", "no");
 
-    return new Response(res.body, {
+    const reader = res.body?.getReader();
+
+    let generatedText = "";
+    const stream = new ReadableStream({
+      start(controller) {
+        return pump();
+        function pump(): any {
+          return reader?.read().then(({ done, value }) => {
+            // When no more data needs to be consumed, close the stream
+            if (done) {
+              log.info(
+                JSON.stringify({
+                  "llm-request": clonedRequestBody,
+                  "llm-respones": generatedText,
+                }),
+                {
+                  type: "data",
+                },
+              );
+              controller.close();
+              return;
+            }
+            const decodedValue = decoder.decode(value, { stream: true });
+            try {
+              const jsonChunk = JSON.parse(decodedValue.replace("data: ", ""));
+              generatedText = jsonChunk.generated_text;
+            } catch (e) {}
+            // Enqueue the next data chunk into our target stream
+            controller.enqueue(value);
+            return pump();
+          });
+        }
+      },
+    });
+
+    return new Response(stream, {
       status: res.status,
       statusText: res.statusText,
       headers: newHeaders,
