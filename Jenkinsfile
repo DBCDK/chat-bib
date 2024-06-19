@@ -14,6 +14,7 @@ pipeline {
 
     }
     environment {
+        GITLAB_ID = "1734"
         DOCKER_TAG = "${imageLabel}"
         IMAGE = "${imageName}${env.BRANCH_NAME != 'main' ? "-${env.BRANCH_NAME.toLowerCase()}" : ''}:${BUILD_NUMBER}"
         DOCKER_COMPOSE_NAME = "compose-${IMAGE}"
@@ -46,6 +47,25 @@ pipeline {
                     }
                 } }
         }
+        stage("Update staging version number") {
+			agent {
+				docker {
+					label 'devel10'
+					image "docker-dbc.artifacts.dbccloud.dk/build-env:latest"
+					alwaysPull true
+				}
+			}
+			when {
+				branch "main"
+			}
+			steps {
+				dir("deploy") {
+					sh """#!/usr/bin/env bash
+						set-new-version configuration.yaml ${env.GITLAB_PRIVATE_TOKEN} ${env.GITLAB_ID} ${env.DOCKER_TAG} -b staging
+					"""
+				}
+			}
+		}
     }
     post {
         always {
