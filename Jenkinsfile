@@ -9,9 +9,11 @@ pipeline {
         label 'devel10'
     }
     triggers{
-        // @TODO parameters on githubPush .. eg. branch
-        githubPush()
-
+        gitlab(
+            triggerOnPush: true,
+            branchFilterType: "All",
+            includeBranchesSpec: "*",
+        )
     }
     environment {
         GITLAB_ID = "1734"
