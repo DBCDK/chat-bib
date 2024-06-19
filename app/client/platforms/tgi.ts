@@ -199,7 +199,9 @@ export class TGIApi implements LLMApi {
 
         // start animaion
         animateResponseText();
+        console.log("messages", messages);
 
+        console.log("messages", JSON.stringify(messages));
         const response = await fetch("/api/tgi/generate_stream", {
           method: "POST",
           headers: {
@@ -228,7 +230,6 @@ export class TGIApi implements LLMApi {
         function getToken(line: string) {
           try {
             const jsonObj = JSON.parse(line?.replace("data: ", ""));
-            console.log(jsonObj);
             if (!jsonObj?.token?.special) {
               return jsonObj?.token?.text || "";
             }

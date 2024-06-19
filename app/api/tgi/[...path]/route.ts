@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSideConfig } from "@/app/config/server";
+import { searchWorks } from "@/app/searchgpt/searchGPT";
 import { log } from "dbc-node-logger";
 
 /**
@@ -48,7 +49,18 @@ async function handle(
   try {
     const decoder = new TextDecoder();
 
-    const clonedRequestBody = await req.text();
+    const clonedRequestBody: any = await req.text();
+    const clonedRequestBodyJson = JSON.parse(clonedRequestBody);
+
+    const works = await searchWorks("hest");
+    // console.log("\n\n\nJSON WORKS", works);
+    console.log(
+      "\n\n\nJSON clonedRequestBodyJson",
+      clonedRequestBodyJson.inputs,
+    );
+
+    // console.log("\n\n clonedRequestBody", clonedRequestBodyJson.inputs);
+    // console.log("\n\n clonedRequestBody.keys", Object.keys(clonedRequestBodyJSIN));
 
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
