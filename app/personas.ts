@@ -23,7 +23,7 @@ export const PERSONAS = [
         },
         {
           id: "Copilot-1",
-          role: "assistant",
+          role: MessageRole.Assistant,
           content:
             "Hej! Jeg er Birgitte. Hvordan kan jeg hjælpe dig i dag? Jeg kan give inspiration og anbefalinger til bøger og meget mere.",
           date: "",
