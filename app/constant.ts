@@ -1,3 +1,4 @@
+import { modelNames } from "@/app/dbc";
 export const OWNER = "";
 export const REPO = "";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
@@ -77,6 +78,7 @@ export enum ModelProvider {
   GeminiPro = "GeminiPro",
   Claude = "Claude",
   TGI = "TGI",
+  DBC = "DBC",
 }
 
 export const Anthropic = {
@@ -141,6 +143,15 @@ export const KnowledgeCutOffDate: Record<string, string> = {
 const dbcModels = ["tgi"];
 
 export const DEFAULT_MODELS = [
+  ...modelNames.map((name) => ({
+    name,
+    available: true,
+    provider: {
+      id: "dbc",
+      providerName: "DBC",
+      providerType: "openai",
+    },
+  })),
   ...dbcModels.map((name) => ({
     name,
     available: true,
