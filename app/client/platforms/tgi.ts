@@ -202,7 +202,7 @@ export class TGIApi implements LLMApi {
         console.log("messages", messages);
 
         console.log("messages", JSON.stringify(messages));
-        const response = await fetch("/api/tgi/generate_stream", {
+        const response = await fetch("/api/searchgpt/generate_stream", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

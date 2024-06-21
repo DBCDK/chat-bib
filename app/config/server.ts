@@ -109,6 +109,9 @@ export const getServerSideConfig = () => {
     generateStreamUrl:
       process.env.GENERATE_STREAM_URL ||
       "http://chat-bib-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
+    generateUrl:
+      process.env.GENERATE_STREAM_URL ||
+      "http://chat-bib-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate",
 
     baseUrl: process.env.BASE_URL,
     apiKey: getApiKey(process.env.OPENAI_API_KEY),
