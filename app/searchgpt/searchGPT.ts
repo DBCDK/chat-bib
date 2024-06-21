@@ -41,7 +41,7 @@ export async function searchGPT(prompt: Prompt): Promise<Prompt> {
   if (searchNeeded) {
     // if yes make create search query
     const searchQuery = await promptToSearchQuery(prompt);
-    console.log("\nsearchQuery", searchQuery);
+    console.log("\n\n\n\nSSSssSSsearchQuery", searchQuery);
     //send to fbi api and get results
     const works = await searchWorks(searchQuery);
     console.log("\n\n\nworks", works);
@@ -86,10 +86,10 @@ function modifyPrompt(prompt: Prompt, newPromptText: string) {
   };
 }
 //will send prompt to mixtral server and returns the respnse
-async function sendPrompt(prompt: Prompt) {
+async function sendPrompt(prompt: Prompt): Promise<string> {
   const controller = new AbortController();
   const serverConfig = getServerSideConfig();
-  const fetchUrl = serverConfig.generateStreamUrl;
+  const fetchUrl = serverConfig.generateUrl;
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
@@ -102,32 +102,39 @@ async function sendPrompt(prompt: Prompt) {
     duplex: "half",
     signal: controller.signal,
   };
-  console.log("prompt", prompt);
+  console.log("sendPrompt.prompt", prompt);
   // Send the modified prompt to your generative AI
   const res = await fetch(fetchUrl, {
     ...fetchOptions,
     body: JSON.stringify(prompt),
   });
 
-  const body = await res.text();
-  const trimmedBody: string = body.replaceAll("data: {", " {");
-  const arr = trimmedBody.split("\n");
-  const query: string = arr
-    .map((item) => {
-      try {
-        return JSON.parse(item);
-      } catch {
-        return null;
-      }
-    })
-    .find((obj) => obj && obj.generated_text !== null);
+  const body = await res.json();
 
-  return query.generated_text?.replaceAll('"', "");
+  console.log("sendPrompt.body", body.generated_text);
+  return body.generated_text;
+  // const body = await res.text();
+  // const trimmedBody: string = body.replaceAll("data: {", " {");
+  // const arr = trimmedBody.split("\n");
+  // const query: string = arr
+  //   .map((item) => {
+  //     try {
+  //       return JSON.parse(item);
+  //     } catch {
+  //       return null;
+  //     }
+  //   })
+  //   .find((obj) => obj && obj.generated_text !== null);
+
+  //return query.generated_text?.replaceAll('"', "");
 }
 async function promptToSearchQuery(prompt: Prompt): Promise<string> {
   const decoder = new TextDecoder();
-  const propmtText = `Generate a search query for the following. Make it as short as possible. Don't use OR|AND|NOT etc. The query should be in danish. don't use words like "about","for" etc. Search query can max be 2 words. Return only the query. Dont comment anything about it`;
+  const propmtText = `Generate a search query for the following. Make it as short as possible. Don't use OR|AND|NOT etc. The query should be in danish. don't use words like "about","for" etc. Search query can max be 2 words. Return only the query. Dont comment anything about it. Return only the query and dont say anything more in your respnse.`;
   const modifiedPrompt = modifyPrompt(prompt, propmtText);
+
+  const res = await sendPrompt(modifiedPrompt);
+  return res;
 }
 //evaluates if we need to make a search.
 function workSearchNeeded(prompt: string) {
@@ -235,7 +242,7 @@ export async function searchWorks(
         limit,
       },
     });
-    console.log("\n\n\nsearchWorks", data);
+    //   console.log("\n\n\nsearchWorks", data);
     return formatedWorks(data.search.works);
   } catch (error) {
     console.error("Error performing GraphQL search:", error);
