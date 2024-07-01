@@ -37,16 +37,16 @@ export function ChatbibIntro() {
         </div>
         <div className={styles.accordionContainer}>
           {content.map((item) => {
-            const isActive = activeId === item.id;
+            const isOpen = activeId === item.id;
             return (
               <div
-                className={`${styles.contentItem} ${isActive ? styles.isOpen : ""}`}
+                className={`${styles.contentItem} ${isOpen ? styles.isOpen : ""}`}
                 key={item.id}
                 id={item.id}
                 onClick={() => handleToggle(item.id)}
               >
                 <h3 className={styles.accordionTitle}>{item.title}</h3>
-                {isActive && <p>{item.text}</p>}
+                {isOpen && <p>{item.text}</p>}
               </div>
             );
           })}
