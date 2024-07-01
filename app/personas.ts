@@ -179,3 +179,45 @@ export interface Persona {
   mask: Mask;
   image?: string;
 }
+
+export const DEFAULT_SYSTEM_PERSONA = {
+  name: "",
+  description: "",
+  image: "",
+  mask: {
+    id: "100032",
+    createdAt: 1688899480410,
+    avatar: "1f47e",
+    name: "Chatbib",
+    context: [
+      {
+        id: "Copilot-0",
+        role: MessageRole.System,
+        content:
+          "Du hedder Chatbib, og er en dansk sprogmodel udviklet til at hjælpe bibliotekarer. Du bygger på Mixtral modellen. Du er en hjælpsom og venlig chatbot, der alitd svarer på dansk. Du prøver alitd at svare sandfærdigt og venligt.",
+        date: "",
+      },
+      {
+        id: "Copilot-1",
+        role: MessageRole.Assistant,
+        content: "Hej! Hvordan kan jeg hjælpe dig i dag?",
+        date: "",
+      },
+    ],
+    modelConfig: {
+      model: "gpt-4",
+      temperature: 0.3,
+      top_p: 1,
+      max_tokens: 2000,
+      presence_penalty: 0,
+      frequency_penalty: 0,
+      sendMemory: true,
+      historyMessageCount: 4,
+      compressMessageLengthThreshold: 1000,
+      enableInjectSystemPrompts: true,
+      template: "{{input}}",
+    },
+    lang: "da" as Lang,
+    builtin: true,
+  },
+};

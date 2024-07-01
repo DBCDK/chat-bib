@@ -24,6 +24,7 @@ import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
+import { DEFAULT_SYSTEM_PERSONA } from "../personas";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -216,19 +217,18 @@ export const useChatStore = createPersistStore(
       newSession(mask?: Mask) {
         const session = createEmptySession();
 
-        if (mask) {
-          const config = useAppConfig.getState();
-          const globalModelConfig = config.modelConfig;
+        const sessionMask = mask ? mask : DEFAULT_SYSTEM_PERSONA.mask;
+        const config = useAppConfig.getState();
+        const globalModelConfig = config.modelConfig;
 
-          session.mask = {
-            ...mask,
-            modelConfig: {
-              ...globalModelConfig,
-              ...mask.modelConfig,
-            },
-          };
-          session.topic = mask.name;
-        }
+        session.mask = {
+          ...sessionMask,
+          modelConfig: {
+            ...globalModelConfig,
+            ...sessionMask.modelConfig,
+          },
+        };
+        session.topic = sessionMask.name;
 
         set((state) => ({
           currentSessionIndex: 0,
