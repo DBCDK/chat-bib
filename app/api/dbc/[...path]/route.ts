@@ -83,7 +83,7 @@ async function handle(
   console.log("CLONED", clonedRequestBody);
   const requestBody = JSON.parse(clonedRequestBody) as LLMRequest;
 
-  const model = requestBody.parameters.model || MODEL_NAMES.DBC_HELLO_WORLD;
+  const model = requestBody.parameters.model || MODEL_NAMES.DBC_BASE;
 
   const generate = models[model]?.generate;
 
