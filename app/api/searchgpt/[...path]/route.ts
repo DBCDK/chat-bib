@@ -53,7 +53,7 @@ async function handle(
     const clonedRequestBody: any = await req.text();
     const promptObject: Prompt = JSON.parse(clonedRequestBody);
 
-    console.log("\nclonedRequestBodyclonedRequestBody\n", promptObject);
+    //console.log("\nclonedRequestBodyclonedRequestBody\n", promptObject);
     // let promptObject = JSON.parse(clonedRequestBody);
 
     const searchGPTPropmpt = await searchGPT(promptObject);

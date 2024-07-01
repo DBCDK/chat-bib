@@ -55,7 +55,7 @@ type Message = {
   content: string | MultimodalContent[];
 };
 
-const llmFormat = (msgs: Message[]): string => {
+export const llmFormat = (msgs: Message[]): string => {
   let result = "<s>[INST] <<SYS>>\n";
   if (msgs[0]?.role === "system") {
     result += msgs.shift()?.content || "";
