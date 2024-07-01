@@ -13,6 +13,7 @@
   --hover-color: #f3f3f3;
   --bar-color: rgba(0, 0, 0, 0.1);
   --theme-color: var(--gray);
+  
 
   /* shadow */
   --shadow: 50px 50px 100px 10px rgb(0, 0, 0, 0.1);
@@ -20,6 +21,8 @@
 
   /* stroke */
   --border-in-light: 1px solid rgb(222, 222, 222);
+
+  --border-darker: rgb(0, 0, 0, 0.2);
 }
 
 @mixin dark {
@@ -36,6 +39,8 @@
   --bar-color: rgba(255, 255, 255, 0.1);
 
   --border-in-light: 1px solid rgba(255, 255, 255, 0.192);
+
+  --border-darker: rgba(255, 255, 255, 0.2);
 
   --theme-color: var(--gray);
 

@@ -155,20 +155,28 @@ export function SideBar(props: { className?: string }) {
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
         <div className={styles["sidebar-logo"] + " no-dark"}>
-          <img
-            src="/dbclogo.png"
-            style={{ width: "100px", cursor: "pointer" }}
-            onClick={() => {
-              navigate(Path.Home);
-            }}
-          />
+          <Link to={Path.Home}>
+            <img
+              src="/dbclogo.png"
+              style={{ width: "100px", cursor: "pointer" }}
+            />
+          </Link>
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
             ChatBIB
           </div>
-          <div className={styles["sidebar-sub-title"]}>Biblioteks AI-chat</div>
+          <div className={styles["sidebar-sub-title"]}>
+            Bibliotekernes AI-chat
+          </div>
         </div>
+      </div>
+      <div className={styles["sidebar-disclaimer"]}>
+        <h2>Disclaimer</h2>
+        <p>
+          ChatBIB er en prototype designet til at udforske ny teknologi. Den kan
+          give forkerte svar. <Link to={Path.Home}>Læs mere her</Link>.
+        </p>
       </div>
       {/* 
       <div className={styles["sidebar-header-bar"]}>
@@ -198,7 +206,7 @@ export function SideBar(props: { className?: string }) {
         className={styles["sidebar-body"]}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
-            navigate(Path.Home);
+            // navigate(Path.Home);
           }
         }}
       >
@@ -234,7 +242,8 @@ export function SideBar(props: { className?: string }) {
           //    icon={<AddIcon  />}
           text={shouldNarrow ? undefined : Locale.Home.NewChat}
           onClick={() => {
-            navigate(Path.NewChat);
+            chatStore.newSession();
+            navigate(Path.Chat);
 
             // if (config.dontShowMaskSplashScreen) {
             //   chatStore.newSession();

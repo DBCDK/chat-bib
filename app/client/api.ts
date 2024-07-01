@@ -7,6 +7,7 @@ import {
 } from "../constant";
 import { ChatMessage, ModelType, useAccessStore, useChatStore } from "../store";
 import { TGIApi } from "./platforms/tgi";
+import { DBCApi } from "./platforms/dbc";
 import { ChatGPTApi } from "./platforms/openai";
 import { GeminiProApi } from "./platforms/google";
 import { ClaudeApi } from "./platforms/anthropic";
@@ -107,6 +108,10 @@ export class ClientApi {
       case ModelProvider.TGI:
         this.llm = new TGIApi();
         break;
+      case ModelProvider.DBC:
+        this.llm = new DBCApi();
+        break;
+
       default:
         this.llm = new ChatGPTApi();
     }
