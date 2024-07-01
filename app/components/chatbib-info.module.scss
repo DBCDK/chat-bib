@@ -7,7 +7,6 @@
   width: 100vw;
   padding: 10px 20px;
   user-select: text;
-
 }
 
 .content {
@@ -27,26 +26,47 @@
 }
 .intro {
 }
+
 .contentItem {
   padding: 10px;
   border: var(--border-in-light);
-
   margin-bottom: 30px;
   cursor: pointer;
+  transition:
+    max-height 0.5s ease-in;
+  max-height: 63px;
+  overflow: hidden;
+
   &:hover,
-  &:active, 
-  &.isOpen{
+  &:active,
+  &.isOpen {
     background-color: var(--hover-color);
   }
 
+  &.isOpen {
+    max-height: 500px; 
+    padding: 10px;
+    
+  }
 }
 
-.buttonContainer{
+.contentItem p {
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.3s ease-in-out;
+  opacity: 0;
+}
+
+.contentItem.isOpen p {
+  opacity: 1;
+}
+
+.buttonContainer {
   display: flex;
   justify-content: center;
   margin-top: 30px;
 }
 
-.accordionContainer{
+.accordionContainer {
   margin-top: 50px;
 }
