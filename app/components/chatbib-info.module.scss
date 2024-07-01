@@ -32,10 +32,10 @@
   border: var(--border-in-light);
   margin-bottom: 30px;
   cursor: pointer;
-  transition:
-    max-height 0.5s ease-in;
-  max-height: 63px;
+  transition: max-height 0.5s ease-in;
+  max-height: 90px;
   overflow: hidden;
+  border-radius: 2px;
 
   &:hover,
   &:active,
@@ -44,9 +44,11 @@
   }
 
   &.isOpen {
-    max-height: 500px; 
+    max-height: 500px;
     padding: 10px;
-    
+    .arrowIcon {
+      transform: rotate(180deg) scale(2);
+    }
   }
 }
 
@@ -70,3 +72,20 @@
 .accordionContainer {
   margin-top: 50px;
 }
+
+.logoContainer {
+  margin: 50px 0;
+  display: flex;
+}
+.accordionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.arrowIcon {
+  transform: scale(2);
+  margin-right: 10px;
+  transition: transform 0.3s ease; 
+
+}
+
