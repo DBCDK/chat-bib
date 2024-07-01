@@ -1,10 +1,5 @@
 [
   {
-    "id": "Disclaimer",
-    "title": "Disclaimer",
-    "text": "ChatBib er et professionelt dialogværktøj beregnet udelukkende til brug af biblioteksansatte og er ikke designet til offentlig brug. Prototypen har til formål at igangsætte konkrete AI-eksperimenter sammen med bibliotekerne, styrke den faglige dialog og kritisk vurdere sprogmodellers potentialer og faldgrupper. Det er vigtigt at anvende sprogmodeller med en kritisk tilgang, da de er trænet på enorme datamængder, som ikke altid er pålidelige og kan producere faktuelt forkerte eller uetiske svar. De tekniske partnere bag ChatBib er DBC Digital og KOMBIT, og projektet involverer bidrag fra biblioteksansatte. Udviklingen inkluderer bestræbelser på at integrere med FBI-databrønden og sikre et stærkt fokus på privatliv og GDPR-overholdelse, med drift hostet på DBC's datacentre i Danmark. DBC vil træne og fintune ChatBib med relevante datasæt og brugerfeedback, med fremtidige planer om at inkludere brugerinteraktioner i træningsprocessen med samtykke."
-  },
-  {
     "id": "om",
     "title": "ChatBib, professionel dialog – ikke borgeranvendelse",
     "text": "Formålet er at Igangsætte konkrete AI-eksperimenter sammen med bibliotekerne, styrke den faglige dialog og\nkritisk vurdere sprogmodellers potentialer og faldgrupper.\nSenere kan det danne basis for chatflader rettet imod borgere ovenpå biblioteksmaterialer, bibliotekernes\nviden og fakta, som bibliotekerne kan stå inde for.\nChatBib er ikke et offentligt produkt. Prototypens målgruppe er udelukkende bibliotekernes ansatte, ikke\nborgere. ChatBib er dog ikke hemmelig, så del bare linket med andre."

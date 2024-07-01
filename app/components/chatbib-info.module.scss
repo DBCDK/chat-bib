@@ -1,4 +1,4 @@
-.container{
+.container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -6,27 +6,44 @@
   height: 100vh;
   width: 100vw;
   padding: 10px 20px;
-
-
 }
 
-.content{
+.content {
   max-width: 750px;
 
   @media screen and (max-width: 800px) {
     max-width: 100%;
     margin: 0 30px;
-
   }
-  
 }
 
-.new-chat-button{
+.new-chat-button {
   width: fit-content;
 }
-.contentItem p{
-  white-space: pre-wrap;
+.contentItem p {
+  // white-space: pre-wrap;
 }
-.intro{
-  
+.intro {
+}
+.contentItem {
+  padding: 10px;
+  border: 1px solid white;
+  margin-bottom: 30px;
+  cursor: pointer;
+  &:hover,
+  &:active, 
+  .isOpen{
+    background-color: var(--hover-color);
+  }
+
+}
+
+.buttonContainer{
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.accordionContainer{
+  margin-top: 50px;
 }
