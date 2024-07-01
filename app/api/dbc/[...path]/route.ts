@@ -3,11 +3,13 @@ import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 import poem from "@/app/dbc/models/poem";
 import helloworld from "@/app/dbc/models/helloworld";
 import base from "@/app/dbc/models/base";
+import withFetch from "@/app/dbc/models/withfetch";
 
 const models = {
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   [MODEL_NAMES.DBC_POEM]: poem,
+  [MODEL_NAMES.DBC_WITH_FETCH]: withFetch,
 };
 
 function createOutputStream() {
@@ -83,8 +85,6 @@ async function handle(
   console.log("CLONED", clonedRequestBody);
   const requestBody = JSON.parse(clonedRequestBody) as LLMRequest;
 
-  console.log("HEESTEEE", requestBody);
-
   const model = requestBody.parameters.model || MODEL_NAMES.DBC_HELLO_WORLD;
 
   const generate = models[model]?.generate;
@@ -94,6 +94,29 @@ async function handle(
   newHeaders.set("X-Accel-Buffering", "no");
 
   const { stream, say, close } = createOutputStream();
+
+  if (requestBody.parameters.stream === false) {
+    const res = await new Promise((resolve) => {
+      generate({
+        say: (message: any) => {
+          if (message.generated_text) {
+            resolve(message.generated_text);
+          }
+        },
+        close: () => {},
+        messages: requestBody.messages,
+        parameters: requestBody.parameters,
+      });
+    });
+    return new Response(
+      JSON.stringify({ choices: [{ message: { content: res } }] }),
+      {
+        status: 200,
+        headers: { ...newHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
   generate({
     say,
     close,

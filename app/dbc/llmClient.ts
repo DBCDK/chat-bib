@@ -42,6 +42,7 @@ export async function llmGenerate(input: LLMRequest) {
   const res = await fetch(fetchUrl, {
     ...fetchOptions,
     body: requestBodyStr,
+    signal: input?.controller?.signal,
   });
   let generatedText = "";
   const reader = res.body?.getReader();

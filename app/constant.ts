@@ -140,19 +140,8 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   tgi: "2023-12",
 };
 
-const dbcModels = ["tgi"];
-
 export const DEFAULT_MODELS = [
   ...modelNames.map((name) => ({
-    name,
-    available: true,
-    provider: {
-      id: "dbc",
-      providerName: "DBC",
-      providerType: "openai",
-    },
-  })),
-  ...dbcModels.map((name) => ({
     name,
     available: true,
     provider: {

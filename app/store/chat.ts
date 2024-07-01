@@ -553,7 +553,11 @@ export const useChatStore = createPersistStore(
         const modelConfig = session.mask.modelConfig;
 
         var api: ClientApi;
-        if (modelConfig.model.startsWith("gemini")) {
+        if (modelConfig.model.startsWith("dbc")) {
+          api = new ClientApi(ModelProvider.DBC);
+        } else if (modelConfig.model.startsWith("tgi")) {
+          api = new ClientApi(ModelProvider.TGI);
+        } else if (modelConfig.model.startsWith("gemini")) {
           api = new ClientApi(ModelProvider.GeminiPro);
         } else if (identifyDefaultClaudeModel(modelConfig.model)) {
           api = new ClientApi(ModelProvider.Claude);

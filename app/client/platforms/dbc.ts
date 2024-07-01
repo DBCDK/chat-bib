@@ -127,19 +127,25 @@ export class DBCApi implements LLMApi {
       requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
     }
 
-    console.log("[Request] openai payload: ", requestPayload);
+    console.log("[Request] dbc payload: ", requestPayload);
 
     const shouldStream = !!options.config.stream;
     const controller = new AbortController();
     options.onController?.(controller);
 
     try {
-      const chatPath = this.path(OpenaiPath.ChatPath);
-      const chatPayload = {
-        method: "POST",
-        body: JSON.stringify(requestPayload),
-        signal: controller.signal,
-        headers: getHeaders(),
+      const chatPath = "/api/dbc/generate_stream";
+
+      const llmRequest: LLMRequest = {
+        messages,
+        parameters: {
+          temperature: modelConfig.temperature,
+          max_new_tokens: 500,
+          presence_penalty: modelConfig.presence_penalty,
+          frequency_penalty: modelConfig.frequency_penalty,
+          model: modelConfig.model as MODEL_NAMES,
+          stream: shouldStream,
+        },
       };
 
       // make a fetch request
@@ -177,17 +183,6 @@ export class DBCApi implements LLMApi {
 
         // start animaion
         animateResponseText();
-
-        const llmRequest: LLMRequest = {
-          messages,
-          parameters: {
-            temperature: modelConfig.temperature,
-            max_new_tokens: 500,
-            presence_penalty: modelConfig.presence_penalty,
-            frequency_penalty: modelConfig.frequency_penalty,
-            model: modelConfig.model as MODEL_NAMES,
-          },
-        };
 
         const response = await fetch("/api/dbc/generate_stream", {
           method: "POST",
@@ -241,7 +236,13 @@ export class DBCApi implements LLMApi {
           options.onFinish(responseText + remainText);
         }
       } else {
-        const res = await fetch(chatPath, chatPayload);
+        const res = await fetch(chatPath, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(llmRequest),
+        });
         clearTimeout(requestTimeoutId);
 
         const resJson = await res.json();
