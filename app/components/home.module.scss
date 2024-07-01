@@ -356,7 +356,7 @@
   padding: 20px 0px 20px 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
 
   user-select: text;
   font-size: 12px;
@@ -367,12 +367,12 @@
     margin: 0px 0px 0px 0px;
 
     padding: 0px;
-    line-height: 14px;
     font-size: 12px;
   }
   p {
     margin: 0;
-    margin-top: 16px;
+    margin-top: 8px;
+    line-height: 20px;
     // text
   }
   a {
