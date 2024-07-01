@@ -27,7 +27,8 @@
 }
 .contentItem {
   padding: 10px;
-  border: 1px solid white;
+  border: var(--border-in-light);
+
   margin-bottom: 30px;
   cursor: pointer;
   &:hover,
