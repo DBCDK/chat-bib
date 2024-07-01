@@ -40,7 +40,7 @@ export enum MODEL_NAMES {
 
 const defaultModel = MODEL_NAMES.DBC_BASE;
 
-export const modelNames = [
+export const modelNames: string[] = [
   defaultModel,
   ...Object.values(MODEL_NAMES)
     .filter((name) => name !== defaultModel)

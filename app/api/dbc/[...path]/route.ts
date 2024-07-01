@@ -6,8 +6,8 @@ import base from "@/app/dbc/models/base";
 
 const models = {
   [MODEL_NAMES.DBC_BASE]: base,
-  [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
-  [MODEL_NAMES.DBC_POEM]: poem,
+  // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
+  // [MODEL_NAMES.DBC_POEM]: poem,
 };
 
 function createOutputStream() {
