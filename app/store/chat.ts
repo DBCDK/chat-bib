@@ -228,7 +228,7 @@ export const useChatStore = createPersistStore(
             ...sessionMask.modelConfig,
           },
         };
-        session.topic = sessionMask.name;
+        session.topic = DEFAULT_TOPIC;
 
         set((state) => ({
           currentSessionIndex: 0,
@@ -570,6 +570,7 @@ export const useChatStore = createPersistStore(
 
         // should summarize topic after chating more than 50 words
         const SUMMARIZE_MIN_LEN = 50;
+
         if (
           config.enableAutoGenerateTitle &&
           session.topic === DEFAULT_TOPIC &&
