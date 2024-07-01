@@ -21,13 +21,13 @@ export function ChatbibIntro() {
         <IconButton
           className={styles["new-chat-button"]}
           text={Locale.NewChat.EmptyChat}
-          onClick={() => navigate(Path.NewChat)}
+          onClick={() => navigate(Path.Chat)}
           type="primary"
           shadow
           size={5}
         />
         {content.map((item) => (
-          <div className={styles.contentItem} key={item.id}>
+          <div className={styles.contentItem} key={item.id} id={item.id}>
             <h2>{item.title}</h2>
             <p>{introText}</p>
           </div>
