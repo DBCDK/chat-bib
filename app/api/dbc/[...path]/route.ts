@@ -3,13 +3,11 @@ import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 import poem from "@/app/dbc/models/poem";
 import helloworld from "@/app/dbc/models/helloworld";
 import base from "@/app/dbc/models/base";
-import withFetch from "@/app/dbc/models/withfetch";
 
 const models = {
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   [MODEL_NAMES.DBC_POEM]: poem,
-  [MODEL_NAMES.DBC_WITH_FETCH]: withFetch,
 };
 
 function createOutputStream() {
