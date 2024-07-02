@@ -629,7 +629,8 @@ export const useChatStore = createPersistStore(
         );
 
         if (
-          historyMsgLength > modelConfig.compressMessageLengthThreshold &&
+          (toBeSummarizedMsgs.length >= modelConfig.historyMessageCount ||
+            historyMsgLength > modelConfig.compressMessageLengthThreshold) &&
           modelConfig.sendMemory
         ) {
           /** Destruct max_tokens while summarizing
