@@ -388,7 +388,7 @@ const da = {
         "Dette er et resumé af chat-historikken som en genopfriskning: " +
         content,
       Topic:
-        "Generér en fire til fem ords titel, der opsummerer vores samtale uden nogen indledning, tegnsætning, anførselstegn, punktummer, symboler, fed tekst eller ekstra tekst. Fjern omsluttende anførselstegn.",
+        "Generér en titel på dansk, der opsummerer vores samtale uden nogen indledning, tegnsætning, anførselstegn, punktummer, symboler, fed tekst eller ekstra tekst. Fjern omsluttende anførselstegn. Skriv på dansk. Titlen må MAX 10 tegn. Brug mellemrum mellem ord.",
       Summarize:
         "Opsummer kort diskussionen i 200 ord eller mindre til brug som en prompt for fremtidig kontekst.",
     },

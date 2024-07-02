@@ -7,9 +7,11 @@
   width: 100vw;
   padding: 10px 20px;
   user-select: text;
-  line-height: 24px;
 }
+.container p{
+  line-height: 24px;
 
+}
 .content {
   max-width: 750px;
 
@@ -45,7 +47,7 @@
   }
 
   &.isOpen {
-    max-height: 500px;
+    max-height: 550px;
     padding: 10px;
     .arrowIcon {
       transform: rotate(180deg) scale(2);
