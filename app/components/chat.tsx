@@ -1202,7 +1202,9 @@ function _Chat() {
                 icon={<ReturnIcon />}
                 bordered
                 title={Locale.Chat.Actions.ChatList}
-                onClick={() => navigate(`${Path.Chat}?showSideBar=true`)}
+                onClick={() =>
+                  navigate(`${Path.Chat}?showSideBar=true`, { replace: true })
+                }
               />
             </div>
           </div>
