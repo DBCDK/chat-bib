@@ -164,7 +164,7 @@ export function SideBar(props: { className?: string }) {
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
-            ChatBIB
+            ChatBib
           </div>
           <div className={styles["sidebar-sub-title"]}>
             Bibliotekernes AI-chat
@@ -174,7 +174,7 @@ export function SideBar(props: { className?: string }) {
       <div className={styles["sidebar-disclaimer"]}>
         <h2>Disclaimer</h2>
         <p>
-          ChatBIB er en prototype designet til at udforske ny teknologi. Den kan
+          ChatBib er en prototype designet til at udforske ny teknologi. Den kan
           give forkerte svar. <Link to={Path.Home}>Læs mere her</Link>.
         </p>
       </div>
