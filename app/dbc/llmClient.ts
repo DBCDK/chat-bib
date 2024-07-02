@@ -21,7 +21,7 @@ const llmFormat = (msgs: Message[]): string => {
 };
 
 export async function llmGenerate(input: LLMRequest) {
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder("utf-8");
 
   const fetchOptions: RequestInit = {
     headers: {
@@ -52,12 +52,17 @@ export async function llmGenerate(input: LLMRequest) {
       return;
     }
 
-    const decodedValue = decoder.decode(value, { stream: true });
-    try {
-      const obj = JSON.parse(decodedValue.replace("data: ", ""));
-      generatedText = obj.generated_text;
-      input.say?.(obj);
-    } catch (e) {}
+    const rawValues = decoder.decode(value, { stream: false }).split("\n");
+
+    rawValues.forEach((rawValue) => {
+      const decodedValue = rawValue.replace("data: ", "").trim();
+      try {
+        const obj = JSON.parse(decodedValue);
+        generatedText = obj.generated_text;
+        input.say?.(obj);
+      } catch (e) {}
+    });
+
     await processChunk();
   }
   await processChunk();
