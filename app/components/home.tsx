@@ -22,6 +22,7 @@ import {
   Routes,
   Route,
   useLocation,
+  useSearchParams,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
@@ -137,7 +138,8 @@ function Screen() {
   const isAuth = location.pathname === Path.Auth;
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder = !isHome; //true
-  //  getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
+  const [searchParams] = useSearchParams();
+  const showSideBar = searchParams.get("showSideBar") === "true"; //  getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
 
   useEffect(() => {
     loadAsyncGoogleFont();
@@ -162,7 +164,7 @@ function Screen() {
       ) : (
         <>
           {!isHome && (
-            <SideBar className={isHome ? styles["sidebar-show"] : ""} />
+            <SideBar className={showSideBar ? styles["sidebar-show"] : ""} />
           )}
 
           <div
