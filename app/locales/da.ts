@@ -67,7 +67,7 @@ const da = {
     Rename: "Omdøb chat",
     Typing: "Skriver…",
     Input: (submitKey: string) => {
-      return "Send besked til ChatBIB";
+      return "Send besked til ChatBib";
       var inputHints = `${submitKey} for at sende`;
       if (submitKey === String(SubmitKey.Enter)) {
         inputHints += ", Shift + Enter for at ombryde";

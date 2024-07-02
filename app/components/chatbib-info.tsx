@@ -26,7 +26,7 @@ export function ChatbibIntro() {
         <div className={styles.logoContainer}>
           <img src="/dbclogo.png" style={{ width: "100px" }} />
         </div>
-        <h1>Velkommen til ChatBIB</h1>
+        <h1>Velkommen til ChatBib</h1>
         <p>{introText}</p>
         <div className={styles.buttonContainer}>
           <IconButton
