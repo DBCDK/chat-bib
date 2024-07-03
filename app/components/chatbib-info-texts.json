@@ -27,6 +27,6 @@
   {
     "id": "fintuning",
     "title": "Fintuning",
-    "text": "DBC kommer til at træne og fintune ChatBib med relevante datasæt. Vi vil også inkludere brugerfeedback. På\net senere tidspunkt etableres en løsning, hvor du som bruger kan sige ja til at dine spørgsmål, svar og feedback\nbliver brugt som træningssæt."
+    "text": "På nuværende tidspunkt er modellen ikke fintunet og opererer i sin rå form. Dette betyder, at den endnu ikke er tilpasset specifikt til vores behov og stadig er baseret på den generelle træning, den har modtaget. DBC kommer til at træne og fintune ChatBib med relevante datasæt. Vi vil også inkludere brugerfeedback. På et senere tidspunkt etableres en løsning, hvor du som bruger kan sige ja til, at dine spørgsmål, svar og feedback bliver brugt som træningssæt."
   }
 ]
