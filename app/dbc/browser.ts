@@ -9,7 +9,7 @@ export async function duckDuckGoSearch(
 ): Promise<SearchResult[] | string> {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ["--proxy-server =http://dmzproxy.dbc.dk:3128"],
+    args: ["--proxy-server=http://dmzproxy.dbc.dk:3128"],
   });
   const page = await browser.newPage();
 
