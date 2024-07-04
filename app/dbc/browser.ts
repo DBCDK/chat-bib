@@ -1,5 +1,4 @@
 import puppeteer from "puppeteer";
-import randomUserAgent from "random-useragent";
 // Or import puppeteer from 'puppeteer-core';
 export type SearchResult = {
   content?: string;
@@ -15,7 +14,6 @@ export async function duckDuckGoSearch(
   // Custom user agent
   const customUA =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36";
-  console.log(randomUserAgent.getRandom());
   // Set custom user agent
   await page.setUserAgent(customUA);
 
