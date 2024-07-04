@@ -23,15 +23,15 @@ async function finalAnswer({
   const copy = [...messages];
   copy.push({
     role: "system",
-    content: `Disse er nogle bøger, som du SKAL bruge til at besvare spørgsmål.
+    content: `Disse er nogle bøger, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse bøger. 
   
-  ${JSON.stringify(works?.slice(0, 10))}
+ bøger:  ${JSON.stringify(works)}
     
-  Svar så kort og præcist som muligt.
+  Svar så kort og præcist som muligt. Giv mindst 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
 
-    Du kan lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
+    Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
 
-    Sær workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:138112446
+    Sæt workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:xxxxxx-basis:xxxxxxxxx
   `,
   });
 
