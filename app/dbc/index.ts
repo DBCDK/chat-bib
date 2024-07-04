@@ -34,12 +34,13 @@ export type LLMRequest = {
 export enum MODEL_NAMES {
   DBC_BASE = "dbc-base",
   DBC_DUCK_DUCK = "dbc-duck-duck",
+  DBC_SIMPLE_SEARCH = "dbc-simple-search",
   // DBC_POEM = "dbc-poem",
   // DBC_HELLO_WORLD = "dbc-hello-world",
   // DBC_WITH_FETCH = "dbc-with-fetch",
 }
 
-const defaultModel = MODEL_NAMES.DBC_BASE;
+const defaultModel = MODEL_NAMES.DBC_SIMPLE_SEARCH;
 
 export const modelNames: string[] = [
   defaultModel,

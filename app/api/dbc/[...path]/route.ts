@@ -4,10 +4,14 @@ import poem from "@/app/dbc/models/poem";
 import helloworld from "@/app/dbc/models/helloworld";
 import base from "@/app/dbc/models/base";
 import duckduck from "@/app/dbc/models/duckduck";
+import simpleSearch from "@/app/dbc/models/simpleSearch";
 
 const models = {
+  [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
+
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_DUCK_DUCK]: duckduck,
+
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
 };
