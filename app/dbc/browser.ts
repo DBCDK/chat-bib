@@ -5,7 +5,7 @@ export type SearchResult = {
   href?: string;
 };
 export async function duckDuckGoSearch(
-  query,
+  query: any,
 ): Promise<SearchResult[] | string> {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();

@@ -245,18 +245,27 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     },
     ...messages,
   ];
-  say("Analyserer\n\n");
+  say("Undersøger forespørgsel...\n\n");
   const performSearch = await searchIsRequired({
     messages,
     parameters,
     say,
   });
 
-  say("Analyserer spørgsmål\n\n");
-  const queries = performSearch
-    ? await detectQuestions({ messages, parameters })
-    : [];
-
+  let queries: string[] = [];
+  if (performSearch) {
+    say("Søgning påkrævet\n\n");
+    queries = await detectQuestions({ messages, parameters });
+    if (queries.length === 0) {
+      say(
+        "Sikke et antiklimaks, jeg kunne ikke finde ud af at lave søgninger!",
+      );
+    } else {
+      say(
+        `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
+      );
+    }
+  }
   // say("Søger\n\n");
   // const site = "site:faktalink.dk "
   const site = "";
@@ -266,7 +275,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     const q = queries[i];
 
     await new Promise((r) => setTimeout(r, 2000));
-    say(`Laver søgning: ${q}...`);
+    say(` * ${q}...`);
 
     const results = await duckDuckGoSearch(site + q);
     if (results == "TIMEOUT") {
