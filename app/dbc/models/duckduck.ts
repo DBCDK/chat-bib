@@ -278,11 +278,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say(` * ${q}...`);
 
     const results = await duckDuckGoSearch(site + q);
-    if (results == "TIMEOUT") {
+    if (results === "TIMEOUT") {
       say(` TIMEOUT\n`);
     } else {
       say(` Hits: ${results.length}\n`);
-      searchResults.push(results);
+      searchResults.push(results as SearchResult[]);
     }
   }
 
