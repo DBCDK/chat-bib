@@ -34,43 +34,54 @@ export async function llmGenerate(input: LLMRequest) {
     // @ts-ignore
     duplex: "half",
   };
+  const parameters = { ...input.parameters };
+
+  delete parameters.model;
   const fetchUrl = serverConfig.generateStreamUrl;
   const requestBodyStr = JSON.stringify({
     inputs: llmFormat(input.messages),
-    parameters: input.parameters,
-  });
-  const res = await fetch(fetchUrl, {
-    ...fetchOptions,
-    body: requestBodyStr,
-    signal: input?.controller?.signal,
+    parameters,
   });
   let generatedText = "";
-  const reader = res.body?.getReader();
-  async function processChunk() {
-    const { value, done } = (await reader?.read()) || { done: true };
-    if (done) {
-      return;
-    }
-
-    const rawValues = decoder.decode(value, { stream: false }).split("\n");
-
-    rawValues.forEach((rawValue) => {
-      const decodedValue = rawValue.replace("data: ", "").trim();
-      try {
-        const obj = JSON.parse(decodedValue);
-        generatedText = obj.generated_text;
-        input.say?.(obj);
-      } catch (e) {}
+  try {
+    const res = await fetch(fetchUrl, {
+      ...fetchOptions,
+      body: requestBodyStr,
+      signal: input?.controller?.signal,
     });
 
+    const reader = res.body?.getReader();
+    async function processChunk() {
+      const { value, done } = (await reader?.read()) || { done: true };
+      if (done) {
+        return;
+      }
+
+      const rawValues = decoder.decode(value, { stream: false }).split("\n");
+
+      rawValues.forEach((rawValue) => {
+        const decodedValue = rawValue.replace(/data:\s*/, "").trim();
+        try {
+          const obj = JSON.parse(decodedValue);
+          generatedText += obj?.token?.text;
+
+          input.say?.(obj);
+        } catch (e: any) {}
+      });
+
+      await processChunk();
+    }
     await processChunk();
+  } catch (e: any) {
+    if (e.name !== "AbortError") {
+      generatedText += "--ABORTED--";
+    }
   }
-  await processChunk();
 
   log.info(
     JSON.stringify({
       "llm-request": requestBodyStr,
-      "llm-respones": generatedText,
+      "llm-response": generatedText,
     }),
     {
       type: "data",

@@ -578,7 +578,7 @@ export const useChatStore = createPersistStore(
         ) {
           const topicMessages = messages.concat(
             createMessage({
-              role: MessageRole.User,
+              role: MessageRole.System,
               content: Locale.Store.Prompt.Topic,
             }),
           );

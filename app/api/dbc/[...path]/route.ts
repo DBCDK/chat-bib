@@ -3,9 +3,11 @@ import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 import poem from "@/app/dbc/models/poem";
 import helloworld from "@/app/dbc/models/helloworld";
 import base from "@/app/dbc/models/base";
+import duckduck from "@/app/dbc/models/duckduck";
 
 const models = {
   [MODEL_NAMES.DBC_BASE]: base,
+  [MODEL_NAMES.DBC_DUCK_DUCK]: duckduck,
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
 };
@@ -80,7 +82,6 @@ async function handle(
   }
 
   const clonedRequestBody = await req.text();
-  console.log("CLONED", clonedRequestBody);
   const requestBody = JSON.parse(clonedRequestBody) as LLMRequest;
 
   const model = requestBody.parameters.model || MODEL_NAMES.DBC_BASE;

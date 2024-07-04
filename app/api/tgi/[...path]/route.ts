@@ -74,7 +74,7 @@ async function handle(
               log.info(
                 JSON.stringify({
                   "llm-request": clonedRequestBody,
-                  "llm-respones": generatedText,
+                  "llm-response": generatedText,
                 }),
                 {
                   type: "data",
