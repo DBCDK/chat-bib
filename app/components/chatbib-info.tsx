@@ -23,9 +23,9 @@ export function ChatbibIntro() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        <div className={styles.logoContainer}>
+        {/* <div className={styles.logoContainer}>
           <img src="/dbclogo.png" style={{ width: "100px" }} />
-        </div>
+        </div> */}
         <h1>Velkommen til ChatBib</h1>
         <p>{introText}</p>
         <div className={styles.buttonContainer}>
@@ -62,6 +62,37 @@ export function ChatbibIntro() {
             );
           })}
         </div>
+        <footer className={styles.footer}>
+          <div>
+            <h4>Kontakt</h4>
+            <p>
+              DBC DIGITAL A/S
+              <br /> Tempovej 7-11
+              <br /> 2750 Ballerup
+              <br />
+              <a href="mailto:dbc@dbc.dk">dbc@dbc.dk</a>
+            </p>
+          </div>
+          <div>
+            <h4>Kundeservice</h4>
+            <p>
+              <a
+                className="external-link"
+                href="http://kundeservice.dbc.dk"
+                target="_blank"
+              >
+                DBC's kundeservice
+                <br />
+                Servicedesk for driftskunder
+              </a>
+              <br />
+            </p>
+          </div>
+
+          <div className={styles.logoContainer}>
+            <img src="/dbclogo.png" style={{ width: "100px" }} />
+          </div>
+        </footer>
       </div>
     </div>
   );
