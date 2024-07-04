@@ -18,10 +18,11 @@ import { ErrorBoundary } from "./error";
 import { getISOLang, getLang } from "../locales";
 
 import {
-  HashRouter as Router,
+  BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
+  useSearchParams,
 } from "react-router-dom";
 import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
@@ -34,7 +35,7 @@ import { identifyDefaultClaudeModel } from "../utils/checkers";
 export function Loading(props: { noLogo?: boolean }) {
   return (
     <div className={styles["loading-content"] + " no-dark"}>
-      {!props.noLogo && <BotIcon />}
+      {/* {!props.noLogo && <BotIcon />} */}
       <LoadingIcon />
     </div>
   );
@@ -55,6 +56,13 @@ const NewChat = dynamic(async () => (await import("./new-chat")).NewChat, {
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
   loading: () => <Loading noLogo />,
 });
+
+const ChatbibInfo = dynamic(
+  async () => (await import("./chatbib-info")).ChatbibIntro,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
 
 export function useSwitchTheme() {
   const config = useAppConfig();
@@ -129,19 +137,25 @@ function Screen() {
   const isHome = location.pathname === Path.Home;
   const isAuth = location.pathname === Path.Auth;
   const isMobileScreen = useMobileScreen();
-  const shouldTightBorder = true;
-  //  getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
+  const shouldTightBorder = !isHome; //true
+  const [searchParams] = useSearchParams();
+  const showSideBar = searchParams.get("showSideBar") === "true"; //  getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
 
   useEffect(() => {
     loadAsyncGoogleFont();
   }, []);
+  console.log("isHome", isHome);
+  console.log(" location.pathname", location.pathname);
+  console.log("Path.Home", Path.Home);
 
   return (
     <div
-      className={
-        styles.container +
-        ` ${shouldTightBorder ? styles["tight-container"] : styles.container}`
-      }
+      // className={
+      //   styles.container +
+      //   ` ${shouldTightBorder ? styles["tight-container"] : styles.container}`
+      // }
+
+      className={`${isHome ? "" : styles.container} ${shouldTightBorder ? styles["tight-container"] : ""}`}
     >
       {isAuth ? (
         <>
@@ -149,13 +163,18 @@ function Screen() {
         </>
       ) : (
         <>
-          <SideBar className={isHome ? styles["sidebar-show"] : ""} />
+          {!isHome && (
+            <SideBar className={showSideBar ? styles["sidebar-show"] : ""} />
+          )}
 
-          <div className={styles["window-content"]} id={SlotID.AppBody}>
+          <div
+            className={` ${isHome ? "" : styles["window-content"]}`}
+            id={SlotID.AppBody}
+          >
             <Routes>
-              <Route path={Path.Home} element={<NewChat />} />
-              <Route path={Path.NewChat} element={<NewChat />} />
-              <Route path={Path.Masks} element={<MaskPage />} />
+              <Route path={Path.Home} element={<ChatbibInfo />} />
+              {/* <Route path={Path.NewChat} element={<NewChat />} /> */}
+              {/* <Route path={Path.Masks} element={<MaskPage />} /> */}
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
             </Routes>

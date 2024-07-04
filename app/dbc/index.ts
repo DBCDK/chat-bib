@@ -1,0 +1,48 @@
+export type GenerateRequest = {
+  messages: Message[];
+  parameters: LLMParameters;
+  say: Function;
+  close: Function;
+};
+export type CustomModel = {
+  generate: (input: GenerateRequest) => void;
+};
+
+export type Message = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+export type LLMParameters = {
+  model?: MODEL_NAMES;
+  temperature?: number;
+  top_p?: number;
+  presence_penalty?: number;
+  frequency_penalty?: number;
+  max_new_tokens?: number;
+  stream?: boolean;
+};
+
+export type LLMRequest = {
+  messages: Message[];
+  parameters: LLMParameters;
+  say?: Function;
+  controller?: AbortController;
+};
+
+// Only allow dbc-base for now
+export enum MODEL_NAMES {
+  DBC_BASE = "dbc-base",
+  // DBC_POEM = "dbc-poem",
+  // DBC_HELLO_WORLD = "dbc-hello-world",
+  // DBC_WITH_FETCH = "dbc-with-fetch",
+}
+
+const defaultModel = MODEL_NAMES.DBC_BASE;
+
+export const modelNames: string[] = [
+  defaultModel,
+  ...Object.values(MODEL_NAMES)
+    .filter((name) => name !== defaultModel)
+    .sort((a, b) => a.localeCompare(b)),
+];

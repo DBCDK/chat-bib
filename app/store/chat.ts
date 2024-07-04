@@ -24,6 +24,7 @@ import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
+import { DEFAULT_SYSTEM_PERSONA } from "../personas";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -216,19 +217,18 @@ export const useChatStore = createPersistStore(
       newSession(mask?: Mask) {
         const session = createEmptySession();
 
-        if (mask) {
-          const config = useAppConfig.getState();
-          const globalModelConfig = config.modelConfig;
+        const sessionMask = mask ? mask : DEFAULT_SYSTEM_PERSONA.mask;
+        const config = useAppConfig.getState();
+        const globalModelConfig = config.modelConfig;
 
-          session.mask = {
-            ...mask,
-            modelConfig: {
-              ...globalModelConfig,
-              ...mask.modelConfig,
-            },
-          };
-          session.topic = mask.name;
-        }
+        session.mask = {
+          ...sessionMask,
+          modelConfig: {
+            ...globalModelConfig,
+            ...sessionMask.modelConfig,
+          },
+        };
+        session.topic = DEFAULT_TOPIC;
 
         set((state) => ({
           currentSessionIndex: 0,
@@ -365,7 +365,9 @@ export const useChatStore = createPersistStore(
         });
 
         var api: ClientApi;
-        if (modelConfig.model.startsWith("tgi")) {
+        if (modelConfig.model.startsWith("dbc")) {
+          api = new ClientApi(ModelProvider.DBC);
+        } else if (modelConfig.model.startsWith("tgi")) {
           api = new ClientApi(ModelProvider.TGI);
         } else if (modelConfig.model.startsWith("gemini")) {
           api = new ClientApi(ModelProvider.GeminiPro);
@@ -551,7 +553,11 @@ export const useChatStore = createPersistStore(
         const modelConfig = session.mask.modelConfig;
 
         var api: ClientApi;
-        if (modelConfig.model.startsWith("gemini")) {
+        if (modelConfig.model.startsWith("dbc")) {
+          api = new ClientApi(ModelProvider.DBC);
+        } else if (modelConfig.model.startsWith("tgi")) {
+          api = new ClientApi(ModelProvider.TGI);
+        } else if (modelConfig.model.startsWith("gemini")) {
           api = new ClientApi(ModelProvider.GeminiPro);
         } else if (identifyDefaultClaudeModel(modelConfig.model)) {
           api = new ClientApi(ModelProvider.Claude);
@@ -564,6 +570,7 @@ export const useChatStore = createPersistStore(
 
         // should summarize topic after chating more than 50 words
         const SUMMARIZE_MIN_LEN = 50;
+
         if (
           config.enableAutoGenerateTitle &&
           session.topic === DEFAULT_TOPIC &&
@@ -622,7 +629,8 @@ export const useChatStore = createPersistStore(
         );
 
         if (
-          historyMsgLength > modelConfig.compressMessageLengthThreshold &&
+          (toBeSummarizedMsgs.length >= modelConfig.historyMessageCount ||
+            historyMsgLength > modelConfig.compressMessageLengthThreshold) &&
           modelConfig.sendMemory
         ) {
           /** Destruct max_tokens while summarizing

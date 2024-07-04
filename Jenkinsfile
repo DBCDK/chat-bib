@@ -9,16 +9,18 @@ pipeline {
         label 'devel10'
     }
     triggers{
-        // @TODO parameters on githubPush .. eg. branch
-        githubPush()
-
+        gitlab(
+            triggerOnPush: true,
+            branchFilterType: "All",
+            includeBranchesSpec: "*",
+        )
     }
     environment {
         DOCKER_TAG = "${imageLabel}"
         IMAGE = "${imageName}${env.BRANCH_NAME != 'main' ? "-${env.BRANCH_NAME.toLowerCase()}" : ''}:${BUILD_NUMBER}"
         DOCKER_COMPOSE_NAME = "compose-${IMAGE}"
         // we need to use metascrums gitlab token .. for the metascrum bot in deploy stage
-        GITLAB_PRIVATE_TOKEN = credentials("metascrum-gitlab-api-token")
+        GITLAB_PRIVATE_TOKEN = credentials("isworker-gitlab-api-token")
         REPOSITORY = "https://docker-ai.artifacts.dbccloud.dk"
     }
     stages {
@@ -46,6 +48,21 @@ pipeline {
                     }
                 } }
         }
+        stage("update staging version number") {
+			agent {
+				docker {
+					label 'devel10'
+					image "docker-dbc.artifacts.dbccloud.dk/build-env"
+					alwaysPull true
+				}
+			}
+			when {
+				branch "main"
+			}
+			steps {
+				sh "set-new-version configuration.yml ${env.GITLAB_PRIVATE_TOKEN} ai/chat-bib-secrets ${env.DOCKER_TAG} -b staging"
+			}
+		}
     }
     post {
         always {
