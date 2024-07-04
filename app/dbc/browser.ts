@@ -7,7 +7,10 @@ export type SearchResult = {
 export async function duckDuckGoSearch(
   query: any,
 ): Promise<SearchResult[] | string> {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--proxy-server =http://dmzproxy.dbc.dk:3128"],
+  });
   const page = await browser.newPage();
 
   page.setDefaultNavigationTimeout(15000);
