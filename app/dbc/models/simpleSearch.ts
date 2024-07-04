@@ -1,5 +1,117 @@
+import { initializeApollo } from "@/app/client/apolloClient";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
+import { gql } from "@apollo/client";
+
+interface FormatedWork {
+  title: string;
+  cover: string;
+  abstract: string;
+  workId: string;
+}
+async function finalAnswer({
+  messages,
+  parameters,
+  works,
+  say,
+}: {
+  messages: Message[];
+  works: FormatedWork[];
+  parameters: any;
+  say: Function;
+}) {
+  const copy = [...messages];
+  copy.push({
+    role: "system",
+    content: `Disse er nogle bøger, som du SKAL bruge til at besvare spørgsmål.
+  
+  ${JSON.stringify(works?.slice(0, 10))}
+    
+  Svar så kort og præcist som muligt.
+
+    Du kan lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
+
+    Sær workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:138112446
+  `,
+  });
+
+  // We just pass it through to the LLM backend
+  await llmGenerate({
+    messages: copy,
+    parameters,
+    say, // Remove this, if you don't want it to stream directly to client
+  });
+
+  // say("\n\nKilder:\n");
+  // say(
+  //   Object.values(works?.slice(0, 5))
+  //     .map((s) => " * " + s.href + "\n    " + s.content)
+  //     .join("\n"),
+  // );
+}
+
+async function searchWorks(
+  query: string,
+  offset: number = 0,
+  limit: number = 15,
+): Promise<any[]> {
+  console.log("\nsearchWorks.query", query);
+  const client = initializeApollo();
+
+  const SEARCH_WORKS_QUERY = gql`
+    query Example_BasicSearch(
+      $q: SearchQuery!
+      $offset: Int!
+      $limit: PaginationLimit!
+    ) {
+      search(q: $q) {
+        works(offset: $offset, limit: $limit) {
+          workId
+          titles {
+            main
+          }
+          abstract
+          manifestations {
+            first {
+              cover {
+                detail_500
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const { data } = await client.query({
+      query: SEARCH_WORKS_QUERY,
+      variables: {
+        q: { all: query },
+        offset,
+        limit,
+      },
+    });
+    console.log("\n\n\nsearchWorks", data);
+    const works = data.search.works;
+    function formatedWorks(works: any[]) {
+      return works.map((w) => {
+        const formatedWork = {
+          title: w.titles.main[0],
+          abstract: w.abstract[0],
+          cover: w.manifestations[0]?.first?.cover?.detail_500,
+          workId: w.workId,
+        };
+        return formatedWork;
+      });
+    }
+    return formatedWorks(works);
+  } catch (error) {
+    console.error("Error performing GraphQL search:", error);
+    //  throw new Error('Failed to fetch data');
+    return [];
+  }
+}
 
 async function searchIsRequired({
   messages,
@@ -107,9 +219,9 @@ Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Re
 Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
 
 Du returnerer KUN dette json format, aldrig andet:
-{"title": "nul"| titel på bog, 
- "author": "null"| navn på forfatter, 
- "subject": "null"| emne som der skal søges på }
+{"title": null | titel på bog, 
+ "author": null| navn på forfatter, 
+ "subject": null| emne som der skal søges på }
 
 
   `;
@@ -142,17 +254,30 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say,
   });
   if (shouldPerformSearch) {
-    say(`\nJeg søger på bibliotek.dk \n`);
+    say(`\nJeg søger på bibliotek.dk.. ⏳\n`);
+
     const searchObject = await promptToSearchObject({
       messages,
       parameters,
       say,
     });
-    say(
-      `\nJeg har lavet denne search object${JSON.stringify(searchObject)} \n`,
-    );
+    // say(
+    //   `\nJeg har lavet denne search object${JSON.stringify(searchObject)} \n`,
+    // );
 
-    console.log("searchObject", searchObject);
+    const query =
+      searchObject?.title ||
+      searchObject?.author ||
+      searchObject?.subject ||
+      ""; //todo combine all three if they have values
+
+    say("\n Jeg laver en søgning på  " + query + "...⏳");
+
+    const works = await searchWorks(query);
+    say("\nSøgning gennemført. Jeg analyserer resultaterne..");
+
+    await finalAnswer({ messages, parameters, works, say });
+    console.log("\n\n", works);
   } else {
     say(`\n Der er ikke behov for at lave en søgning \n`);
 
