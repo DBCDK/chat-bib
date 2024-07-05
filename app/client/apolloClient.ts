@@ -9,11 +9,11 @@ import { setContext } from "@apollo/client/link/context";
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 const httpLink = new HttpLink({
-  uri: "https://fbi-api-staging.k8s.dbc.dk/bibdk21/graphql",
+  uri: "https://fbi-api-prod.k8s.dbc.dk/bibdk21/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = process.env.FBI_API_ACCESS_TOKEN;
+  const token = process.env.FBI_API_TOKEN;
   // Return the headers to the context so httpLink can read them
   return {
     headers: {
