@@ -346,7 +346,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       say("\nKunne ikke lave en søge query fra din prompt.\n");
     }
   } else {
-    say(`\n Der er ikke behov for at lave en søgning \n`);
+    // say(`\n Der er ikke behov for at lave en søgning \n`);
 
     await llmGenerate({
       messages,
