@@ -56,7 +56,7 @@ type SimpleSearchQuery = {
 async function searchWorks(
   query: SimpleSearchQuery,
   offset: number = 0,
-  limit: number = 15,
+  limit: number = 35,
 ): Promise<any[]> {
   //remove null values
   const filteredSearchQuery = Object.fromEntries(
@@ -99,8 +99,11 @@ async function searchWorks(
         limit,
       },
     });
-    console.log("\n\n\nsearchWorks", data);
-    const works = data.search.works;
+    //filter for works that has an abstract. Look only on the first 15 works
+    const works = data?.search?.works
+      ?.filter((w: any) => w?.abstract[0]?.length > 0)
+      .slice(0, 15);
+
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {
