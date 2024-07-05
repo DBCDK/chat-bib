@@ -188,6 +188,7 @@ type SearchObject = {
   title?: string;
   author?: string;
   subject?: string;
+  all?: string;
 };
 let str = `  {"title": null,
 "author": null,
@@ -228,19 +229,33 @@ async function promptToSearchObject({
     if (!searchObject) {
       return null;
     }
-    console.log("\n\n###############################\n\n\n\n\n\n\n\n\n\n\n");
+    //only user messages
     const messagesToString = messages
       .map((e) => (e.role == "user" ? e.content : ""))
       .join(" ")
       .toLowerCase();
+
     console.log("\nmessagesToString", messagesToString);
-    const filteredObject = Object.fromEntries(
+    //filter for null values
+    let filteredObject = Object.fromEntries(
       Object.entries(searchObject).filter(([key, value]) => {
         console.log("\n  Object.entries(searchObject).filter value", value);
-
         return value != null && messagesToString.includes(value.toLowerCase());
       }),
     );
+
+    if (!filteredObject.all && filteredObject.subject?.split(" ").length > 1) {
+      filteredObject.all = filteredObject.subject + "";
+      delete filteredObject.subject;
+    }
+    // if(filteredObject?.all){
+    //   filteredObject.all = filteredObject.all.replaceAll(" og "," ");
+
+    // }
+    console.log("\n🍕beforefilteredObject", searchObject);
+
+    console.log("\n🍕filteredObject", filteredObject);
+
     console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
     return filteredObject;
   }
@@ -307,15 +322,16 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       say,
     });
     say(
-      "\nJeg laver en søgning til simple search🔎 \n" +
+      "\nJeg laver en søgning til simple search🔎 \n\n" +
         JSON.stringify(searchObject) +
-        "\n",
+        "\n\n",
     );
 
     const searchQuery = {
       title: searchObject?.title,
       creator: searchObject?.author,
       subject: searchObject?.subject,
+      all: searchObject?.all,
     };
     console.log(
       "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
