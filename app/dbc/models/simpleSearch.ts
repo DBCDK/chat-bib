@@ -49,9 +49,15 @@ async function finalAnswer({
   //     .join("\n"),
   // );
 }
+type SimpleSearchQuery = {
+  all?: string;
+  title?: string;
+  creator?: string;
+  subject?: string;
+};
 
 async function searchWorks(
-  query: string,
+  query: SimpleSearchQuery,
   offset: number = 0,
   limit: number = 15,
 ): Promise<any[]> {
@@ -87,7 +93,7 @@ async function searchWorks(
     const { data } = await client.query({
       query: SEARCH_WORKS_QUERY,
       variables: {
-        q: { all: query },
+        q: query,
         offset,
         limit,
       },
@@ -240,7 +246,7 @@ Du returnerer KUN dette json format, aldrig andet:
   });
 
   const searchObject = extractJsonFromText(res);
-  console.log("searchObject", searchObject);
+  console.log("\n\n\npromptToSearchObject.searchObject", searchObject);
   return searchObject;
 }
 
@@ -270,14 +276,28 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       searchObject?.author ||
       searchObject?.subject ||
       ""; //todo combine all three if they have values
-
+    const searchQuery = {
+      title: searchObject?.title,
+      creator: searchObject?.author,
+      subject: searchObject?.subject,
+    };
     say("\n Jeg laver en søgning på  " + query + "...⏳");
+    const filteredSearchQuery = Object.fromEntries(
+      Object.entries(searchQuery).filter(([key, value]) => value != null),
+    );
+    console.log("\n\n\filteredSearchQuery", filteredSearchQuery);
+    console.log("\n\nsearchObject", searchObject, "\n\n\n");
 
-    const works = await searchWorks(query);
-    say("\nSøgning gennemført. Jeg analyserer resultaterne..");
+    const works = await searchWorks(filteredSearchQuery);
 
-    await finalAnswer({ messages, parameters, works, say });
-    console.log("\n\n", works);
+    if (works.length > 0) {
+      say("\nSøgning gennemført. Jeg analyserer resultaterne..");
+
+      await finalAnswer({ messages, parameters, works, say });
+      console.log("\n\n", works);
+    } else {
+      say("\nJeg fandt desværre ikke nogle resultater.");
+    }
   } else {
     say(`\n Der er ikke behov for at lave en søgning \n`);
 
