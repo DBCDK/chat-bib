@@ -191,36 +191,34 @@ async function promptToSearchObject({
   say: Function;
 }): Promise<SearchObject | null> {
   function extractJsonFromText(text: string): SearchObject | null {
-    // Regular expression to match JSON object in text
-    const jsonPattern = /\{.*?\}/;
-    const match = text.match(jsonPattern);
+    // Regular expression to find JSON part in the string
+    const jsonRegex = /\{.*?\}/;
+    const match = text.match(jsonRegex);
 
     if (match) {
+      const jsonStr = match[0];
       try {
-        // Parse the matched JSON string into a JavaScript object
-        const jsonObject = JSON.parse(match[0]);
-        return jsonObject;
-      } catch (e) {
-        console.error("Failed to parse JSON:", e);
+        // Parse JSON string to object
+        const jsonObj = JSON.parse(jsonStr);
+        return jsonObj;
+      } catch (error) {
+        console.error("Error: The JSON string could not be decoded.");
         return null;
       }
     } else {
-      console.log("No JSON found in text.");
+      console.error("Error: No JSON object found in the input string.");
       return null;
     }
   }
-
   const systemPrompt = `
 Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
 Og et emne som der søges om.
 
-
-
 Du svarer ALDRIG selv på spørgsmålet.
-Du returnerer "intetForfatterNavn", hvis der ikke indegår et forfatternavn i samtalen.
-Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatter navn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
+Du returnerer "null", hvis der ikke indegår et forfatternavn i samtalen.
+Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatternavn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
 Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen.
-Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
+Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
 
 Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
 
@@ -244,9 +242,10 @@ Du returnerer KUN dette json format, aldrig andet:
     parameters,
     say,
   });
+  console.log("\n\n\n\n⏳promptToSearchObject.res", res);
 
   const searchObject = extractJsonFromText(res);
-  console.log("\n\n\npromptToSearchObject.searchObject", searchObject);
+  console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
   return searchObject;
 }
 
