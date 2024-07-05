@@ -1,6 +1,7 @@
 import { SearchResult } from "./browser";
 import { getServerSideConfig } from "@/app/config/server";
 import { fetch, ProxyAgent } from "undici";
+import { log } from "dbc-node-logger";
 
 const serverConfig = getServerSideConfig();
 
@@ -17,12 +18,22 @@ export async function search(q: string): Promise<SearchResult[]> {
       dispatcher,
     },
   );
-  const json: any = await res.json();
-  //   console.log(JSON.stringify(json, null, 2));
+  try {
+    const json: any = await res.json();
+    //   console.log(JSON.stringify(json, null, 2));
 
-  return (
-    json?.web?.results?.map((r: any) => {
-      return { href: r.url, content: r.description };
-    }) || []
-  );
+    return (
+      json?.web?.results?.map((r: any) => {
+        return { href: r.url, content: r.description };
+      }) || []
+    );
+  } catch (e) {
+    log.error(
+      "ERROR from brave search api: " +
+        JSON.stringify({
+          text: await res.text(),
+        }),
+    );
+    return [];
+  }
 }
