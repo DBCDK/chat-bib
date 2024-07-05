@@ -62,7 +62,11 @@ async function searchWorks(
   offset: number = 0,
   limit: number = 15,
 ): Promise<any[]> {
-  console.log("\n\n\n\nsearchWorks.query", query);
+  //remove null values
+  const filteredSearchQuery = Object.fromEntries(
+    Object.entries(query).filter(([key, value]) => value != null),
+  );
+
   const client = initializeApollo();
 
   const SEARCH_WORKS_QUERY = gql`
@@ -94,7 +98,7 @@ async function searchWorks(
     const { data } = await client.query({
       query: SEARCH_WORKS_QUERY,
       variables: {
-        q: query,
+        q: filteredSearchQuery,
         offset,
         limit,
       },
@@ -222,13 +226,16 @@ async function promptToSearchObject({
       return null;
     }
     console.log("\n\n###############################\n\n\n\n\n\n\n\n\n\n\n");
-    const messagesToString = messages.map((e) => e.content).join(" ");
+    const messagesToString = messages
+      .map((e) => (e.role == "user" ? e.content : ""))
+      .join(" ")
+      .toLowerCase();
     console.log("\nmessagesToString", messagesToString);
     const filteredObject = Object.fromEntries(
       Object.entries(searchObject).filter(([key, value]) => {
-        console.log("\n  Object.entries(searchObject).fil value", value);
+        console.log("\n  Object.entries(searchObject).filter value", value);
 
-        return value != null && messagesToString.includes(value);
+        return value != null && messagesToString.includes(value.toLowerCase());
       }),
     );
     console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
@@ -243,6 +250,7 @@ Du returnerer "null", hvis der ikke indegår et forfatternavn i samtalen.
 Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatternavn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
 Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen.
 Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
+Hvis der er noget i samtalen som er relevant for søgningen og som ikke er et emne, en titel, eller en forfatter, skal du sætte den i "all".
 
 Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
 
@@ -251,7 +259,8 @@ Du skal skrive på dansk. Kun på dansk.
 Du returnerer KUN dette json format, aldrig andet:
 {"title": null | titel på bog, 
  "author": null| navn på forfatter, 
- "subject": null| emne som der skal søges på }
+ "subject": null| emne som der skal søges på,
+ "all": null | general søgning for flere ord }
 
 
   `;
@@ -266,7 +275,7 @@ Du returnerer KUN dette json format, aldrig andet:
     controller,
     messages: copy,
     parameters,
-    say,
+    // say,
   });
   console.log("\n\n\n\n⏳promptToSearchObject.res", res);
 
@@ -274,19 +283,18 @@ Du returnerer KUN dette json format, aldrig andet:
   console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
 
   const validatedSearchObject = validateSearchObject(searchObject);
-  console.log("\n\n\npromptToSearchObject.searchObject", validatedSearchObject);
+  console.log("\n\n\nalidatedSearchObject.searchObject", validatedSearchObject);
   return validatedSearchObject;
 }
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
-  //if (messages?.[messages?.length - 1]?.role !== "user") {
-  // We just pass it through to the LLM backend
-
   const shouldPerformSearch = await searchIsRequired({
     messages,
     parameters,
     say,
   });
+
+  console.log("\n\n\n\n🚀🍊🚀🍊🚀🍊messages: ", messages, "\n\n\n");
   if (shouldPerformSearch) {
     say(`\nJeg søger på bibliotek.dk.. ⏳\n`);
 
@@ -295,28 +303,14 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       parameters,
       say,
     });
-    // say(
-    //   `\nJeg har lavet denne search object${JSON.stringify(searchObject)} \n`,
-    // );
 
-    const query =
-      searchObject?.title ||
-      searchObject?.author ||
-      searchObject?.subject ||
-      ""; //todo combine all three if they have values
     const searchQuery = {
       title: searchObject?.title,
       creator: searchObject?.author,
       subject: searchObject?.subject,
     };
-    say("\n Jeg laver en søgning på  " + query + "...⏳");
-    const filteredSearchQuery = Object.fromEntries(
-      Object.entries(searchQuery).filter(([key, value]) => value != null),
-    );
-    console.log("\n\n\filteredSearchQuery", filteredSearchQuery);
-    console.log("\n\nsearchObject", searchObject, "\n\n\n");
-
-    const works = await searchWorks(filteredSearchQuery);
+    console.log("\n\n\n\n\n\n\n\nsearchQuery: ", JSON.stringify(searchQuery));
+    const works = await searchWorks(searchQuery);
     console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
 
     if (works.length > 0) {
@@ -337,14 +331,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     });
   }
 
-  //  await llmGenerate({
-  //   messages,
-  //   parameters,
-  //    say, // Remove this, if you don't want it to stream directly to client
-  // });
   close();
-
-  //}
 }
 
 export default {
