@@ -1,4 +1,5 @@
-import { duckDuckGoSearch, SearchResult } from "../browser";
+import { search } from "../clients/brave";
+import { SearchResult } from "../clients/browser";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 
@@ -245,18 +246,27 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     },
     ...messages,
   ];
-  say("Analyserer\n\n");
+  say("Undersøger forespørgsel...\n\n");
   const performSearch = await searchIsRequired({
     messages,
     parameters,
     say,
   });
 
-  say("Analyserer spørgsmål\n\n");
-  const queries = performSearch
-    ? await detectQuestions({ messages, parameters })
-    : [];
-
+  let queries: string[] = [];
+  if (performSearch) {
+    say("Søgning påkrævet\n\n");
+    queries = await detectQuestions({ messages, parameters });
+    if (queries.length === 0) {
+      say(
+        "Sikke et antiklimaks, jeg kunne ikke finde ud af at lave søgninger!",
+      );
+    } else {
+      say(
+        `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
+      );
+    }
+  }
   // say("Søger\n\n");
   // const site = "site:faktalink.dk "
   const site = "";
@@ -265,28 +275,24 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   for (let i = 0; i < queries.length; i++) {
     const q = queries[i];
 
-    await new Promise((r) => setTimeout(r, 2000));
-    say(`Laver søgning: ${q}...`);
+    await new Promise((r) => setTimeout(r, 1200));
+    say(` * ${q}...`);
 
-    const results = await duckDuckGoSearch(site + q);
-    if (results == "TIMEOUT") {
-      say(` TIMEOUT\n`);
-    } else {
-      say(` Hits: ${results.length}\n`);
-      searchResults.push(results);
-    }
+    const results = await search(site + q);
+    say(` Hits: ${results.length}\n`);
+    searchResults.push(results as SearchResult[]);
   }
 
   say("\n\n");
+  let mergedResults = mergeLists(searchResults)?.slice(0, 20) || [];
 
-  let all: any = [];
-  searchResults.forEach((results) => {
-    all = [...all, ...results.slice(0, 3)];
-  });
+  say(
+    `Validerer ${mergedResults.length} søgeresultat${mergedResults.length === 1 ? "" : "er"} \n\n`,
+  );
 
   const validatedSources = (
     await Promise.all(
-      all.map(async (entry: any) => {
+      mergedResults.map(async (entry: any) => {
         const isValidSource = await validateSource({
           questions: queries,
           searchResult: entry,
@@ -311,6 +317,21 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   }
 
   close();
+}
+
+function mergeLists(lists: SearchResult[][]): SearchResult[] {
+  let result: SearchResult[] = [];
+  let maxLength = Math.max(...lists.map((list) => list.length));
+
+  for (let i = 0; i < maxLength; i++) {
+    lists.forEach((list) => {
+      if (i < list.length) {
+        result.push(list[i]);
+      }
+    });
+  }
+
+  return result;
 }
 
 export default {

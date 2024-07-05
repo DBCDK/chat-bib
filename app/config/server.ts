@@ -106,9 +106,11 @@ export const getServerSideConfig = () => {
   ).split(",");
 
   return {
+    braveKey: process.env.BRAVE_KEY,
     generateStreamUrl:
       process.env.GENERATE_STREAM_URL ||
-      "http://chat-bib-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
+      "http://hawkeye-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
+    // "http://chat-bib-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
 
     baseUrl: process.env.BASE_URL,
     apiKey: getApiKey(process.env.OPENAI_API_KEY),

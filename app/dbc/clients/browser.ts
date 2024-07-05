@@ -4,10 +4,15 @@ export type SearchResult = {
   content?: string;
   href?: string;
 };
+// TODO
+// https://www.googleapis.com/customsearch/v1?key=AIzaSyAvucUXnOKAFoBVKzTG9umHLCflstQz1VM&cx=5749598af9fb34f25&q=site:bibliotek.dk%20Sjove%20b%C3%B8ger%20til%20voksne
 export async function duckDuckGoSearch(
-  query,
+  query: any,
 ): Promise<SearchResult[] | string> {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--proxy-server=http://dmzproxy.dbc.dk:3128", "--disable-ipv6"],
+  });
   const page = await browser.newPage();
 
   page.setDefaultNavigationTimeout(15000);

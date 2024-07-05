@@ -24,6 +24,7 @@ COPY --chown=node:node --from=build /home/node/app/.next ./.next
 COPY --chown=node:node --from=build /home/node/app/public ./public
 COPY --chown=node:node --from=build /home/node/app/node_modules ./node_modules
 COPY --chown=node:node --from=build /home/node/app/package.json ./
+COPY --chown=node:node --from=build /home/node/.cache/puppeteer /home/node/.cache/puppeteer
 
 EXPOSE 3000
 USER node
