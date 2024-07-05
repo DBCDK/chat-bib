@@ -7,7 +7,7 @@ const serverConfig = getServerSideConfig();
 
 const dispatcher = new ProxyAgent("http://dmzproxy.dbc.dk:3128");
 export async function search(q: string): Promise<SearchResult[]> {
-  const url = `https://api.search.brave.com/res/v1/web/search?q=${q}`;
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(q)}`;
   const res = await fetch(url, {
     headers: {
       Accept: "application/json",
