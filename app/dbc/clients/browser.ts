@@ -4,6 +4,8 @@ export type SearchResult = {
   content?: string;
   href?: string;
 };
+// TODO
+// https://www.googleapis.com/customsearch/v1?key=AIzaSyAvucUXnOKAFoBVKzTG9umHLCflstQz1VM&cx=5749598af9fb34f25&q=site:bibliotek.dk%20Sjove%20b%C3%B8ger%20til%20voksne
 export async function duckDuckGoSearch(
   query: any,
 ): Promise<SearchResult[] | string> {
