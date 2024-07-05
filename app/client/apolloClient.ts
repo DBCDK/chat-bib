@@ -13,8 +13,7 @@ const httpLink = new HttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  // Get the authentication token from local storage if it exists
-  const token = "1b6108b38253c93d26f027a5ec4f7e5bea02206f";
+  const token = process.env.FBI_API_ACCESS_TOKEN;
   // Return the headers to the context so httpLink can read them
   return {
     headers: {
