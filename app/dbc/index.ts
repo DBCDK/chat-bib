@@ -40,7 +40,7 @@ export enum MODEL_NAMES {
   // DBC_WITH_FETCH = "dbc-with-fetch",
 }
 
-const defaultModel = MODEL_NAMES.DBC_SIMPLE_SEARCH;
+const defaultModel = MODEL_NAMES.DBC_BASE;
 
 export const modelNames: string[] = [
   defaultModel,

@@ -45,13 +45,6 @@ async function finalAnswer({
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
   });
-
-  // say("\n\nKilder:\n");
-  // say(
-  //   Object.values(works?.slice(0, 5))
-  //     .map((s) => " * " + s.href + "\n    " + s.content)
-  //     .join("\n"),
-  // );
 }
 type SimpleSearchQuery = {
   all?: string;
@@ -312,41 +305,45 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say,
   });
 
-  console.log("\n\n\n\n🚀🍊🚀🍊🚀🍊messages: ", messages, "\n\n\n");
   if (shouldPerformSearch) {
     say(`\nAnalyserer⏳\n`);
 
-    const searchObject = await promptToSearchObject({
-      messages,
-      parameters,
-      say,
-    });
+    const searchObject =
+      (await promptToSearchObject({
+        messages,
+        parameters,
+        say,
+      })) || {};
     say(
       "\nJeg laver en søgning til simple search🔎 \n\n" +
         JSON.stringify(searchObject) +
         "\n\n",
     );
 
-    const searchQuery = {
-      title: searchObject?.title,
-      creator: searchObject?.author,
-      subject: searchObject?.subject,
-      all: searchObject?.all,
-    };
-    console.log(
-      "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
-      JSON.stringify(searchQuery),
-    );
-    const works = await searchWorks(searchQuery);
-    console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
+    if (Object.keys(searchObject).length > 0) {
+      const searchQuery = {
+        title: searchObject?.title,
+        creator: searchObject?.author,
+        subject: searchObject?.subject,
+        all: searchObject?.all,
+      };
+      console.log(
+        "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
+        JSON.stringify(searchQuery),
+      );
+      const works = await searchWorks(searchQuery);
+      console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
 
-    if (works.length > 0) {
-      say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
+      if (works.length > 0) {
+        say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
 
-      await finalAnswer({ messages, parameters, works, say });
-      console.log("\n\n", works);
+        await finalAnswer({ messages, parameters, works, say });
+        console.log("\n\n", works);
+      } else {
+        say("\nJeg fandt desværre ikke nogle resultater.");
+      }
     } else {
-      say("\nJeg fandt desværre ikke nogle resultater.");
+      say("\nKunne ikke lave en søge query fra din prompt.\n");
     }
   } else {
     say(`\n Der er ikke behov for at lave en søgning \n`);
