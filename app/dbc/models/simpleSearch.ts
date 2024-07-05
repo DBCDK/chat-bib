@@ -28,11 +28,14 @@ async function finalAnswer({
  bøger:  ${JSON.stringify(works)}
     
   Svar så kort og præcist som muligt. Giv mindst 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
-  Skriv max 25 tegn om hver bog.
+
+  For hver bog, SKAL du skrive en sætning der fortæller om bogen. 
 
     Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
 
     Sæt workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:xxxxxxxxx
+
+    Vis en liste med en sætning der fortæller om bogen, link til bibliotek.dk samt titlen på bogen.
   `,
   });
 
@@ -296,20 +299,28 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   console.log("\n\n\n\n🚀🍊🚀🍊🚀🍊messages: ", messages, "\n\n\n");
   if (shouldPerformSearch) {
-    say(`\nJeg søger på bibliotek.dk.. ⏳\n`);
+    say(`\nAnalyserer⏳\n`);
 
     const searchObject = await promptToSearchObject({
       messages,
       parameters,
       say,
     });
+    say(
+      "\nJeg laver en søgning til simple search🔎 \n" +
+        JSON.stringify(searchObject) +
+        "\n",
+    );
 
     const searchQuery = {
       title: searchObject?.title,
       creator: searchObject?.author,
       subject: searchObject?.subject,
     };
-    console.log("\n\n\n\n\n\n\n\nsearchQuery: ", JSON.stringify(searchQuery));
+    console.log(
+      "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
+      JSON.stringify(searchQuery),
+    );
     const works = await searchWorks(searchQuery);
     console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
 
