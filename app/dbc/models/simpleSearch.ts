@@ -28,10 +28,11 @@ async function finalAnswer({
  bøger:  ${JSON.stringify(works)}
     
   Svar så kort og præcist som muligt. Giv mindst 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
+  Skriv max 25 tegn om hver bog.
 
     Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
 
-    Sæt workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:xxxxxx-basis:xxxxxxxxx
+    Sæt workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:xxxxxxxxx
   `,
   });
 
@@ -61,7 +62,7 @@ async function searchWorks(
   offset: number = 0,
   limit: number = 15,
 ): Promise<any[]> {
-  console.log("\nsearchWorks.query", query);
+  console.log("\n\n\n\nsearchWorks.query", query);
   const client = initializeApollo();
 
   const SEARCH_WORKS_QUERY = gql`
@@ -181,6 +182,10 @@ type SearchObject = {
   author?: string;
   subject?: string;
 };
+let str = `  {"title": null,
+"author": null,
+"subject": "krimi"}</s>
+`;
 async function promptToSearchObject({
   messages,
   parameters,
@@ -191,24 +196,43 @@ async function promptToSearchObject({
   say: Function;
 }): Promise<SearchObject | null> {
   function extractJsonFromText(text: string): SearchObject | null {
-    // Regular expression to find JSON part in the string
-    const jsonRegex = /\{.*?\}/;
-    const match = text.match(jsonRegex);
+    // Regular expression to find JSON object in the input string, accounting for possible newlines and spaces
+    const jsonRegex = /{[^]*}/;
 
-    if (match) {
-      const jsonStr = match[0];
+    // Use the regex to extract the JSON object string
+    const jsonString = text.match(jsonRegex);
+
+    if (jsonString) {
       try {
-        // Parse JSON string to object
-        const jsonObj = JSON.parse(jsonStr);
-        return jsonObj;
+        // Parse the JSON string into an object
+        const jsonObject = JSON.parse(jsonString[0]);
+        return jsonObject;
       } catch (error) {
-        console.error("Error: The JSON string could not be decoded.");
+        console.error("Failed to parse JSON:", error);
         return null;
       }
     } else {
-      console.error("Error: No JSON object found in the input string.");
+      console.error("No JSON object found in the input string.");
       return null;
     }
+  }
+
+  function validateSearchObject(searchObject: SearchObject | null) {
+    if (!searchObject) {
+      return null;
+    }
+    console.log("\n\n###############################\n\n\n\n\n\n\n\n\n\n\n");
+    const messagesToString = messages.map((e) => e.content).join(" ");
+    console.log("\nmessagesToString", messagesToString);
+    const filteredObject = Object.fromEntries(
+      Object.entries(searchObject).filter(([key, value]) => {
+        console.log("\n  Object.entries(searchObject).fil value", value);
+
+        return value != null && messagesToString.includes(value);
+      }),
+    );
+    console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
+    return filteredObject;
   }
   const systemPrompt = `
 Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
@@ -221,6 +245,8 @@ Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv tit
 Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
 
 Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
+
+Du skal skrive på dansk. Kun på dansk. 
 
 Du returnerer KUN dette json format, aldrig andet:
 {"title": null | titel på bog, 
@@ -246,7 +272,10 @@ Du returnerer KUN dette json format, aldrig andet:
 
   const searchObject = extractJsonFromText(res);
   console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
-  return searchObject;
+
+  const validatedSearchObject = validateSearchObject(searchObject);
+  console.log("\n\n\npromptToSearchObject.searchObject", validatedSearchObject);
+  return validatedSearchObject;
 }
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
@@ -288,9 +317,10 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     console.log("\n\nsearchObject", searchObject, "\n\n\n");
 
     const works = await searchWorks(filteredSearchQuery);
+    console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
 
     if (works.length > 0) {
-      say("\nSøgning gennemført. Jeg analyserer resultaterne..");
+      say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
 
       await finalAnswer({ messages, parameters, works, say });
       console.log("\n\n", works);
