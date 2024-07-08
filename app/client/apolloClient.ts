@@ -5,6 +5,8 @@ import {
   NormalizedCacheObject,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
+import { getClientConfig } from "../config/client";
+const clientConfig = getClientConfig();
 
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
@@ -13,7 +15,7 @@ const httpLink = new HttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = process.env.FBI_API_TOKEN;
+  const token = clientConfig?.fbiApiToken;
   // Return the headers to the context so httpLink can read them
   return {
     headers: {

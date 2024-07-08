@@ -31,6 +31,10 @@ import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
 import { useAccessStore } from "../store";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
+import { initializeApollo } from "../client/apolloClient";
+import { ApolloProvider } from "@apollo/client";
+
+const client = initializeApollo();
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -220,10 +224,12 @@ export function Home() {
   }
 
   return (
-    <ErrorBoundary>
-      <Router>
-        <Screen />
-      </Router>
-    </ErrorBoundary>
+    <ApolloProvider client={client}>
+      <ErrorBoundary>
+        <Router>
+          <Screen />
+        </Router>
+      </ErrorBoundary>
+    </ApolloProvider>
   );
 }

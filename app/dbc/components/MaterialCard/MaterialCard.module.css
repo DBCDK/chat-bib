@@ -1,0 +1,49 @@
+.card {
+  background: rgb(82, 73, 73);
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 196px;
+  color: white;
+
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  margin: 24px
+}
+.content {
+  margin: 20px;
+  max-width: 300px;
+}
+.creators {
+  font-size: 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1; /* Number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card img {
+  max-height: 196px;
+  min-width: 100px;
+  transform: scale(1.15);
+  clip-path: inset(10px);
+}
+
+.card h2 {
+  color: white;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  margin-bottom: 4px;
+}
+.card a:hover {
+  color: white;
+}
+
+.abstract {
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* Number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

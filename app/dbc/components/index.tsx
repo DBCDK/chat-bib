@@ -1,6 +1,6 @@
 import { decodeValue } from "./constants";
 import ExampleComponent from "./ExampleComponent";
-import MaterialCard from "./MaterialCard";
+import MaterialCard from "./MaterialCard/MaterialCard";
 
 type ComponentType = {
   [key: string]: (parts: string[], complete: Boolean) => JSX.Element;

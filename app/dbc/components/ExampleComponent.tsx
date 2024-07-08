@@ -16,9 +16,6 @@ function ExampleComponent({
   description: string;
   complete: Boolean;
 }) {
-  //   if (!complete) {
-  //     return null;
-  //   }
   return (
     <div
       style={{ maxWidth: 300, padding: 18, margin: 24, background: "#933737" }}
