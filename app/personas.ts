@@ -1,4 +1,5 @@
 import { Lang } from "./locales";
+import { DEFAULT_CONFIG } from "./store";
 import { Mask } from "./store/mask";
 import { MessageRole } from "./typing";
 
@@ -29,6 +30,7 @@ export const PERSONAS = [
           date: "",
         },
       ],
+
       modelConfig: {
         model: "gpt-4",
         temperature: 0.3,
@@ -205,7 +207,7 @@ export const DEFAULT_SYSTEM_PERSONA = {
       },
     ],
     modelConfig: {
-      model: "gpt-4",
+      model: "dbc-base",
       temperature: 0.3,
       top_p: 1,
       max_tokens: 2000,

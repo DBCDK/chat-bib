@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
-import poem from "@/app/dbc/models/poem";
-import helloworld from "@/app/dbc/models/helloworld";
+
 import base from "@/app/dbc/models/base";
 import websearch from "@/app/dbc/models/websearch";
 import simpleSearch from "@/app/dbc/models/simpleSearch";
+import visualsexamples from "@/app/dbc/models/visualsexamples";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
@@ -14,6 +14,7 @@ const models = {
 
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
+  [MODEL_NAMES.DBC_VISUALS_EXAMPLES]: visualsexamples,
 };
 
 function createOutputStream() {
