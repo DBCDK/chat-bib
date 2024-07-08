@@ -165,45 +165,49 @@ function _MarkDownContent(props: { content: string }) {
       components={{
         pre: PreCode,
         p: (pProps) => {
+          // return <p {...pProps} />;
           const components = [];
           let offset = -1;
-          let currentContent = "";
+          let currentContent: any[] = [];
           let isCustomComponent = false;
           for (let i = 0; i < pProps.children?.length; i++) {
             const currentText = pProps.children[i];
-            console.log("current", currentText);
             if (currentText === BEGIN_COMPONENT) {
               isCustomComponent = true;
-              if (currentContent) {
+              if (currentContent.length > 0) {
                 components.push(
                   <p {...pProps} dir="auto">
                     {currentContent}
                   </p>,
                 );
-                currentContent = "";
+                currentContent = [];
               }
               offset = i;
             } else if (currentText === END_COMPONENT) {
               isCustomComponent = false;
               components.push(
-                <div key={currentContent}>
-                  {deserializeCustomComponent(currentContent, true)}
+                <div key={currentContent.join("")}>
+                  {deserializeCustomComponent(currentContent.join(""), true)}
                 </div>,
               );
-              currentContent = "";
+              currentContent = [];
               offset = -1;
-            } else if (isCustomComponent) {
-              currentContent += currentText;
             } else {
-              components.push(currentText);
+              currentContent.push(currentText);
             }
           }
           if (currentContent) {
             if (isCustomComponent) {
               components.push(
-                <div key={currentContent}>
-                  {deserializeCustomComponent(currentContent, false)}
+                <div key={currentContent.join("")}>
+                  {deserializeCustomComponent(currentContent.join(""), false)}
                 </div>,
+              );
+            } else {
+              components.push(
+                <p {...pProps} dir="auto">
+                  {currentContent}
+                </p>,
               );
             }
           }
