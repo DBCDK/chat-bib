@@ -13,6 +13,10 @@ import LoadingIcon from "../icons/three-dots.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { showImageModal } from "./ui-lib";
+import { AllowElement, Root } from "react-markdown/lib/rehype-filter";
+import { childrenToReact } from "react-markdown/lib/ast-to-react";
+import { deserializeCustomComponent } from "../dbc/components";
+import { BEGIN_COMPONENT, END_COMPONENT } from "../dbc/components/constants";
 
 export function Mermaid(props: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -134,13 +138,19 @@ function escapeBrackets(text: string) {
   );
 }
 
+const CustomComponent = ({ children }: any) => {
+  return <span style={{ color: "blue", fontWeight: "bold" }}>{children}</span>;
+};
+
 function _MarkDownContent(props: { content: string }) {
+  console.log("MARKDOWN CONTENT", props.content);
   const escapedContent = useMemo(() => {
     return escapeBrackets(escapeDollarNumber(props.content));
   }, [props.content]);
 
   return (
     <ReactMarkdown
+      // allowElement={allowElement as AllowElement}
       remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
       rehypePlugins={[
         RehypeKatex,
@@ -154,7 +164,51 @@ function _MarkDownContent(props: { content: string }) {
       ]}
       components={{
         pre: PreCode,
-        p: (pProps) => <p {...pProps} dir="auto" />,
+        p: (pProps) => {
+          const components = [];
+          let offset = -1;
+          let currentContent = "";
+          let isCustomComponent = false;
+          for (let i = 0; i < pProps.children?.length; i++) {
+            const currentText = pProps.children[i];
+            console.log("current", currentText);
+            if (currentText === BEGIN_COMPONENT) {
+              isCustomComponent = true;
+              if (currentContent) {
+                components.push(
+                  <p {...pProps} dir="auto">
+                    {currentContent}
+                  </p>,
+                );
+                currentContent = "";
+              }
+              offset = i;
+            } else if (currentText === END_COMPONENT) {
+              isCustomComponent = false;
+              components.push(
+                <div key={currentContent}>
+                  {deserializeCustomComponent(currentContent, true)}
+                </div>,
+              );
+              currentContent = "";
+              offset = -1;
+            } else if (isCustomComponent) {
+              currentContent += currentText;
+            } else {
+              components.push(currentText);
+            }
+          }
+          if (currentContent) {
+            if (isCustomComponent) {
+              components.push(
+                <div key={currentContent}>
+                  {deserializeCustomComponent(currentContent, false)}
+                </div>,
+              );
+            }
+          }
+          return <>{components}</>;
+        },
         a: (aProps) => {
           const href = aProps.href || "";
           const isInternal = /^\/#/i.test(href);
