@@ -2,6 +2,7 @@ import { initializeApollo } from "@/app/client/apolloClient";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
+import MaterialCard from "../components/MaterialCard/MaterialCard";
 
 interface FormatedWork {
   title: string;
@@ -40,10 +41,17 @@ async function finalAnswer({
   });
 
   // We just pass it through to the LLM backend
-  await llmGenerate({
+  const finalAnswer = await llmGenerate({
     messages: copy,
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
+  });
+  MaterialCard.serialize({ say, workId: "work-of:870970-basis:138462455" });
+  say("\n\n\n\n");
+  works.forEach((work) => {
+    if (finalAnswer.includes(work.workId)) {
+      MaterialCard.serialize({ say, workId: work.workId });
+    }
   });
 }
 type SimpleSearchQuery = {
@@ -220,6 +228,12 @@ async function promptToSearchObject({
       return null;
     }
   }
+
+  /**
+   * Validates
+   * @param searchObject
+   * @returns
+   */
 
   function validateSearchObject(searchObject: SearchObject | null) {
     if (!searchObject) {
