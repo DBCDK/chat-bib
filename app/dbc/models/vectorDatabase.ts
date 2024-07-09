@@ -5,11 +5,11 @@ import { gql } from "@apollo/client";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
 import { searchWorks } from "../clients/vectorDB";
 
-interface FormatedWork {
+export interface FormatedWork {
   title: string;
   cover: string;
   abstract: string;
-  workId: string;
+  work: string; //workId
 }
 async function finalAnswer({
   messages,
@@ -50,20 +50,14 @@ async function finalAnswer({
   say("\n\n\n\n");
 
   works.forEach((work) => {
-    if (finalAnswer.includes(work.workId)) {
-      MaterialCard.serialize({ say, workId: work.workId });
+    if (finalAnswer.includes(work.work)) {
+      MaterialCard.serialize({ say, workId: work.work });
     }
   });
   say("\n\n\n\n");
 
   console.log("\n\nfinal answer: ", finalAnswer);
 }
-type SimpleSearchQuery = {
-  all?: string;
-  title?: string;
-  creator?: string;
-  subject?: string;
-};
 
 async function searchIsRequired({
   messages,
@@ -121,13 +115,6 @@ Du returnerer KUN dette json format, aldrig andet:
 
   return res as Boolean;
 }
-
-type SearchObject = {
-  title?: string;
-  author?: string;
-  subject?: string;
-  all?: string;
-};
 
 function extractQueryFromText(text: string): string | null {
   const start = text.indexOf("#b");
@@ -203,7 +190,10 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     });
 
     say(
-      "\nJeg laver en søgning til vector databasen \n\n" + searchQuery + "\n\n",
+      "\nJeg laver en søgning til vector databasen \n\n" +
+        "q: " +
+        searchQuery +
+        "\n\n",
     );
 
     if (searchQuery && searchQuery !== "null") {

@@ -2,14 +2,10 @@ import { SearchResult } from "./browser";
 import { getServerSideConfig } from "@/app/config/server";
 import { fetch, ProxyAgent } from "undici";
 import { log } from "dbc-node-logger";
+import { FormatedWork } from "../models/vectorDatabase";
 
 const serverConfig = getServerSideConfig();
-interface FormatedWork {
-  title: string;
-  cover: string;
-  abstract: string;
-  workId: string;
-}
+
 //const dispatcher = new ProxyAgent("http://dmzproxy.dbc.dk:3128");
 export async function searchWorks(q: string): Promise<FormatedWork[]> {
   const url = `http://blurb-quest-1-0.mi-prod.svc.cloud.dbc.dk/?q=${encodeURIComponent(q)}`;
