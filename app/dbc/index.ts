@@ -39,6 +39,7 @@ export enum MODEL_NAMES {
   // DBC_POEM = "dbc-poem",
   // DBC_HELLO_WORLD = "dbc-hello-world",
   // DBC_WITH_FETCH = "dbc-with-fetch",
+  DBC_VECTOR_DB = "dbc-vector-db",
 }
 
 const defaultModel = MODEL_NAMES.DBC_BASE;
