@@ -4,10 +4,13 @@ import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 import base from "@/app/dbc/models/base";
 import websearch from "@/app/dbc/models/websearch";
 import simpleSearch from "@/app/dbc/models/simpleSearch";
+import complexSearch from "@/app/dbc/models/complexSearch";
+
 import visualsexamples from "@/app/dbc/models/visualsexamples";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
+  [MODEL_NAMES.DBC_COMPLEX_SEARCH]: complexSearch,
 
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_WEB_SEARCH]: websearch,
