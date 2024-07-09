@@ -5,6 +5,7 @@ import base from "@/app/dbc/models/base";
 import websearch from "@/app/dbc/models/websearch";
 import simpleSearch from "@/app/dbc/models/simpleSearch";
 import visualsexamples from "@/app/dbc/models/visualsexamples";
+import vectorDatabase from "@/app/dbc/models/vectorDatabase";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
@@ -15,6 +16,7 @@ const models = {
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
   [MODEL_NAMES.DBC_VISUALS_EXAMPLES]: visualsexamples,
+  [MODEL_NAMES.DBC_VECTOR_DB]: vectorDatabase,
 };
 
 function createOutputStream() {

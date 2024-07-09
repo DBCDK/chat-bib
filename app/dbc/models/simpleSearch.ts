@@ -87,7 +87,7 @@ async function searchWorks(
           }
           abstract
           manifestations {
-            first {
+            latest {
               cover {
                 detail_500
               }
