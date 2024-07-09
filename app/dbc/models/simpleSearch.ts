@@ -46,7 +46,6 @@ async function finalAnswer({
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
   });
-  MaterialCard.serialize({ say, workId: "work-of:870970-basis:138462455" });
   say("\n\n\n\n");
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
