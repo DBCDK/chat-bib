@@ -258,15 +258,14 @@ let str = `  {"title": null,
 "author": null,
 "subject": "krimi"}</s>
 `;
-
+const searchIndexes: { [key: string]: string } = {
+  title: "term.title",
+  language: "phrase.language",
+  author: "term.creatorcontributor",
+  subject: "term.subject",
+  worktype: "worktype",
+};
 function searchObjectToCQL(searchObject: SearchObject) {
-  const searchIndexes: { [key: string]: string } = {
-    title: "term.title",
-    language: "phrase.language",
-    author: "term.creatorcontributor",
-    subject: "term.subject",
-  };
-
   let cql = "";
 
   Object.keys(searchObject).forEach((key, i) => {
@@ -275,7 +274,7 @@ function searchObjectToCQL(searchObject: SearchObject) {
 
       const values = searchObject[key]?.split(",");
       values.map((value, indx) => {
-        cql += `${i === 0 && indx === 0 ? "" : " OR "}${searchIndex}=${value}`;
+        cql += `${i === 0 && indx === 0 ? "" : " AND "}${searchIndex}=${value}`;
       });
     }
   });
@@ -329,7 +328,7 @@ async function promptToSearchObject({
     let filteredObject = Object.fromEntries(
       Object.entries(searchObject).filter(([key, value]) => {
         console.log("\n  Object.entries(searchObject).filter value", value);
-        return value != null; //&& messagesToString.includes(value.toLowerCase());
+        return value != null; // && messagesToString.includes(value.toLowerCase());
       }),
     );
 
@@ -404,9 +403,13 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     parameters,
     say,
   });
-
+  if (messages.length === 3) {
+    say(
+      `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
+    );
+  }
   if (shouldPerformSearch) {
-    say(`\nAnalyserer⏳\n`);
+    say(`\nAnalyserer..\n`);
 
     const searchObject =
       (await promptToSearchObject({
