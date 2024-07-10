@@ -1,7 +1,8 @@
 import { search } from "../clients/brave";
 import { SearchResult } from "../clients/browser";
-import { CustomModel, GenerateRequest, Message } from "../index";
+import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
+import { ModelDescription } from "./modelsDescriptions";
 
 async function finalAnswer({
   messages,
@@ -333,6 +334,12 @@ function mergeLists(lists: SearchResult[][]): SearchResult[] {
 
   return result;
 }
+
+export const modelDescription: ModelDescription = {
+  name: MODEL_NAMES.DBC_WEB_SEARCH,
+  description:
+    "En model til at udføre websøgninger og generere svar baseret på søgeresultaterne. Brug denne model når der bliver spurgt om generelle spørgsmål så som 'Hvad er forskellen på en kat og en hund?' eller 'Hvad er hovedstaden i Frankrig?'",
+};
 
 export default {
   generate,

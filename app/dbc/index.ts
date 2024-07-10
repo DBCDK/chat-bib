@@ -39,6 +39,7 @@ export enum MODEL_NAMES {
   // DBC_POEM = "dbc-poem",
   // DBC_HELLO_WORLD = "dbc-hello-world",
   // DBC_WITH_FETCH = "dbc-with-fetch",
+  DBC_GENERAL_MODEL = "dbc-general-model",
   DBC_VECTOR_DB = "dbc-vector-db",
 }
 

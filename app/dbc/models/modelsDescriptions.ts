@@ -1,0 +1,10 @@
+import { modelDescription as simpleSearchDescription } from "./simpleSearch";
+import { modelDescription as websearchDescription } from "./websearch";
+export interface ModelDescription {
+  name: string;
+  description: string;
+}
+export const modelsDescriptions: ModelDescription[] = [
+  simpleSearchDescription,
+  websearchDescription,
+];

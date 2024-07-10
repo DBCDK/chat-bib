@@ -1,8 +1,9 @@
 import { initializeApollo } from "@/app/client/apolloClient";
-import { CustomModel, GenerateRequest, Message } from "../index";
+import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
+import { ModelDescription } from "./modelsDescriptions";
 
 interface FormatedWork {
   title: string;
@@ -373,6 +374,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   close();
 }
+
+export const modelDescription: ModelDescription = {
+  name: MODEL_NAMES.DBC_SIMPLE_SEARCH,
+  description:
+    "En model til at udføre enkle søgninger på bøger baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales en bog. Prioritere denne model hvis der skal findes bøger.",
+};
 
 export default {
   generate,
