@@ -34,7 +34,7 @@ export async function llmGenerate(input: LLMRequest) {
     // @ts-ignore
     duplex: "half",
   };
-  const parameters = { ...input.parameters };
+  const parameters = { ...input.parameters, temperature: 0.001 };
 
   delete parameters.model;
   const fetchUrl = serverConfig.generateStreamUrl;
@@ -43,6 +43,8 @@ export async function llmGenerate(input: LLMRequest) {
     parameters,
   });
   let generatedText = "";
+  const now = performance.now();
+  let firstToken: number = -1;
   try {
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
@@ -53,6 +55,9 @@ export async function llmGenerate(input: LLMRequest) {
     const reader = res.body?.getReader();
     async function processChunk() {
       const { value, done } = (await reader?.read()) || { done: true };
+      if (firstToken < 0) {
+        firstToken = performance.now();
+      }
       if (done) {
         return;
       }
@@ -82,6 +87,7 @@ export async function llmGenerate(input: LLMRequest) {
     JSON.stringify({
       "llm-request": requestBodyStr,
       "llm-response": generatedText,
+      timeToFirstToken: firstToken > 0 ? firstToken - now : 0,
     }),
     {
       type: "data",

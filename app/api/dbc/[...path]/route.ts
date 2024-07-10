@@ -3,14 +3,19 @@ import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 
 import base from "@/app/dbc/models/base";
 import websearch from "@/app/dbc/models/websearch";
+import websearch2 from "@/app/dbc/models/websearch-2";
+
 import simpleSearch from "@/app/dbc/models/simpleSearch";
 import visualsexamples from "@/app/dbc/models/visualsexamples";
+import vectorLibrarian from "@/app/dbc/models/theVectorLibrarian";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
 
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_WEB_SEARCH]: websearch,
+  [MODEL_NAMES.DBC_WEB_SEARCH_2]: websearch2,
+  [MODEL_NAMES.DBC_VECTOR_LIBRARIAN]: vectorLibrarian,
 
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
