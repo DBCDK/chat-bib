@@ -1,9 +1,7 @@
 import { initializeApollo } from "@/app/client/apolloClient";
-import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
+import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
-import MaterialCard from "../components/MaterialCard/MaterialCard";
-import { ModelDescription } from "./modelsDescriptions";
 
 interface FormatedWork {
   title: string;
@@ -42,16 +40,10 @@ async function finalAnswer({
   });
 
   // We just pass it through to the LLM backend
-  const finalAnswer = await llmGenerate({
+  await llmGenerate({
     messages: copy,
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
-  });
-  say("\n\n\n\n");
-  works.forEach((work) => {
-    if (finalAnswer.includes(work.workId)) {
-      MaterialCard.serialize({ say, workId: work.workId });
-    }
   });
 }
 type SimpleSearchQuery = {
@@ -60,6 +52,74 @@ type SimpleSearchQuery = {
   creator?: string;
   subject?: string;
 };
+
+async function searchByCQL(
+  cql: string,
+  offset: number = 0,
+  limit: number = 35,
+): Promise<any[]> {
+  const client = initializeApollo();
+
+  const COMPLEX_SEARCH_QUERY = gql`
+    query Example_ComplexSearch(
+      $cql: String!
+      $offset: Int!
+      $limit: PaginationLimit!
+    ) {
+      complexSearch(cql: $cql) {
+        hitcount
+        errorMessage
+        works(offset: $offset, limit: $limit) {
+          workId
+          titles {
+            main
+          }
+          abstract
+          manifestations {
+            latest {
+              cover {
+                detail_500
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const { data } = await client.query({
+      query: COMPLEX_SEARCH_QUERY,
+      variables: {
+        cql: cql,
+        offset,
+        limit,
+      },
+    });
+
+    console.log("🍊🚧🍊🚧🍊🚧COMPLEX data QUERY 🍊🚧🍊🚧:", data);
+    console.log("cql", cql);
+    const works = data?.complexSearch?.works
+      ?.filter((w: any) => w?.abstract[0]?.length > 0)
+      .slice(0, 15);
+    function formatedWorks(works: any[]) {
+      return works.map((w) => {
+        const formatedWork = {
+          title: w.titles.main[0],
+          abstract: w.abstract[0],
+          cover: w.manifestations[0]?.first?.cover?.detail_500,
+          workId: w.workId,
+        };
+        return formatedWork;
+      });
+    }
+    return formatedWorks(works);
+  } catch (error) {
+    console.log("EEROR: ", error);
+
+    return [];
+  }
+}
 
 async function searchWorks(
   query: SimpleSearchQuery,
@@ -87,7 +147,7 @@ async function searchWorks(
           }
           abstract
           manifestations {
-            latest {
+            first {
               cover {
                 detail_500
               }
@@ -198,6 +258,30 @@ let str = `  {"title": null,
 "author": null,
 "subject": "krimi"}</s>
 `;
+const searchIndexes: { [key: string]: string } = {
+  title: "term.title",
+  language: "phrase.language",
+  author: "term.creatorcontributor",
+  subject: "term.subject",
+  worktype: "worktype",
+};
+function searchObjectToCQL(searchObject: SearchObject) {
+  let cql = "";
+
+  Object.keys(searchObject).forEach((key, i) => {
+    if (key in searchIndexes) {
+      const searchIndex = searchIndexes[key];
+
+      const values = searchObject[key]?.split(",");
+      values.map((value, indx) => {
+        cql += `${i === 0 && indx === 0 ? "" : " AND "}${searchIndex}=${value}`;
+      });
+    }
+  });
+
+  return cql;
+}
+
 async function promptToSearchObject({
   messages,
   parameters,
@@ -229,12 +313,6 @@ async function promptToSearchObject({
     }
   }
 
-  /**
-   * Validates
-   * @param searchObject
-   * @returns
-   */
-
   function validateSearchObject(searchObject: SearchObject | null) {
     if (!searchObject) {
       return null;
@@ -250,14 +328,14 @@ async function promptToSearchObject({
     let filteredObject = Object.fromEntries(
       Object.entries(searchObject).filter(([key, value]) => {
         console.log("\n  Object.entries(searchObject).filter value", value);
-        return value != null && messagesToString.includes(value.toLowerCase());
+        return value != null; // && messagesToString.includes(value.toLowerCase());
       }),
     );
 
-    if (!filteredObject.all && filteredObject.subject?.split(" ").length > 1) {
-      filteredObject.all = filteredObject.subject + "";
-      delete filteredObject.subject;
-    }
+    // if (!filteredObject.all && filteredObject.subject?.split(" ").length > 1) {
+    //   filteredObject.all = filteredObject.subject + "";
+    //   delete filteredObject.subject;
+    // }
     // if(filteredObject?.all){
     //   filteredObject.all = filteredObject.all.replaceAll(" og "," ");
 
@@ -269,6 +347,7 @@ async function promptToSearchObject({
     console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
     return filteredObject;
   }
+
   const systemPrompt = `
 Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
 Og et emne som der søges om.
@@ -288,7 +367,10 @@ Du returnerer KUN dette json format, aldrig andet:
 {"title": null | titel på bog, 
  "author": null| navn på forfatter, 
  "subject": null| emne som der skal søges på,
- "all": null | general søgning for flere ord }
+ "language": null | sprog som der ønskes. Hvis flere sprog retunere en kommasepareret liste. (eksempelvis dansk,engelsk,fransk),
+ "worktype": null | type af materiale. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil) ],
+ 
+ }
 
 
   `;
@@ -321,9 +403,13 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     parameters,
     say,
   });
-
+  if (messages.length === 3) {
+    say(
+      `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
+    );
+  }
   if (shouldPerformSearch) {
-    say(`\nAnalyserer⏳\n`);
+    say(`\nAnalyserer..\n`);
 
     const searchObject =
       (await promptToSearchObject({
@@ -332,10 +418,14 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
         say,
       })) || {};
     say(
-      "\nJeg laver en søgning til simple search🔎 \n\n" +
+      "\nJeg laver en søgning til complex search🔎 \n\n" +
         JSON.stringify(searchObject) +
         "\n\n",
     );
+
+    const cql = searchObjectToCQL(searchObject);
+
+    say("\nJeg laver denne cql søgning: \n\n" + cql + "\n\n");
 
     if (Object.keys(searchObject).length > 0) {
       const searchQuery = {
@@ -345,11 +435,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
         all: searchObject?.all,
       };
       console.log(
-        "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
+        "\n\n\n\n\n\n\n\nLaver søgning til complex search: ",
         JSON.stringify(searchQuery),
       );
-      const works = await searchWorks(searchQuery);
-      console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
+      const works = await searchByCQL(cql);
+
+      console.log("\n\n 🚨🚨🚨🚨 here are the works BY CQLlll: ", works);
 
       if (works.length > 0) {
         say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
@@ -374,12 +465,6 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   close();
 }
-
-export const modelDescription: ModelDescription = {
-  name: MODEL_NAMES.DBC_SIMPLE_SEARCH,
-  description:
-    "En model til at udføre enkle søgninger på bøger baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales en bog. Prioritere denne model hvis der skal findes bøger.",
-};
 
 export default {
   generate,
