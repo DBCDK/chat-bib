@@ -42,7 +42,8 @@ async function getModelByPrompt({
     ? json.modelName
     : MODEL_NAMES.DBC_BASE;
 
-  return models[modelName];
+  //Hack to typescript error. Return models[modelName];
+  return models[modelName as keyof typeof models];
 }
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
   say("\nJeg tænker..");
