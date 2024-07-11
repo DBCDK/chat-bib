@@ -359,16 +359,15 @@ Du returnerer KUN dette json format, aldrig andet:
  "subject":  emne som der skal søges på,
  "all": general søgning for flere ord,
  "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. (eksempelvis dansk,engelsk,fransk),
-
- 
+ "childrenOrAdults":  "til børn" eller "til voksne",
+ "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
   }
 
   Retunere ikke felterne, hvis de ikke har en værdi.
   `;
 
   /**
-   *  "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier.  Bøger, Artikler, Film, Musik, Spil ],
- "childrenOrAdults":  "til børn" eller "til voksne",
+   * 
  "year": hvis det specifikt nævnes, tilføj årstallet for udgivelsen
    */
 
@@ -417,6 +416,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       parameters,
       say,
     });
+
     say(
       "\nJeg laver en søgning til simple search🔎 \n\n" +
         JSON.stringify(searchObject) +
