@@ -3,6 +3,23 @@ import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 
+const allowedIndexes = [
+  { searchIndexes: "term.general", description: "general friktestsøgning" },
+  { searchIndexes: "term.title", description: "søg efter titel på bog" },
+  { searchIndexes: "term.creatorcontributor", description: "forfatternavn" },
+  { searchIndexes: "term.subject", description: "emne" },
+  {
+    searchIndexes: "phrase.mainlanguage",
+    description:
+      "Sprog. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK!",
+  },
+  {
+    searchIndexes: "worktype",
+    description:
+      "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil)",
+  },
+];
+
 interface FormatedWork {
   title: string;
   cover: string;
@@ -375,9 +392,30 @@ Du returnerer KUN dette json format, aldrig andet:
 
   `;
 
+  const newSystemPrompt = `
+Ud fra samtalen, skal du lave en CQL-søgning.
+
+
+DU MÅ IKKE ANTAGE NOGET. DU MÅ KUN BRUGE DET DER ER I SAMTALEN.
+
+Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}
+
+Du kan bruge "AND", "OR", "NOT" mellem indekserne.
+Hvis du er i tvivl om nogle af værdierne skal du ikke svare på dem. Du må ikke bare gætte. 
+
+Du skal skrive på dansk. Kun på dansk. 
+
+Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling"). 
+
+Hvis cql-strengen, indeholder indekser med "NOT", skal de indekser placeres sidst i cql-strengen.
+
+
+
+  `;
+
   const copy = [
     ...messages.filter((entry) => entry.role !== "system"),
-    { role: "system", content: systemPrompt } as Message,
+    { role: "system", content: newSystemPrompt } as Message,
   ];
   const controller = new AbortController();
 
@@ -397,6 +435,50 @@ Du returnerer KUN dette json format, aldrig andet:
   return validatedSearchObject;
 }
 
+async function promptToCQL({
+  messages,
+  parameters,
+  say,
+}: {
+  messages: Message[];
+  parameters: any;
+  say: Function;
+}): Promise<string | null> {
+  const newSystemPrompt = `
+Ud fra samtalen, skal du lave en CQL-søgning.
+
+Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}
+
+Du kan bruge "AND", "OR", "NOT" mellem indekserne.
+Hvis du er i tvivl om nogle af værdierne skal du ikke svare på dem. Du må ikke bare gætte. 
+
+HVIS VÆRDIEN IKKE STÅR I SAMTALEN, MÅ DU IKKE SVARE PÅ DET. DU MÅ IKKE TIFØJE VÆRDIER SOM IKKE ER NÆVNT I SAMTALEN!
+
+Du skal skrive på dansk. Kun på dansk. 
+
+Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling")
+
+Retunere kun cql-streng. Skriv ikke andet end cq-strengen.
+
+
+  `;
+
+  const copy = [
+    ...messages.filter((entry) => entry.role !== "system"),
+    { role: "system", content: newSystemPrompt } as Message,
+  ];
+  const controller = new AbortController();
+
+  const res = await llmGenerate({
+    controller,
+    messages: copy,
+    parameters,
+    // say,
+  });
+  console.log("\n\n\n\n⏳promptToSearchObject.res", res);
+  return res?.replaceAll("</s>", "") || null;
+}
+
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
   const shouldPerformSearch = await searchIsRequired({
     messages,
@@ -411,33 +493,26 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   if (shouldPerformSearch) {
     say(`\nAnalyserer..\n`);
 
-    const searchObject =
-      (await promptToSearchObject({
-        messages,
-        parameters,
-        say,
-      })) || {};
-    say(
-      "\nJeg laver en søgning til complex search🔎 \n\n" +
-        JSON.stringify(searchObject) +
-        "\n\n",
-    );
+    // const searchObject =
+    //   (await promptToSearchObject({
+    //     messages,
+    //     parameters,
+    //     say,
+    //   })) || {};
+    // say(
+    //   "\nJeg laver en søgning til complex search🔎 \n\n" +
+    //     JSON.stringify(searchObject) +
+    //     "\n\n",
+    // );
 
-    const cql = searchObjectToCQL(searchObject);
+    const cql = await promptToCQL({
+      messages,
+      parameters,
+      say,
+    }); //searchObjectToCQL(searchObject);
 
     say("\nJeg laver denne cql søgning: \n\n" + cql + "\n\n");
-
-    if (Object.keys(searchObject).length > 0) {
-      const searchQuery = {
-        title: searchObject?.title,
-        creator: searchObject?.author,
-        subject: searchObject?.subject,
-        all: searchObject?.all,
-      };
-      console.log(
-        "\n\n\n\n\n\n\n\nLaver søgning til complex search: ",
-        JSON.stringify(searchQuery),
-      );
+    if (cql) {
       const works = await searchByCQL(cql);
 
       console.log("\n\n 🚨🚨🚨🚨 here are the works BY CQLlll: ", works);
@@ -453,6 +528,33 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     } else {
       say("\nKunne ikke lave en søge query fra din prompt.\n");
     }
+
+    // if (Object.keys(searchObject).length > 0) {
+    //   const searchQuery = {
+    //     title: searchObject?.title,
+    //     creator: searchObject?.author,
+    //     subject: searchObject?.subject,
+    //     all: searchObject?.all,
+    //   };
+    //   console.log(
+    //     "\n\n\n\n\n\n\n\nLaver søgning til complex search: ",
+    //     JSON.stringify(searchQuery),
+    //   );
+    //   const works = await searchByCQL(cql);
+
+    //   console.log("\n\n 🚨🚨🚨🚨 here are the works BY CQLlll: ", works);
+
+    //   if (works.length > 0) {
+    //     say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
+
+    //     await finalAnswer({ messages, parameters, works, say });
+    //     console.log("\n\n", works);
+    //   } else {
+    //     say("\nJeg fandt desværre ikke nogle resultater.");
+    //   }
+    // } else {
+    //   say("\nKunne ikke lave en søge query fra din prompt.\n");
+    // }
   } else {
     // say(`\n Der er ikke behov for at lave en søgning \n`);
 
