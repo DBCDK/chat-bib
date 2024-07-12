@@ -55,10 +55,13 @@ async function finalAnswer({
   });
 }
 type SimpleSearchQuery = {
-  all?: string;
-  title?: string;
-  creator?: string;
-  subject?: string;
+  q: {
+    all?: string;
+    title?: string;
+    creator?: string;
+    subject?: string;
+  };
+  filters?: Filters;
 };
 
 async function searchWorks(
@@ -68,7 +71,16 @@ async function searchWorks(
 ): Promise<any[]> {
   //remove null values
   const filteredSearchQuery = Object.fromEntries(
-    Object.entries(query).filter(([key, value]) => value != null),
+    Object.entries(query.q).filter(([key, value]) => value != null),
+  );
+  const filteredFilters = Object.fromEntries(
+    Object.entries(query.filters ?? {}).filter(([key, value]) => value != null),
+  );
+
+  console.log("\n\n\n\n\n\n filteredFilters", filteredFilters + "\n\n\n");
+  console.log(
+    "\n\n\n\n\n\n filteredSearchQuery",
+    filteredSearchQuery + "\n\n\n",
   );
 
   const client = initializeApollo();
@@ -78,8 +90,9 @@ async function searchWorks(
       $q: SearchQuery!
       $offset: Int!
       $limit: PaginationLimit!
+      $filters: SearchFilters!
     ) {
-      search(q: $q) {
+      search(q: $q, filters: $filters) {
         works(offset: $offset, limit: $limit) {
           workId
           titles {
@@ -99,10 +112,20 @@ async function searchWorks(
   `;
 
   try {
+    console.log(
+      "\n\n\n\n\n\n 🚧 searchWorks QUERY: ",
+      JSON.stringify({
+        q: filteredSearchQuery,
+        filters: filteredFilters,
+        offset,
+        limit,
+      }) + "\n\n\n",
+    );
     const { data } = await client.query({
       query: SEARCH_WORKS_QUERY,
       variables: {
         q: filteredSearchQuery,
+        filters: filteredFilters,
         offset,
         limit,
       },
@@ -131,6 +154,7 @@ async function searchWorks(
   }
 }
 
+//TODO only check the latest message
 async function searchIsRequired({
   messages,
   parameters,
@@ -188,16 +212,22 @@ Du returnerer KUN dette json format, aldrig andet:
   return res as Boolean;
 }
 
-type SearchObject = {
+type Query = {
   title?: string;
-  author?: string;
+  creator?: string;
   subject?: string;
   all?: string;
 };
-let str = `  {"title": null,
-"author": null,
-"subject": "krimi"}</s>
-`;
+
+type Filters = {
+  mainLanguages?: string;
+  workTypes?: string[];
+  childrenOrAdults?: string;
+  year?: string | number;
+};
+
+type SearchObject = Query & Filters;
+
 async function promptToSearchObject({
   messages,
   parameters,
@@ -206,7 +236,7 @@ async function promptToSearchObject({
   messages: Message[];
   parameters: any;
   say: Function;
-}): Promise<SearchObject | null> {
+}): Promise<{ query: Query; filters?: Filters }> {
   function extractJsonFromText(text: string): SearchObject | null {
     // Regular expression to find JSON object in the input string, accounting for possible newlines and spaces
     const jsonRegex = /{[^]*}/;
@@ -235,9 +265,9 @@ async function promptToSearchObject({
    * @returns
    */
 
-  function validateSearchObject(searchObject: SearchObject | null) {
+  function validateQuery(searchObject: SearchObject | null): Query {
     if (!searchObject) {
-      return null;
+      return {};
     }
     //only user messages
     const messagesToString = messages
@@ -245,12 +275,14 @@ async function promptToSearchObject({
       .join(" ")
       .toLowerCase();
 
-    console.log("\nmessagesToString", messagesToString);
     //filter for null values
     let filteredObject = Object.fromEntries(
       Object.entries(searchObject).filter(([key, value]) => {
         console.log("\n  Object.entries(searchObject).filter value", value);
-        return value != null && messagesToString.includes(value.toLowerCase());
+        return (
+          value != null
+          // TODO: improve this.  && messagesToString.includes(String(value).toLowerCase())
+        );
       }),
     );
 
@@ -269,6 +301,43 @@ async function promptToSearchObject({
     console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
     return filteredObject;
   }
+
+  function extractFiltersFromSearchObject(searchObject: SearchObject): Filters {
+    const filterKeys: (keyof Filters)[] = [
+      "mainLanguages",
+      "workTypes",
+      "childrenOrAdults",
+      "year",
+    ];
+    const filters = filterKeys.reduce((acc, key) => {
+      if (key in searchObject) {
+        if (key === "mainLanguages" && Array.isArray(searchObject[key])) {
+          acc[key] = (searchObject[key] as string[]).map(
+            (language) => language.charAt(0).toUpperCase() + language.slice(1),
+          );
+        } else {
+          acc[key] = searchObject[key];
+        }
+      }
+
+      return acc;
+    }, {} as Filters);
+
+    return filters;
+  }
+
+  function extractQueryFromSearchObject(searchObject: SearchObject): Query {
+    const queryKeys: (keyof Query)[] = ["title", "creator", "subject", "all"];
+    const query = queryKeys.reduce((acc, key) => {
+      if (key in searchObject) {
+        acc[key] = searchObject[key];
+      }
+      return acc;
+    }, {} as Query);
+
+    return query;
+  }
+
   const systemPrompt = `
 Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
 Og et emne som der søges om.
@@ -285,13 +354,24 @@ Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bar
 Du skal skrive på dansk. Kun på dansk. 
 
 Du returnerer KUN dette json format, aldrig andet:
-{"title": null | titel på bog, 
- "author": null| navn på forfatter, 
- "subject": null| emne som der skal søges på,
- "all": null | general søgning for flere ord }
+{"title": titel på bog, 
+ "creator": navn på forfatter,
+ "subject":  emne som der skal søges på,
+ "all": general søgning for flere ord,
+ "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. (eksempelvis dansk,engelsk,fransk),
+ "childrenOrAdults":  "til børn" eller "til voksne",
+ "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
+  }
 
-
+  Retunere ikke felterne, hvis de ikke har en værdi.
   `;
+
+  /**
+   * 
+ "year": hvis det specifikt nævnes, tilføj årstallet for udgivelsen
+   */
+
+  //filters: fictionalCharacters, childrenOrAdults ("til voksne" eller "til børn"), year
 
   const copy = [
     ...messages.filter((entry) => entry.role !== "system"),
@@ -310,9 +390,15 @@ Du returnerer KUN dette json format, aldrig andet:
   const searchObject = extractJsonFromText(res);
   console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
 
-  const validatedSearchObject = validateSearchObject(searchObject);
+  const query = extractQueryFromSearchObject(searchObject || {});
+  const validatedSearchObject = validateQuery(query);
   console.log("\n\n\nalidatedSearchObject.searchObject", validatedSearchObject);
-  return validatedSearchObject;
+  const filters = extractFiltersFromSearchObject(searchObject || {});
+
+  console.log("\n\n\n🍊alidatedSearchObject.filters", filters);
+  console.log("\n\n\n🔧alidatedSearchObject.query", query);
+
+  return { query: validatedSearchObject, filters: filters };
 }
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
@@ -325,12 +411,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   if (shouldPerformSearch) {
     say(`\nAnalyserer⏳\n`);
 
-    const searchObject =
-      (await promptToSearchObject({
-        messages,
-        parameters,
-        say,
-      })) || {};
+    const searchObject = await promptToSearchObject({
+      messages,
+      parameters,
+      say,
+    });
+
     say(
       "\nJeg laver en søgning til simple search🔎 \n\n" +
         JSON.stringify(searchObject) +
@@ -339,14 +425,26 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
     if (Object.keys(searchObject).length > 0) {
       const searchQuery = {
-        title: searchObject?.title,
-        creator: searchObject?.author,
-        subject: searchObject?.subject,
-        all: searchObject?.all,
+        q: {
+          ...searchObject.query,
+
+          //   creator: searchObject?.query?.author,
+        },
+        filters: { ...searchObject.filters },
+        // title: searchObject?.query?.title,
+        // creator: searchObject?.query?.author,
+        // subject: searchObject?.query?.subject,
+        // all: searchObject?.query?.all,
       };
       console.log(
         "\n\n\n\n\n\n\n\nLaver søgning til simple search: ",
         JSON.stringify(searchQuery),
+      );
+
+      say(
+        "\nfilters searchquery: 🔎\n\n searchQuery " +
+          JSON.stringify(searchQuery) +
+          "\n\n\n",
       );
       const works = await searchWorks(searchQuery);
       console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
