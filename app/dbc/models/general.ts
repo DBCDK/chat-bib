@@ -34,12 +34,15 @@ async function getModelByPrompt({
     controller,
     messages: copy,
     parameters,
-    // say,
+    say: (text: string) => {
+      console.log("General.text", text);
+    },
   });
 
   const json = extractJsonFromText(res);
-  const modelName = Object.values(MODEL_NAMES).includes(json.modelName)
-    ? json.modelName
+  console.log("json", json);
+  const modelName = Object.values(MODEL_NAMES).includes(json?.modelName)
+    ? json?.modelName
     : MODEL_NAMES.DBC_BASE;
 
   //Hack to typescript error. Return models[modelName];
