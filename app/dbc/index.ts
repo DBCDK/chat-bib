@@ -42,6 +42,7 @@ export enum MODEL_NAMES {
   // DBC_WITH_FETCH = "dbc-with-fetch",
   DBC_GENERAL_MODEL = "dbc-general-model",
   DBC_VECTOR_DB = "dbc-vector-db",
+  DBC_MULTI_SEARCH = "dbc-multi-search",
 }
 
 const defaultModel = MODEL_NAMES.DBC_BASE;

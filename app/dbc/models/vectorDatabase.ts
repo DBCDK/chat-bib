@@ -9,7 +9,7 @@ export interface FormatedWork {
   title: string;
   cover: string;
   abstract: string;
-  work: string; //workId
+  workId: string; //workId
 }
 async function finalAnswer({
   messages,
@@ -50,8 +50,8 @@ async function finalAnswer({
   say("\n\n\n\n");
 
   works.forEach((work) => {
-    if (finalAnswer.includes(work.work)) {
-      MaterialCard.serialize({ say, workId: work.work });
+    if (finalAnswer.includes(work.workId)) {
+      MaterialCard.serialize({ say, workId: work.workId });
     }
   });
   say("\n\n\n\n");
@@ -127,7 +127,7 @@ function extractQueryFromText(text: string): string | null {
   return text.substring(start + 2, end).trim();
 }
 
-async function promptToSearchString({
+export async function promptToSearchString({
   messages,
   parameters,
   say,
