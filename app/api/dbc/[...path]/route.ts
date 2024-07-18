@@ -11,7 +11,7 @@ import vectorDatabase from "@/app/dbc/models/vectorDatabase";
 import generalModel from "@/app/dbc/models/general";
 import multiSearch from "@/app/dbc/models/multiSearch";
 
-export const models = {
+const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
   [MODEL_NAMES.DBC_COMPLEX_SEARCH]: complexSearch,
 
