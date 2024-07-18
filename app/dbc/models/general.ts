@@ -1,4 +1,4 @@
-import { models } from "@/app/api/dbc/[...path]/route";
+import models from "@/app/dbc/models/models";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { modelsDescriptions } from "./modelsDescriptions";
