@@ -6,12 +6,18 @@ import { gql } from "@apollo/client";
 const allowedIndexes = [
   { searchIndexes: "term.general", description: "general friktestsøgning" },
   { searchIndexes: "term.title", description: "søg efter titel på bog" },
-  { searchIndexes: "term.creatorcontributor", description: "forfatternavn" },
-  { searchIndexes: "term.subject", description: "emne" },
+  {
+    searchIndexes: "term.creatorcontributor",
+    description: 'forfatternavn. Eksempel: term.creatorcontributor="Murakami"',
+  },
+  {
+    searchIndexes: "term.subject",
+    description: 'emne. Eksempel: term.subject="kaffe"',
+  },
   {
     searchIndexes: "phrase.mainlanguage",
     description:
-      "Sprog. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK!",
+      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK!",
   },
   // {
   //   searchIndexes: "worktype",

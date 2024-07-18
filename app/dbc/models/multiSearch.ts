@@ -195,7 +195,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     close,
   });
 
-  say(`Jeg fandt ${simpleSearchWorks.length} værker i complex search \n\n`);
+  say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
 
   const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
