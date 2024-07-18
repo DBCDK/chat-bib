@@ -4,7 +4,7 @@ import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
 import { ModelDescription } from "./modelsDescriptions";
-
+//TODO MOVE TO A SHARED FILE!
 interface FormatedWork {
   title: string;
   cover: string;
@@ -64,11 +64,11 @@ type SimpleSearchQuery = {
   filters?: Filters;
 };
 
-async function searchWorks(
+export async function searchWorks(
   query: SimpleSearchQuery,
   offset: number = 0,
   limit: number = 35,
-): Promise<any[]> {
+): Promise<FormatedWork[]> {
   //remove null values
   const filteredSearchQuery = Object.fromEntries(
     Object.entries(query.q).filter(([key, value]) => value != null),
@@ -228,7 +228,7 @@ type Filters = {
 
 type SearchObject = Query & Filters;
 
-async function promptToSearchObject({
+export async function promptToSearchObject({
   messages,
   parameters,
   say,
@@ -242,7 +242,7 @@ async function promptToSearchObject({
     const jsonRegex = /{[^]*}/;
 
     // Use the regex to extract the JSON object string
-    const jsonString = text.match(jsonRegex);
+    const jsonString = text?.replaceAll("</s>", "").match(jsonRegex);
 
     if (jsonString) {
       try {
@@ -363,7 +363,7 @@ Du returnerer KUN dette json format, aldrig andet:
  "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
   }
 
-  Retunere ikke felterne, hvis de ikke har en værdi.
+  Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mellem felterne.
   `;
 
   /**

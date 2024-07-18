@@ -13,11 +13,11 @@ const allowedIndexes = [
     description:
       "Sprog. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK!",
   },
-  {
-    searchIndexes: "worktype",
-    description:
-      "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil)",
-  },
+  // {
+  //   searchIndexes: "worktype",
+  //   description:
+  //     "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil)",
+  // },
 ];
 
 interface FormatedWork {
@@ -70,11 +70,11 @@ type SimpleSearchQuery = {
   subject?: string;
 };
 
-async function searchByCQL(
+export async function searchByCQL(
   cql: string,
   offset: number = 0,
   limit: number = 35,
-): Promise<any[]> {
+): Promise<FormatedWork[]> {
   const client = initializeApollo();
 
   const COMPLEX_SEARCH_QUERY = gql`
@@ -398,6 +398,8 @@ Ud fra samtalen, skal du lave en CQL-søgning.
 
 DU MÅ IKKE ANTAGE NOGET. DU MÅ KUN BRUGE DET DER ER I SAMTALEN.
 
+Du skal bruge searchindekser præcist som det står.
+
 Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}
 
 Du kan bruge "AND", "OR", "NOT" mellem indekserne.
@@ -405,7 +407,7 @@ Hvis du er i tvivl om nogle af værdierne skal du ikke svare på dem. Du må ikk
 
 Du skal skrive på dansk. Kun på dansk. 
 
-Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling"). 
+Du returnerer KUN en CQL-streng. Eksempelvis (worktype="literature" AND term.title="harry potter" AND term.creatorcontributor="rowling"). 
 
 Hvis cql-strengen, indeholder indekser med "NOT", skal de indekser placeres sidst i cql-strengen.
 
@@ -435,7 +437,7 @@ Hvis cql-strengen, indeholder indekser med "NOT", skal de indekser placeres sids
   return validatedSearchObject;
 }
 
-async function promptToCQL({
+export async function promptToCQL({
   messages,
   parameters,
   say,

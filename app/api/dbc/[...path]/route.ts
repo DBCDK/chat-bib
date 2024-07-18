@@ -9,6 +9,7 @@ import complexSearch from "@/app/dbc/models/complexSearch";
 import visualsexamples from "@/app/dbc/models/visualsexamples";
 import vectorDatabase from "@/app/dbc/models/vectorDatabase";
 import generalModel from "@/app/dbc/models/general";
+import multiSearch from "@/app/dbc/models/multiSearch";
 
 export const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
@@ -22,6 +23,7 @@ export const models = {
   [MODEL_NAMES.DBC_VISUALS_EXAMPLES]: visualsexamples,
   [MODEL_NAMES.DBC_VECTOR_DB]: vectorDatabase,
   [MODEL_NAMES.DBC_GENERAL_MODEL]: generalModel,
+  [MODEL_NAMES.DBC_MULTI_SEARCH]: multiSearch,
 };
 
 function createOutputStream() {
