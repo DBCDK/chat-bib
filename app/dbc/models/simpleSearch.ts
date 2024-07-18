@@ -60,6 +60,7 @@ type SimpleSearchQuery = {
     title?: string;
     creator?: string;
     subject?: string;
+    [key: string]: any; // Add this line
   };
   filters?: Filters;
 };
@@ -220,14 +221,16 @@ type Query = {
 };
 
 type Filters = {
-  mainLanguages?: string;
+  mainLanguages?: string[];
   workTypes?: string[];
   childrenOrAdults?: string;
   year?: string | number;
 };
 
-type SearchObject = Query & Filters;
-
+type SearchObject = Query &
+  Filters & {
+    [key: string]: any; // Add this line
+  };
 export async function promptToSearchObject({
   messages,
   parameters,
@@ -316,7 +319,8 @@ export async function promptToSearchObject({
             (language) => language.charAt(0).toUpperCase() + language.slice(1),
           );
         } else {
-          acc[key] = searchObject[key];
+          //acc[key] = searchObject[key];
+          acc[key] = searchObject[key] as Filters[keyof Filters];
         }
       }
 
