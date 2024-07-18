@@ -208,7 +208,7 @@ export const DEFAULT_SYSTEM_PERSONA = {
       },
     ],
     modelConfig: {
-      model: MODEL_NAMES.DBC_BASE,
+      model: MODEL_NAMES.DBC_MULTI_SEARCH,
       temperature: 0.3,
       top_p: 1,
       max_tokens: 2000,

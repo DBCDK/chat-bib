@@ -147,6 +147,7 @@ export async function searchWorks(
         return formatedWork;
       });
     }
+    console.log("\n\n\n\n\n\n\n works length: " + works.length);
     return formatedWorks(works);
   } catch (error) {
     console.error("Error performing GraphQL search:", error);
@@ -312,16 +313,28 @@ export async function promptToSearchObject({
       "childrenOrAdults",
       "year",
     ];
+
+    // Extract the filter object based on the keys from filterKeys
     const filters = filterKeys.reduce((acc, key) => {
-      if (key in searchObject) {
-        if (key === "mainLanguages" && Array.isArray(searchObject[key])) {
-          acc[key] = (searchObject[key] as string[]).map(
-            (language) => language.charAt(0).toUpperCase() + language.slice(1),
-          );
-        } else {
-          //acc[key] = searchObject[key];
-          acc[key] = searchObject[key] as Filters[keyof Filters];
+      const value = searchObject[key];
+      if (key === "mainLanguages" && Array.isArray(searchObject[key])) {
+        acc[key] = (searchObject[key] as string[]).map(
+          (language) => language.charAt(0).toUpperCase() + language.slice(1),
+        );
+      }
+
+      // Ensure the value is of the correct type before adding it to the filters object
+      else if (key === "workTypes") {
+        if (Array.isArray(value)) {
+          acc[key] = value;
         }
+      } else if (key === "childrenOrAdults" && typeof value === "string") {
+        acc[key] = value;
+      } else if (
+        key === "year" &&
+        (typeof value === "string" || typeof value === "number")
+      ) {
+        acc[key] = value;
       }
 
       return acc;
@@ -362,7 +375,7 @@ Du returnerer KUN dette json format, aldrig andet:
  "creator": navn på forfatter,
  "subject":  emne som der skal søges på,
  "all": general søgning for flere ord,
- "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. (eksempelvis dansk,engelsk,fransk),
+ "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk"),
  "childrenOrAdults":  "til børn" eller "til voksne",
  "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
   }
@@ -451,13 +464,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
           "\n\n\n",
       );
       const works = await searchWorks(searchQuery);
-      console.log("\n\n 🚨🚨🚨🚨 here are the works: ", works);
 
       if (works.length > 0) {
         say("\nSøgning gennemført. Jeg analyserer resultaterne..\n\n");
 
         await finalAnswer({ messages, parameters, works, say });
-        console.log("\n\n", works);
       } else {
         say("\nJeg fandt desværre ikke nogle resultater.");
       }
