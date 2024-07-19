@@ -175,7 +175,7 @@ export class DBCApi implements LLMApi {
             const fetchText = remainText.slice(0, fetchCount);
             responseText += fetchText;
             remainText = remainText.slice(fetchCount);
-            console.log(responseText);
+            //  console.log(responseText);
             options.onUpdate?.(responseText, fetchText);
           }
 
@@ -204,7 +204,7 @@ export class DBCApi implements LLMApi {
         function getToken(line: string) {
           try {
             const jsonObj = JSON.parse(line?.replace("data: ", ""));
-            console.log(jsonObj);
+            //   console.log(jsonObj);
             if (!jsonObj?.token?.special) {
               return jsonObj?.token?.text || "";
             }

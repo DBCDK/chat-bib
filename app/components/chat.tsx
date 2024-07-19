@@ -673,6 +673,7 @@ function _Chat() {
   const fontSize = config.fontSize;
 
   const [showExport, setShowExport] = useState(false);
+  //const [isGenerating, setIsGenerating] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState("");
@@ -989,6 +990,7 @@ function _Chat() {
     _setMsgRenderIndex(newIndex);
   }
 
+  console.log("msgRenderIndex", msgRenderIndex);
   const messages = useMemo(() => {
     const endRenderIndex = Math.min(
       msgRenderIndex + 3 * CHAT_PAGE_SIZE,
@@ -996,7 +998,11 @@ function _Chat() {
     );
     return renderMessages.slice(msgRenderIndex, endRenderIndex);
   }, [msgRenderIndex, renderMessages]);
-
+  const isGenerating = useMemo(() => {
+    return renderMessages.some((m) => m.streaming);
+    //return  !!session.messages[session.messages.length - 1].streaming
+  }, [renderMessages]);
+  console.log("isGenerating", isGenerating);
   const onChatBodyScroll = (e: HTMLElement) => {
     const bottomHeight = e.scrollTop + e.clientHeight;
     const edgeThreshold = e.clientHeight;
@@ -1022,6 +1028,7 @@ function _Chat() {
     setMsgRenderIndex(renderMessages.length - CHAT_PAGE_SIZE);
     scrollDomToBottom();
   }
+  console.log("renderMessages", renderMessages);
 
   // clear context index = context length + index in messages
   const clearContextIndex =
@@ -1191,6 +1198,13 @@ function _Chat() {
     }
     setAttachImages(images);
   }
+  const stopAll = () => ChatControllerPool.stopAll();
+  console.log("generating", isGenerating);
+  console.log("loading", isLoading);
+  const hasPending = ChatControllerPool.hasPending();
+
+  console.log("hasPending", hasPending);
+  console.log("ChatControllerPool", ChatControllerPool);
 
   return (
     <div className={styles.chat} key={session.id}>
@@ -1522,13 +1536,23 @@ function _Chat() {
               })}
             </div>
           )}
-          <IconButton
-            icon={<SendWhiteIcon />}
-            text={Locale.Chat.Send}
-            className={styles["chat-input-send"]}
-            type="primary"
-            onClick={() => doSubmit(userInput)}
-          />
+          {isGenerating ? (
+            <IconButton
+              icon={<StopIcon />}
+              text={Locale.Chat.InputActions.Stop}
+              className={styles["chat-input-send"]}
+              type="primary"
+              onClick={stopAll}
+            />
+          ) : (
+            <IconButton
+              icon={<SendWhiteIcon />}
+              text={Locale.Chat.Send}
+              className={styles["chat-input-send"]}
+              type="primary"
+              onClick={() => doSubmit(userInput)}
+            />
+          )}
         </label>
       </div>
 
