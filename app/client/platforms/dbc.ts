@@ -102,6 +102,7 @@ export class DBCApi implements LLMApi {
       content: getMessageTextContent(v),
     }));
 
+    const conversationId = useChatStore.getState().currentSession().id;
     const modelConfig = {
       ...useAppConfig.getState().modelConfig,
       ...useChatStore.getState().currentSession().mask.modelConfig,
@@ -137,7 +138,10 @@ export class DBCApi implements LLMApi {
       const chatPath = "/api/dbc/generate_stream";
 
       const llmRequest: LLMRequest = {
-        messages,
+        messages: messages?.map((m) => ({
+          ...m,
+          content: m?.content?.replace(/Action:.*/g, ""),
+        })),
         parameters: {
           temperature: modelConfig.temperature,
           max_new_tokens: 500,
@@ -146,7 +150,10 @@ export class DBCApi implements LLMApi {
           model: modelConfig.model as MODEL_NAMES,
           stream: shouldStream,
         },
+        conversationId,
       };
+
+      console.log({ llmRequest });
 
       // make a fetch request
       const requestTimeoutId = setTimeout(
@@ -171,7 +178,10 @@ export class DBCApi implements LLMApi {
           }
 
           if (remainText.length > 0) {
-            const fetchCount = Math.max(1, Math.round(remainText.length / 60));
+            const fetchCount = Math.max(
+              1000,
+              Math.round(remainText.length / 60),
+            );
             const fetchText = remainText.slice(0, fetchCount);
             responseText += fetchText;
             remainText = remainText.slice(fetchCount);

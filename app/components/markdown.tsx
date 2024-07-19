@@ -5,7 +5,7 @@ import RemarkBreaks from "remark-breaks";
 import RehypeKatex from "rehype-katex";
 import RemarkGfm from "remark-gfm";
 import RehypeHighlight from "rehype-highlight";
-import { useRef, useState, RefObject, useEffect, useMemo } from "react";
+import { useRef, useState, RefObject, useEffect, useMemo, useId } from "react";
 import { copyToClipboard } from "../utils";
 import mermaid from "mermaid";
 
@@ -13,10 +13,10 @@ import LoadingIcon from "../icons/three-dots.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { showImageModal } from "./ui-lib";
-import { AllowElement, Root } from "react-markdown/lib/rehype-filter";
-import { childrenToReact } from "react-markdown/lib/ast-to-react";
+
 import { deserializeCustomComponent } from "../dbc/components";
-import { BEGIN_COMPONENT, END_COMPONENT } from "../dbc/components/constants";
+
+import { PluginStatusContainer } from "../dbc/components/PluginStatus/PluginStatusContainer";
 
 export function Mermaid(props: { code: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -165,53 +165,7 @@ function _MarkDownContent(props: { content: string }) {
       components={{
         pre: PreCode,
         p: (pProps) => {
-          // return <p {...pProps} />;
-          const components = [];
-          let offset = -1;
-          let currentContent: any[] = [];
-          let isCustomComponent = false;
-          for (let i = 0; i < pProps.children?.length; i++) {
-            const currentText = pProps.children[i];
-            if (currentText === BEGIN_COMPONENT) {
-              isCustomComponent = true;
-              if (currentContent.length > 0) {
-                components.push(
-                  <p {...pProps} dir="auto">
-                    {currentContent}
-                  </p>,
-                );
-                currentContent = [];
-              }
-              offset = i;
-            } else if (currentText === END_COMPONENT) {
-              isCustomComponent = false;
-              components.push(
-                <div key={currentContent.join("")}>
-                  {deserializeCustomComponent(currentContent.join(""), true)}
-                </div>,
-              );
-              currentContent = [];
-              offset = -1;
-            } else {
-              currentContent.push(currentText);
-            }
-          }
-          if (currentContent) {
-            if (isCustomComponent) {
-              components.push(
-                <div key={currentContent.join("")}>
-                  {deserializeCustomComponent(currentContent.join(""), false)}
-                </div>,
-              );
-            } else {
-              components.push(
-                <p {...pProps} dir="auto">
-                  {currentContent}
-                </p>,
-              );
-            }
-          }
-          return <>{components}</>;
+          return <p {...pProps} dir="auto" />;
         },
         a: (aProps) => {
           const href = aProps.href || "";
@@ -237,23 +191,54 @@ export function Markdown(
     defaultShow?: boolean;
   } & React.DOMAttributes<HTMLDivElement>,
 ) {
+  const uniqueId = useId();
   const mdRef = useRef<HTMLDivElement>(null);
+
+  const splitted = useMemo(() => {
+    let parts: any = [];
+
+    props.content?.split(/(?=<C>)/g).forEach((p) => {
+      const moreSplit = p.split(/(?=<\/C>)/g);
+      moreSplit
+        .map((p2) => p2.replace("</C>", ""))
+        .filter((p2) => !"<C>".startsWith(p2) && !"</C>".startsWith(p2))
+        .forEach((p2, index) => {
+          if (p2.startsWith("<C>")) {
+            parts.push(
+              deserializeCustomComponent(
+                p2.replace("<C>", ""),
+                !!moreSplit[index + 1]?.startsWith("</C>"),
+                uniqueId,
+              ),
+            );
+          } else {
+            parts.push(<MarkdownContent key={p2} content={p2} />);
+          }
+        });
+    });
+    return parts;
+  }, [props.content]);
 
   return (
     <div
       className="markdown-body"
-      style={{
-        fontSize: `${props.fontSize ?? 14}px`,
-      }}
+      style={
+        {
+          // fontSize: `${props.fontSize ?? 14}px`,
+        }
+      }
       ref={mdRef}
-      onContextMenu={props.onContextMenu}
+      // onContextMenu={props.onContextMenu}
       onDoubleClickCapture={props.onDoubleClickCapture}
       dir="auto"
     >
       {props.loading ? (
         <LoadingIcon />
       ) : (
-        <MarkdownContent content={props.content} />
+        <>
+          <PluginStatusContainer parentId={uniqueId} />
+          {splitted}
+        </>
       )}
     </div>
   );

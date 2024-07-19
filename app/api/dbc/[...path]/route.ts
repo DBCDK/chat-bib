@@ -8,6 +8,7 @@ import websearch2 from "@/app/dbc/models/websearch-2";
 import simpleSearch from "@/app/dbc/models/simpleSearch";
 import visualsexamples from "@/app/dbc/models/visualsexamples";
 import vectorLibrarian from "@/app/dbc/models/theVectorLibrarian";
+import plugins from "@/app/dbc/models/plugins";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
@@ -20,6 +21,7 @@ const models = {
   // [MODEL_NAMES.DBC_HELLO_WORLD]: helloworld,
   // [MODEL_NAMES.DBC_POEM]: poem,
   [MODEL_NAMES.DBC_VISUALS_EXAMPLES]: visualsexamples,
+  [MODEL_NAMES.DBC_PLUGINS]: plugins,
 };
 
 function createOutputStream() {
@@ -53,6 +55,9 @@ function createOutputStream() {
   checkQueue();
 
   async function say(obj: string | object) {
+    if (!obj) {
+      return;
+    }
     if (typeof obj === "object") {
       queue = [...queue, obj];
     } else {
@@ -101,7 +106,10 @@ async function handle(
   const newHeaders = new Headers();
   newHeaders.delete("www-authenticate");
   newHeaders.set("X-Accel-Buffering", "no");
-
+  const messages = requestBody.messages.map((m) => ({
+    ...m,
+    content: m.content.replace(/<C>.*?<\/C>/g, ""),
+  }));
   const { stream, say, close } = createOutputStream();
 
   if (requestBody.parameters.stream === false) {
@@ -113,8 +121,9 @@ async function handle(
           }
         },
         close: () => {},
-        messages: requestBody.messages,
+        messages,
         parameters: requestBody.parameters,
+        conversationId: requestBody?.conversationId || "",
       });
     });
     return new Response(
@@ -129,8 +138,9 @@ async function handle(
   generate({
     say,
     close,
-    messages: requestBody.messages,
+    messages,
     parameters: requestBody.parameters,
+    conversationId: requestBody?.conversationId || "",
   });
 
   return new Response(stream, {

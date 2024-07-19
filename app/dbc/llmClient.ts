@@ -34,9 +34,11 @@ export async function llmGenerate(input: LLMRequest) {
     // @ts-ignore
     duplex: "half",
   };
-  const parameters = { ...input.parameters, temperature: 0.001 };
+  const parameters = { temperature: 0.001, ...input.parameters };
 
   delete parameters.model;
+  delete parameters.cutOff;
+
   const fetchUrl = serverConfig.generateStreamUrl;
   const requestBodyStr = JSON.stringify({
     inputs: llmFormat(input.messages),
@@ -45,11 +47,12 @@ export async function llmGenerate(input: LLMRequest) {
   let generatedText = "";
   const now = performance.now();
   let firstToken: number = -1;
+  const controller = input?.controller || new AbortController();
   try {
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
       body: requestBodyStr,
-      signal: input?.controller?.signal,
+      signal: controller?.signal,
     });
 
     const reader = res.body?.getReader();
@@ -67,10 +70,17 @@ export async function llmGenerate(input: LLMRequest) {
       rawValues.forEach((rawValue) => {
         const decodedValue = rawValue.replace(/data:\s*/, "").trim();
         try {
+          // console.log("decodedValue", decodedValue);
           const obj = JSON.parse(decodedValue);
           generatedText += obj?.token?.text;
 
           input.say?.(obj);
+          if (
+            input?.parameters?.cutOff &&
+            generatedText?.length > input?.parameters?.cutOff
+          ) {
+            // controller?.abort();
+          }
         } catch (e: any) {}
       });
 
