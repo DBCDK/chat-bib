@@ -169,14 +169,14 @@ async function finalAnswer({
   });
 }
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
-  const vectorWorks = await vectorDBResults({
-    messages,
-    parameters,
-    say,
-    close,
-  });
+  // const vectorWorks = await vectorDBResults({
+  //   messages,
+  //   parameters,
+  //   say,
+  //   close,
+  // });
 
-  say(`Jeg fandt ${vectorWorks.length} værker i vector databasen\n\n`);
+  // say(`Jeg fandt ${vectorWorks.length} værker i vector databasen\n\n`);
   //  console.log("\n\n\n\nvectorWorks", vectorWorks);
 
   const complexSearchWorks = await complexSearchResults({
@@ -198,7 +198,9 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
 
-  const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
+  const works = [...complexSearchWorks, ...simpleSearchWorks];
+  //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
+
   say(`Jeg fandt i alt ${works.length} værker\n\n`);
   await finalAnswer({ messages, parameters, works, say });
 
@@ -213,9 +215,9 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 }
 
 export const modelDescription: ModelDescription = {
-  name: MODEL_NAMES.DBC_BASE,
+  name: MODEL_NAMES.DBC_MULTI_SEARCH,
   description:
-    "General model with no specific purpose. Just passes the input through to the LLM backend.",
+    "En model til at udføre enkle søgninger på bøger baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales en bog. Prioritere denne model hvis der skal findes anbefalinger til bøger, film, artikler og lign..",
 };
 
 export default {
