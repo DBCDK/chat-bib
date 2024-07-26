@@ -1,3 +1,4 @@
+import { MODEL_NAMES } from "./dbc";
 import { Lang } from "./locales";
 import { DEFAULT_CONFIG } from "./store";
 import { Mask } from "./store/mask";
@@ -207,7 +208,7 @@ export const DEFAULT_SYSTEM_PERSONA = {
       },
     ],
     modelConfig: {
-      model: "dbc-base",
+      model: MODEL_NAMES.DBC_GENERAL_MODEL,
       temperature: 0.3,
       top_p: 1,
       max_tokens: 2000,
