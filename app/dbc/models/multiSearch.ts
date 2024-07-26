@@ -51,7 +51,7 @@ async function simpleSearchResults({
   close,
 }: GenerateRequest) {
   say("🎢 🚨Laver en simple search søgning..\n\n");
-
+  //make sure that gramma errors are corrected.
   const searchObject = await promptToSearchObject({
     messages,
     parameters,

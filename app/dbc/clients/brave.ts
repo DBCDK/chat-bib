@@ -23,11 +23,14 @@ export async function search(q: string): Promise<SearchResult[]> {
   try {
     const json = JSON.parse(text);
 
-    //   console.log(JSON.stringify(json, null, 2));
+    // console.log(JSON.stringify(json, null, 2));
 
     return (
       json?.web?.results?.map((r: any) => {
-        return { href: r.url, content: r.description };
+        return {
+          href: r.url,
+          content: r.description + r.extra_snippets?.join("\n"),
+        };
       }) || []
     );
   } catch (e) {
