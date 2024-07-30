@@ -88,10 +88,10 @@ export async function searchWorks(
 
   const SEARCH_WORKS_QUERY = gql`
     query Example_BasicSearch(
-      $q: SearchQuery!
+      $q: SearchQueryInput!
       $offset: Int!
-      $limit: PaginationLimit!
-      $filters: SearchFilters!
+      $limit: PaginationLimitScalar!
+      $filters: SearchFiltersInput!
     ) {
       search(q: $q, filters: $filters) {
         works(offset: $offset, limit: $limit) {
@@ -127,8 +127,8 @@ export async function searchWorks(
       variables: {
         q: filteredSearchQuery,
         filters: filteredFilters,
-        offset,
-        limit,
+        offset: 0,
+        limit: 35,
       },
     });
     //filter for works that has an abstract. Look only on the first 15 works
