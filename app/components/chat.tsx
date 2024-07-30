@@ -506,13 +506,13 @@ export function ChatActions(props: {
           icon={<BottomIcon />}
         />
       )}
-      {props.hitBottom && (
+      {/* {props.hitBottom && (
         <ChatAction
           onClick={props.showPromptModal}
           text={Locale.Chat.InputActions.Settings}
           icon={<SettingsIcon />}
         />
-      )}
+      )} */}
 
       {showUploadImage && (
         <ChatAction
@@ -521,7 +521,7 @@ export function ChatActions(props: {
           icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
-      <ChatAction
+      {/* <ChatAction
         onClick={nextTheme}
         text={Locale.Chat.InputActions.Theme[theme]}
         icon={
@@ -535,13 +535,13 @@ export function ChatActions(props: {
             ) : null}
           </>
         }
-      />
+      /> */}
 
-      <ChatAction
+      {/* <ChatAction
         onClick={props.showPromptHints}
         text={Locale.Chat.InputActions.Prompt}
         icon={<PromptIcon />}
-      />
+      /> */}
 
       {/* <ChatAction
         onClick={() => {
@@ -550,7 +550,7 @@ export function ChatActions(props: {
         text={Locale.Chat.InputActions.Masks}
         icon={<MaskIcon />}
       /> */}
-
+      {/* 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
         icon={<BreakIcon />}
@@ -564,7 +564,7 @@ export function ChatActions(props: {
             }
           });
         }}
-      />
+      /> */}
 
       <ChatAction
         onClick={() => setShowModelSelector(true)}
