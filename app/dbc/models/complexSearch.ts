@@ -4,8 +4,8 @@ import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 
 const allowedIndexes = [
-  { searchIndexes: "term.general", description: "general friktestsøgning" },
-  { searchIndexes: "term.title", description: "søg efter titel på bog" },
+  { searchIndexes: "term.general", description: "general søgning" },
+  { searchIndexes: "term.title", description: "Søg efter titel et værk" },
   {
     searchIndexes: "term.creatorcontributor",
     description: 'forfatternavn. Eksempel: term.creatorcontributor="Murakami"',
@@ -17,7 +17,7 @@ const allowedIndexes = [
   {
     searchIndexes: "phrase.mainlanguage",
     description:
-      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK!",
+      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK! KUN PÅ DANSK. DU MÅ IKKE SKRIVE PÅ ENGELSK!",
   },
   // {
   //   searchIndexes: "worktype",
@@ -215,9 +215,15 @@ export async function promptToCQL({
   const newSystemPrompt = `
 Ud fra samtalen, skal du lave en CQL-søgning.
 
-Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}
+Et "værk" er en bog, artikel, film, musik, spil eller andet materiale.s
 
-Du kan bruge "AND", "OR", "NOT" mellem indekserne.
+Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her.
+
+Du kan bruge disse logiske operatorer "AND", "OR", "NOT" mellem indekserne. Disse må ikke stå lige efter hindande. DU må ikke skrive "term.creatorcontributor="Yuval" AND NOT term.mainlanguage="dansk"".
+
+Det første ord i en sætning skal altid være et indeks. Du må ikke starte med en logiske operator.
+
+
 Hvis du er i tvivl om nogle af værdierne skal du ikke svare på dem. Du må ikke bare gætte. 
 
 HVIS VÆRDIEN IKKE STÅR I SAMTALEN, MÅ DU IKKE SVARE PÅ DET. DU MÅ IKKE TIFØJE VÆRDIER SOM IKKE ER NÆVNT I SAMTALEN!
@@ -227,6 +233,8 @@ Du skal skrive på dansk. Kun på dansk.
 Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling")
 
 Retunere kun cql-streng. Skriv ikke andet end cq-strengen.
+
+
 
 
   `;

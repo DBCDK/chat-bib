@@ -256,16 +256,16 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   let queries: string[] = [];
   if (performSearch) {
-    say("Søgning påkrævet\n\n");
+    say("Jeg laver en websøgning...\n\n");
     queries = await detectQuestions({ messages, parameters });
     if (queries.length === 0) {
       say(
         "Sikke et antiklimaks, jeg kunne ikke finde ud af at lave søgninger!",
       );
     } else {
-      say(
-        `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
-      );
+      // say(
+      //   `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
+      // );
     }
   }
   // say("Søger\n\n");
@@ -287,9 +287,9 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   say("\n\n");
   let mergedResults = mergeLists(searchResults)?.slice(0, 20) || [];
 
-  say(
-    `Validerer ${mergedResults.length} søgeresultat${mergedResults.length === 1 ? "" : "er"} \n\n`,
-  );
+  // say(
+  //   `Validerer ${mergedResults.length} søgeresultat${mergedResults.length === 1 ? "" : "er"} \n\n`,
+  // );
 
   const validatedSources = (
     await Promise.all(
