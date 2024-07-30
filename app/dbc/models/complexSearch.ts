@@ -81,7 +81,7 @@ export async function searchByCQL(
     query Example_ComplexSearch(
       $cql: String!
       $offset: Int!
-      $limit: PaginationLimit!
+      $limit: PaginationLimitScalar!
     ) {
       complexSearch(cql: $cql) {
         hitcount
@@ -253,11 +253,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     parameters,
     say,
   });
-  if (messages.length === 3) {
-    say(
-      `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
-    );
-  }
+  // if (messages.length === 3) {
+  //   say(
+  //     `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
+  //   );
+  // }
   if (shouldPerformSearch) {
     say(`\nAnalyserer..\n`);
 
