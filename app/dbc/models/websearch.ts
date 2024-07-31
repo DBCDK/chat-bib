@@ -302,7 +302,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
         return { ...entry, isValidSource };
       }),
     )
-  ).filter((entry) => entry.isValidSource);
+  )
+    .filter((entry) => entry.isValidSource)
+    .map((entry) => ({
+      ...entry,
+      content: entry.content.replace(/<\/?strong>/gm, ""),
+    }));
 
   const uniqSources: any = {};
   validatedSources?.forEach((s) => (uniqSources[s.href] = s));
