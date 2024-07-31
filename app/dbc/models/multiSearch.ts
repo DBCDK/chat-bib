@@ -21,7 +21,7 @@ async function complexSearchResults({
   say,
   close,
 }: GenerateRequest) {
-  say("⏳Laver en cql søgning..\n\n");
+  say("\n\n⏳Laver en cql søgning..\n\n");
 
   try {
     const cql = await promptToCQL({
@@ -202,7 +202,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
 
   say(`Jeg fandt i alt ${works.length} værker\n\n`);
-  await finalAnswer({ messages, parameters, works, say });
+
+  if (works.length === 0) {
+    say("Jeg fandt desværre ingen værker. Prøv at stille et andet spørgsmål");
+  } else {
+    await finalAnswer({ messages, parameters, works, say });
+  }
 
   // We just pass it through to the LLM backend
   //   await llmGenerate({
