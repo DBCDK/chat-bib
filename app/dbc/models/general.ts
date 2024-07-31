@@ -49,7 +49,7 @@ async function getModelByPrompt({
   return models[modelName as keyof typeof models];
 }
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
-  say("\nJeg tænker..");
+  say("\nJeg tænker..\n\n");
 
   //run a prompt to determind which model to use
   //pass the prompt to the model

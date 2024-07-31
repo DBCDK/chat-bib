@@ -21,7 +21,7 @@ async function complexSearchResults({
   say,
   close,
 }: GenerateRequest) {
-  say("\n\n⏳Laver en cql søgning..\n\n");
+  // say("\n\n⏳Laver en cql søgning..\n\n");
 
   try {
     const cql = await promptToCQL({
@@ -50,7 +50,7 @@ async function simpleSearchResults({
   say,
   close,
 }: GenerateRequest) {
-  say("🎢 🚨Laver en simple search søgning..\n\n");
+  //say("🎢 🚨Laver en simple search søgning..\n\n");
   //make sure that gramma errors are corrected.
   const searchObject = await promptToSearchObject({
     messages,
@@ -185,7 +185,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say,
     close,
   });
-  say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
+  say("\nFørste søgnign foretaget... ");
+  //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
+  console.log(
+    `Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`,
+  );
   // console.log("\n\n\n\ncomplexSearchWorks", complexSearchWorks);
 
   const simpleSearchWorks = await simpleSearchResults({
@@ -194,18 +198,25 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say,
     close,
   });
+  say("\nAnden søgnigng foretaget... ");
 
-  say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
+  //  say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
+  console.log(
+    `Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`,
+  );
+
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
 
   const works = [...complexSearchWorks, ...simpleSearchWorks];
   //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
 
-  say(`Jeg fandt i alt ${works.length} værker\n\n`);
+  //say(`Jeg fandt i alt ${works.length} værker\n\n`);
 
   if (works.length === 0) {
     say("Jeg fandt desværre ingen værker. Prøv at stille et andet spørgsmål");
   } else {
+    say("\nAnalyserer resultaterne... \n");
+
     await finalAnswer({ messages, parameters, works, say });
   }
 

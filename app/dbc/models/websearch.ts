@@ -38,7 +38,7 @@ async function finalAnswer({
   say("\n\nKilder:\n");
   say(
     Object.values(validatedSources?.slice(0, 5))
-      .map((s) => " * " + s.href + "\n    " + s.content)
+      .map((s) => " * " + s.href + "\n    " + s.content?.slice(0, 100) + "...")
       .join("\n"),
   );
 }
