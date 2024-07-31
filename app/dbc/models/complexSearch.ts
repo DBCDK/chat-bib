@@ -232,7 +232,7 @@ Du skal skrive på dansk. Kun på dansk.
 
 Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling")
 
-Retunere kun cql-streng. Skriv ikke andet end cq-strengen.
+Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE ANDET END CQL-STRENGEN!!
 
 
 
