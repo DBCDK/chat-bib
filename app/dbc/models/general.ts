@@ -55,7 +55,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   PluginStatus.serialize({
     say,
     pluginName: id,
-    description: `Søger efter værker...`,
+    description: `Jeg tænker...`,
   });
   //run a prompt to determind which model to use
   //pass the prompt to the model

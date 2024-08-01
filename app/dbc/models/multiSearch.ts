@@ -156,7 +156,7 @@ async function finalAnswer({
   PluginStatus.serialize({
     say,
     pluginName: id,
-    description: `Fuldført.`,
+    description: `Færdig.`,
   });
   // We just pass it through to the LLM backend
   const finalAnswer = await llmGenerate({
