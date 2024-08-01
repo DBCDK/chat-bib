@@ -1,4 +1,3 @@
-import { modelDescription as simpleSearchDescription } from "./simpleSearch";
 import { modelDescription as multisearchDescription } from ".//multiSearch";
 
 import { modelDescription as websearchDescription } from "./websearch";

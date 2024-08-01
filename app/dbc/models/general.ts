@@ -3,6 +3,8 @@ import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { modelsDescriptions } from "./modelsDescriptions";
 import { extractJsonFromText } from "./utils";
+import PluginStatus from "../components/PluginStatus/PluginStatus";
+const id = MODEL_NAMES.DBC_GENERAL_MODEL;
 
 async function getModelByPrompt({
   messages,
@@ -49,8 +51,12 @@ async function getModelByPrompt({
   return models[modelName as keyof typeof models];
 }
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
-  say("\nJeg tænker..\n\n");
-
+  //say("\nJeg tænker..\n\n");
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Søger efter værker...`,
+  });
   //run a prompt to determind which model to use
   //pass the prompt to the model
   const model = await getModelByPrompt({

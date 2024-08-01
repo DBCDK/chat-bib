@@ -5,6 +5,7 @@
 
 import { searchWorks as searchVectorWorks } from "../clients/vectorDB";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
+import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { promptToCQL, searchByCQL } from "./complexSearch";
@@ -14,7 +15,7 @@ import {
   searchWorks as searchSimpleSearch,
 } from "./simpleSearch";
 import { FormatedWork, promptToSearchString } from "./vectorDatabase";
-
+const id = MODEL_NAMES.DBC_GENERAL_MODEL;
 async function complexSearchResults({
   messages,
   parameters,
@@ -135,32 +136,40 @@ async function finalAnswer({
 
     Vis en liste med en sætning der fortæller om bogen.
   `;
+  //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
+  //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
+
+  const prompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
+  
+ værker:  ${JSON.stringify(works)}
+    
+  Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
+
+  DU MÅ IKKE SKRIVE ANDET INFO OM VÆRKERNE. IKKE titel, forfatter eller andet info. KUN VÆRK ID'ER.
+  Skriv værkerne i denne format: #værkId1, #værkId2, #værkId3, #værkId4, #værkId5
+  `;
   const copy = [...messages];
   copy.push({
     role: "system",
     content: systemPrompt,
-    //     content: `Disse er nogle bøger, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse bøger.
-
-    //  bøger:  ${JSON.stringify(works)}
-
-    //   Svar så kort og præcist som muligt. Giv mindst 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
-
-    //   For hver bog, SKAL du skrive en sætning der fortæller om bogen.
-
-    //     Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
-
-    //     Sæt workId fra de givne bøger istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:xxxxxxxxx
-
-    //     Vis en liste med en sætning der fortæller om bogen, link til bibliotek.dk samt titlen på bogen.
-    //   `,
   });
-
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Fuldført.`,
+  });
   // We just pass it through to the LLM backend
   const finalAnswer = await llmGenerate({
     messages: copy,
     parameters,
-    say, // Remove this, if you don't want it to stream directly to client
+    say: (message: string) => {
+      // console.log("\n\n in SAY FINAL ANSWER: ", message);
+
+      //TODO: check if the message is a workId, if so send materialCard with that workId
+      say(message);
+    },
   });
+
   say("\n\n\n\n");
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
@@ -178,14 +187,26 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   // say(`Jeg fandt ${vectorWorks.length} værker i vector databasen\n\n`);
   //  console.log("\n\n\n\nvectorWorks", vectorWorks);
+  //say("\nSøger efter værker... ");
 
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Søger efter værker...`,
+  });
   const complexSearchWorks = await complexSearchResults({
     messages,
     parameters,
     say,
     close,
   });
-  say("\nFørste søgnign foretaget... ");
+
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Første søgning foretaget... `,
+  });
+  //say("\nFørste søgning foretaget... ");
   //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
   console.log(
     `Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`,
@@ -198,8 +219,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     say,
     close,
   });
-  say("\nAnden søgnigng foretaget... ");
-
+  //say("\nAnden søgning foretaget... ");
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Anden søgning foretaget... `,
+  });
   //  say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
   console.log(
     `Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`,
@@ -215,8 +240,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   if (works.length === 0) {
     say("Jeg fandt desværre ingen værker. Prøv at stille et andet spørgsmål");
   } else {
-    say("\nAnalyserer resultaterne... \n");
-
+    // say("\nAnalyserer resultaterne... \n");
+    PluginStatus.serialize({
+      say,
+      pluginName: id,
+      description: `Analyserer resultaterne... `,
+    });
     await finalAnswer({ messages, parameters, works, say });
   }
 
