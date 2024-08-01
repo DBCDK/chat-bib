@@ -153,11 +153,11 @@ async function finalAnswer({
     role: "system",
     content: systemPrompt,
   });
-  PluginStatus.serialize({
-    say,
-    pluginName: id,
-    description: `Færdig.`,
-  });
+  // PluginStatus.serialize({
+  //   say,
+  //   pluginName: id,
+  //   description: `Færdig.`,
+  // });
   // We just pass it through to the LLM backend
   const finalAnswer = await llmGenerate({
     messages: copy,

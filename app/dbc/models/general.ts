@@ -77,6 +77,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   //     parameters,
   //     say, // Remove this, if you don't want it to stream directly to client
   //   });}
+
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Færdig.`,
+  });
   close();
 }
 

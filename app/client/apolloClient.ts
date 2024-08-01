@@ -11,7 +11,7 @@ const clientConfig = getClientConfig();
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 const httpLink = new HttpLink({
-  uri: "https://fbi-api-prod.k8s.dbc.dk/bibdk21/graphql",
+  uri: "https://fbi-api.dbc.dk/bibdk21/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -27,9 +27,7 @@ const authLink = setContext((_, { headers }) => {
 
 function createApolloClient() {
   return new ApolloClient({
-    ssrMode: true,
-
-    //ssrMode: typeof window === "undefined", // Disables force-fetching on the server (so queries are only run once)
+    ssrMode: typeof window === "undefined", // Disables force-fetching on the server (so queries are only run once)
     link: authLink.concat(httpLink),
     cache: new InMemoryCache(),
   });
