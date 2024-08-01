@@ -27,7 +27,9 @@ const authLink = setContext((_, { headers }) => {
 
 function createApolloClient() {
   return new ApolloClient({
-    ssrMode: typeof window === "undefined", // Disables force-fetching on the server (so queries are only run once)
+    ssrMode: true,
+
+    //ssrMode: typeof window === "undefined", // Disables force-fetching on the server (so queries are only run once)
     link: authLink.concat(httpLink),
     cache: new InMemoryCache(),
   });
