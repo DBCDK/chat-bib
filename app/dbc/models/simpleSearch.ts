@@ -90,7 +90,7 @@ export async function searchWorks(
     query Example_BasicSearch(
       $q: SearchQueryInput!
       $offset: Int!
-      $limit: PaginationLimitScalar!
+      $limit: PaginationLimit!
       $filters: SearchFiltersInput!
     ) {
       search(q: $q, filters: $filters) {
