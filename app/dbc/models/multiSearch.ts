@@ -136,6 +136,14 @@ async function finalAnswer({
 
     Vis en liste med en sætning der fortæller om bogen.
   `;
+  const systemPrompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
+  
+  værker:  ${JSON.stringify(works)}
+     
+   Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
+ 
+   For hver bog, SKAL du kun skrive titel og workId.
+   `;
   //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
   //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
 
@@ -151,7 +159,7 @@ async function finalAnswer({
   const copy = [...messages];
   copy.push({
     role: "system",
-    content: systemPrompt,
+    content: systemPrompt2,
   });
   // PluginStatus.serialize({
   //   say,
@@ -171,6 +179,7 @@ async function finalAnswer({
   });
 
   say("\n\n\n\n");
+  console.log("\n\nfinal answer works!!: ", works, "\n\n\n works");
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
       MaterialCard.serialize({ say, workId: work.workId });
@@ -231,10 +240,13 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   );
 
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
+  //filter away same results
+  const works = [...complexSearchWorks, ...simpleSearchWorks].filter(
+    (work, index, self) =>
+      index === self.findIndex((w) => w.workId === work.workId),
+  );
 
-  const works = [...complexSearchWorks, ...simpleSearchWorks];
   //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
-
   //say(`Jeg fandt i alt ${works.length} værker\n\n`);
 
   if (works.length === 0) {

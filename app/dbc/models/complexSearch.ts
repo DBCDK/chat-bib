@@ -31,6 +31,7 @@ interface FormatedWork {
   cover: string;
   abstract: string;
   workId: string;
+  creators: string[];
 }
 async function finalAnswer({
   messages,
@@ -92,6 +93,9 @@ export async function searchByCQL(
             main
           }
           abstract
+          creators {
+            display
+          }
           manifestations {
             latest {
               cover {
@@ -126,6 +130,7 @@ export async function searchByCQL(
           abstract: w.abstract[0],
           cover: w.manifestations[0]?.first?.cover?.detail_500,
           workId: w.workId,
+          creators: w.creators.map((c: any) => c.display),
         };
         return formatedWork;
       });

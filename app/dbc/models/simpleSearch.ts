@@ -10,6 +10,7 @@ interface FormatedWork {
   cover: string;
   abstract: string;
   workId: string;
+  creators: string[];
 }
 async function finalAnswer({
   messages,
@@ -100,6 +101,9 @@ export async function searchWorks(
             main
           }
           abstract
+          creators {
+            display
+          }
           manifestations {
             latest {
               cover {
@@ -143,6 +147,7 @@ export async function searchWorks(
           abstract: w.abstract[0],
           cover: w.manifestations[0]?.first?.cover?.detail_500,
           workId: w.workId,
+          creators: w.creators.map((c: any) => c.display),
         };
         return formatedWork;
       });
@@ -374,7 +379,7 @@ Du returnerer KUN dette json format, aldrig andet:
 {"title": titel på bog, 
  "creator": navn på forfatter,
  "subject":  emne som der skal søges på,
- "all": general søgning for flere ord,
+ "all": general søgning for flere ord. Der søges på stikord. Ikke lange sætninger. ordene skal kun være relateret til værket. Eksempelvis emne, navn på forfatter, titel på bog, land osv..
  "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk"),
  "childrenOrAdults":  "til børn" eller "til voksne",
  "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
