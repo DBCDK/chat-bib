@@ -88,10 +88,10 @@ export async function searchWorks(
 
   const SEARCH_WORKS_QUERY = gql`
     query Example_BasicSearch(
-      $q: SearchQueryInput!
+      $q: SearchQuery!
       $offset: Int!
       $limit: PaginationLimit!
-      $filters: SearchFiltersInput!
+      $filters: SearchFilters!
     ) {
       search(q: $q, filters: $filters) {
         works(offset: $offset, limit: $limit) {
