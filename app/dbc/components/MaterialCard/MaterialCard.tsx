@@ -124,7 +124,14 @@ function MaterialCard({
 
   return (
     <div className={styles.card}>
-      {!isLoading && <img src={cover} />}
+      {!isLoading && (
+        <a
+          href={`https://bibliotek.dk/materiale/titel/${encodeURIComponent(work?.workId)}`}
+          target={"_blank"}
+        >
+          <img src={cover} />
+        </a>
+      )}
       {!isLoading && (
         <div className={styles.content}>
           <a
