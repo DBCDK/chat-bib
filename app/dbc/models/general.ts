@@ -12,16 +12,22 @@ async function getModelByPrompt({
   say,
 }: GenerateRequest): Promise<{ generate: Function }> {
   const systemPrompt = `
-    Ud fra samtalen, skal du finde ud af om hvilken model der skal bruges. Du skal vælge en model fra følgende: ${JSON.stringify(modelsDescriptions)}.
-    
-    Du svarer ALDRIG selv på spørgsmålet.
+    Ud fra samtalen, skal du finde ud af om hvilken model der skal bruges. 
 
-    
-    Hvis du er i tvivl om hvilken model der skal bruges, skal du bruge ${MODEL_NAMES.DBC_BASE}. 
     
     
     Du returnerer KUN dette json format, aldrig andet:
     {"modelName": navn på model}
+
+
+        
+    Du skal vælge en model fra følgende: ${JSON.stringify(modelsDescriptions)}.
+    Hvis du er i tvivl om hvilken model der skal bruges, skal du bruge ${MODEL_NAMES.DBC_BASE}. 
+
+    HUSK at du skal returnere en modelnavn i dette format: 
+     {"modelName": navn på model}
+
+     Du må aldrig skrive andet info end det der står i json formatet.
     
       `;
 
