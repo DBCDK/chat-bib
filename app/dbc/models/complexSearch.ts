@@ -227,7 +227,7 @@ Ud fra samtalen, skal du lave en CQL-søgning.
 
 Et "værk" er en bog, artikel, film, musik, spil eller andet materiale.s
 
-Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her.
+Her er søgeindekser: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her. DU MÅ KUN DISSE SØGEINDEKSER. ALDRIG ANDET!
 
 Du kan bruge disse logiske operatorer "AND", "OR", "NOT" mellem indekserne. Disse må ikke stå lige efter hindande. DU må ikke skrive "term.creatorcontributor="Yuval" AND NOT term.mainlanguage="dansk"".
 
@@ -261,6 +261,7 @@ Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE AN
     parameters,
     // say,
   });
+  //TODO: make a validator. if search index is not in allowedIndexes, remove from cql
   console.log("\n\n\n\n⏳promptToSearchObject.res", res);
   return res?.replaceAll("</s>", "") || null;
 }

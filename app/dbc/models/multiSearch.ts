@@ -15,6 +15,9 @@ import {
   searchWorks as searchSimpleSearch,
 } from "./simpleSearch";
 import { FormatedWork, promptToSearchString } from "./vectorDatabase";
+const workDefinition =
+  "Et værk er en bog, en film, en artikel, musik, spil eller andet material som kan lånes på biblioteket.";
+
 const id = MODEL_NAMES.DBC_GENERAL_MODEL;
 async function complexSearchResults({
   messages,
@@ -143,6 +146,7 @@ async function finalAnswer({
    Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
  
    For hver bog, SKAL du kun skrive titel og workId.
+   Du må kun svare på dansk.
    `;
   //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
   //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
@@ -193,7 +197,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   //   say,
   //   close,
   // });
-
+  const simpleSearchWorks = await simpleSearchResults({
+    messages,
+    parameters,
+    say,
+    close,
+  });
   // say(`Jeg fandt ${vectorWorks.length} værker i vector databasen\n\n`);
   //  console.log("\n\n\n\nvectorWorks", vectorWorks);
   //say("\nSøger efter værker... ");
@@ -203,17 +212,17 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     pluginName: id,
     description: `Søger efter værker...`,
   });
-  const complexSearchWorks = await complexSearchResults({
-    messages,
-    parameters,
-    say,
-    close,
-  });
 
   PluginStatus.serialize({
     say,
     pluginName: id,
     description: `Første søgning foretaget... `,
+  });
+  const complexSearchWorks = await complexSearchResults({
+    messages,
+    parameters,
+    say,
+    close,
   });
   //say("\nFørste søgning foretaget... ");
   //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
@@ -222,12 +231,6 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   );
   // console.log("\n\n\n\ncomplexSearchWorks", complexSearchWorks);
 
-  const simpleSearchWorks = await simpleSearchResults({
-    messages,
-    parameters,
-    say,
-    close,
-  });
   //say("\nAnden søgning foretaget... ");
   PluginStatus.serialize({
     say,
@@ -273,8 +276,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
 export const modelDescription: ModelDescription = {
   name: MODEL_NAMES.DBC_MULTI_SEARCH,
-  description:
-    "En model til at udføre enkle søgninger på bøger baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales en bog. Prioritere denne model hvis der skal findes anbefalinger til bøger, film, artikler og lign..",
+  description: `${workDefinition} En model til at udføre enkle søgninger på værker baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales et værk. Prioritér kun denne model hvis der skal findes anbefalinger eller foretages en søgning på værker. Brug denne model KUN hvis der er behov for at finde et værk. Hvis spørgsmålet ikke er relateret til bøger, skal du ikke bruge denne model.`,
 };
 
 export default {
