@@ -2,7 +2,8 @@ import { initializeApollo } from "@/app/client/apolloClient";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
-
+const workDefinition =
+  "Et værk er en bog, en film, en artikel, musik, spil eller andet material som kan lånes på biblioteket.";
 const allowedIndexes = [
   { searchIndexes: "term.general", description: "general søgning" },
   { searchIndexes: "term.title", description: "Søg efter titel et værk" },
@@ -19,11 +20,11 @@ const allowedIndexes = [
     description:
       "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK! KUN PÅ DANSK. DU MÅ IKKE SKRIVE PÅ ENGELSK!",
   },
-  // {
-  //   searchIndexes: "worktype",
-  //   description:
-  //     "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil)",
-  // },
+  {
+    searchIndexes: "worktype",
+    description:
+      "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil). Her er nogle eksempler: worktype=literature OR worktype=article OR worktype=movie OR worktype=music OR worktype=game",
+  },
 ];
 
 interface FormatedWork {
@@ -47,11 +48,13 @@ async function finalAnswer({
   const copy = [...messages];
   copy.push({
     role: "system",
-    content: `Disse er nogle bøger, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse bøger. 
+    content: `
+    ${workDefinition}
+    Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
   
- bøger:  ${JSON.stringify(works)}
+ Værker:  ${JSON.stringify(works)}
     
-  Svar så kort og præcist som muligt. Giv mindst 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
+  Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de bøger som jeg har givet dig.
 
   For hver bog, SKAL du skrive en sætning der fortæller om bogen. 
 
@@ -153,14 +156,16 @@ async function searchIsRequired({
   say: Function;
 }): Promise<Boolean> {
   const systemPrompt = `
-Ud fra samtalen, skal du finde ud af om der er behov for at finde en bog.
 
-Hvis spørgsmålet ikke er relateret til bøger, er der ikke behov for at finde en bog.
+${workDefinition}
+Ud fra samtalen, skal du finde ud af om der er behov for at finde et værk.
+
+Hvis spørgsmålet ikke er relateret til værker, er der ikke behov for at finde et værk.
 
 
 Du svarer ALDRIG selv på spørgsmålet.
-Du returnerer 1, hvis der er behov for at finde en bog
-Du returnerer 0, hvis der IKKE er behov for at finde en bog.
+Du returnerer 1, hvis der er behov for at finde et værk
+Du returnerer 0, hvis der IKKE er behov for at finde et værk.
 ns står for needSearch
 
 Du returnerer KUN dette json format, aldrig andet:
@@ -222,7 +227,7 @@ Ud fra samtalen, skal du lave en CQL-søgning.
 
 Et "værk" er en bog, artikel, film, musik, spil eller andet materiale.s
 
-Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her.
+Her er søgeindekser: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her. DU MÅ KUN DISSE SØGEINDEKSER. ALDRIG ANDET!
 
 Du kan bruge disse logiske operatorer "AND", "OR", "NOT" mellem indekserne. Disse må ikke stå lige efter hindande. DU må ikke skrive "term.creatorcontributor="Yuval" AND NOT term.mainlanguage="dansk"".
 
@@ -256,6 +261,7 @@ Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE AN
     parameters,
     // say,
   });
+  //TODO: make a validator. if search index is not in allowedIndexes, remove from cql
   console.log("\n\n\n\n⏳promptToSearchObject.res", res);
   return res?.replaceAll("</s>", "") || null;
 }

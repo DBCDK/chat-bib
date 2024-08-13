@@ -13,8 +13,6 @@ async function getModelByPrompt({
 }: GenerateRequest): Promise<{ generate: Function }> {
   const systemPrompt = `
     Ud fra samtalen, skal du finde ud af om hvilken model der skal bruges. 
-
-    
     
     Du returnerer KUN dette json format, aldrig andet:
     {"modelName": navn på model}
@@ -24,10 +22,10 @@ async function getModelByPrompt({
     Du skal vælge en model fra følgende: ${JSON.stringify(modelsDescriptions)}.
     Hvis du er i tvivl om hvilken model der skal bruges, skal du bruge ${MODEL_NAMES.DBC_BASE}. 
 
-    HUSK at du skal returnere en modelnavn i dette format: 
+    HUSK at du skal returnere et modelnavn i dette format: 
      {"modelName": navn på model}
 
-     Du må aldrig skrive andet info end det der står i json formatet.
+     Du må aldrig skrive andet info end det der står i json formatet. Du må IKKE skriv noget før eller efter json formatet.
     
       `;
 
@@ -38,19 +36,59 @@ async function getModelByPrompt({
 
   const controller = new AbortController();
 
-  const res = await llmGenerate({
-    controller,
-    messages: copy,
-    parameters,
-    say: (text: string) => {
-      console.log("General.text", text);
-    },
+  const modelJSON: any = await new Promise(async (resolve, reject) => {
+    let accumulatedText = "";
+
+    try {
+      await llmGenerate({
+        controller,
+        messages: copy,
+        parameters,
+        say: (chunk: any) => {
+          accumulatedText += chunk?.token?.text || "";
+          console.log("Streaming text:", accumulatedText);
+
+          // Regular expression to find JSON object in the accumulated text
+          const jsonRegex = /{[^]*}/;
+          const jsonString = accumulatedText.match(jsonRegex);
+
+          if (jsonString) {
+            try {
+              // Parse the JSON string into an object
+              const jsonObject = JSON.parse(jsonString[0]);
+
+              // Abort the controller to stop further streaming
+              controller.abort();
+
+              // Resolve the promise with the extracted JSON object
+              resolve(jsonObject);
+            } catch (error) {
+              console.error("Failed to parse JSON:", error);
+              reject(error);
+            }
+          }
+        },
+      });
+    } catch (error) {
+      console.error("Error during text streaming:", error);
+      reject(error);
+    }
   });
 
-  const json = extractJsonFromText(res);
-  console.log("json", json);
-  const modelName = Object.values(MODEL_NAMES).includes(json?.modelName)
-    ? json?.modelName
+  // //TODO stop when json is found
+  // const res = await llmGenerate({
+  //   controller,
+  //   messages: copy,
+  //   parameters,
+  //   say: (text: string) => {
+  //     console.log("General.text", text);
+  //   },
+  // });
+
+  //const json = extractJsonFromText(res);
+  console.log("json", modelJSON);
+  const modelName = Object.values(MODEL_NAMES).includes(modelJSON?.modelName)
+    ? modelJSON?.modelName
     : MODEL_NAMES.DBC_BASE;
 
   //Hack to typescript error. Return models[modelName];

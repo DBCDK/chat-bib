@@ -15,7 +15,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 export const modelDescription: ModelDescription = {
   name: MODEL_NAMES.DBC_BASE,
   description:
-    "General model with no specific purpose. Just passes the input through to the LLM backend.",
+    "Denne model kan besvare generelle spørgsmål. Den kan hjælpe med at uddybe spørgsmål som brugeren stiller. Eksempelvis hvis brugere spørger om en anbefaling eller søgning og brugern ikke har givet nok information om dette, kan denne model spørge brugere om at uddybe sit forespørgsel. Den kan generere tekst og svar ud fra brugerens input. Du må IKKE bruge denne model stil søgning eller anbefaling af værker.",
 };
 
 export default {
