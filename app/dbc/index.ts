@@ -3,6 +3,7 @@ export type GenerateRequest = {
   parameters: LLMParameters;
   say: Function;
   close: Function;
+  conversationId?: string;
 };
 export type CustomModel = {
   generate: (input: GenerateRequest) => void;
@@ -21,9 +22,11 @@ export type LLMParameters = {
   frequency_penalty?: number;
   max_new_tokens?: number;
   stream?: boolean;
+  cutOff?: number;
 };
 
 export type LLMRequest = {
+  conversationId?: string;
   messages: Message[];
   parameters: LLMParameters;
   say?: Function;
@@ -34,17 +37,21 @@ export type LLMRequest = {
 export enum MODEL_NAMES {
   DBC_BASE = "dbc-base",
   DBC_WEB_SEARCH = "dbc-web-search",
+  DBC_WEB_SEARCH_2 = "dbc-web-search-2",
   DBC_SIMPLE_SEARCH = "dbc-simple-search",
   DBC_COMPLEX_SEARCH = "dbc-complex-search",
   DBC_VISUALS_EXAMPLES = "dbc-visuals-example",
+  DBC_VECTOR_LIBRARIAN = "dbc-vector-librarian",
+  DBC_PLUGINS = "dbc-plugins",
   // DBC_POEM = "dbc-poem",
   // DBC_HELLO_WORLD = "dbc-hello-world",
   // DBC_WITH_FETCH = "dbc-with-fetch",
   DBC_GENERAL_MODEL = "dbc-general-model",
   DBC_VECTOR_DB = "dbc-vector-db",
+  DBC_MULTI_SEARCH = "dbc-multi-search",
 }
 
-const defaultModel = MODEL_NAMES.DBC_BASE;
+const defaultModel = MODEL_NAMES.DBC_WEB_SEARCH_2;
 
 export const modelNames: string[] = [
   defaultModel,

@@ -23,7 +23,13 @@ export async function searchWorks(q: string): Promise<FormatedWork[]> {
     // const json = JSON.parse(text);
 
     //   console.log(JSON.stringify(json, null, 2));
-    return json.response || [];
+    return (
+      json?.response?.map((work: any) => ({
+        title: work?.title,
+        abstract: work?.text,
+        workId: work.work,
+      })) || []
+    );
   } catch (e) {
     log.error(
       "ERROR from vector database client: " +

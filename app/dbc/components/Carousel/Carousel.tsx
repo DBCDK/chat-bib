@@ -5,11 +5,11 @@ import {
   encodeValue,
   END_COMPONENT,
 } from "../constants";
-import styles from "./MaterialCard.module.css";
+import styles from "./Carousel.module.css";
 
-const GET_MATERIAL = gql`
-  query Get_Work($workId: String!) {
-    work(id: $workId) {
+const GET_MATERIALS = gql`
+  query Get_Works($workIds: [String!]!) {
+    works(id: $workIds) {
       workId
       titles {
         main
@@ -104,65 +104,50 @@ function sortByMaterialtype(a: any) {
   return 0;
 }
 
-const name = "MaterialCard";
+const name = "Carousel";
 
-function MaterialCard({
-  workId,
+function Carousel({
+  workIds,
   complete,
 }: {
-  workId: string;
+  workIds: string[];
   complete: Boolean;
 }) {
-  const { loading, error, data } = useQuery(GET_MATERIAL, {
-    variables: { workId },
-    skip: !complete || !workId,
+  const { loading, error, data } = useQuery(GET_MATERIALS, {
+    variables: { workIds },
+    skip: !complete || !workIds,
   });
   const isLoading = !complete || loading;
 
-  const work = data?.work;
-  const cover = getCoverImage(work?.manifestations?.mostRelevant)?.detail;
-
   return (
-    <div className={styles.card}>
-      {!isLoading && (
-        <a
-          href={`https://bibliotek.dk/materiale/titel/${encodeURIComponent(work?.workId)}`}
-          target={"_blank"}
-        >
-          <img src={cover} />
-        </a>
-      )}
-      {!isLoading && (
-        <div className={styles.content}>
-          <a
-            href={`https://bibliotek.dk/materiale/titel/${encodeURIComponent(work?.workId)}`}
-            target={"_blank"}
-          >
-            <h2>{work?.titles?.main}</h2>
-          </a>
-
-          <p className={styles.creators}>
-            {work?.creators
-              ?.map((creator: any) => creator?.display)
-              ?.join(", ")}
-          </p>
-
-          <p className={styles.abstract}>{work?.abstract}</p>
-        </div>
-      )}
+    <div className={styles.container}>
+      {data?.works?.map((work: any) => {
+        const cover = getCoverImage(work?.manifestations?.mostRelevant)?.detail;
+        return (
+          <div key={work.workId}>
+            <a
+              href={`https://bibliotek.dk/materiale/titel/${encodeURIComponent(work?.workId)}`}
+              target={"_blank"}
+            >
+              <img src={cover} />
+            </a>
+          </div>
+        );
+      })}
     </div>
   );
 }
-function serialize({ say, workId }: { say: Function; workId: string }) {
+function serialize({ say, workIds }: { say: Function; workIds: string[] }) {
   say(BEGIN_COMPONENT);
   say(encodeValue(name));
   say(DELIMITER);
-  say(encodeValue(workId));
+  say(encodeValue(JSON.stringify(workIds)));
   say(END_COMPONENT);
 }
 function deserialize(parts: string[], complete: Boolean) {
-  const [workId] = parts;
-  return <MaterialCard workId={workId} complete={complete} />;
+  const [workIds] = parts;
+
+  return <Carousel workIds={JSON.parse(workIds || "[]")} complete={complete} />;
 }
 
 export default {

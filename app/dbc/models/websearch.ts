@@ -1,8 +1,11 @@
 import { search } from "../clients/brave";
 import { SearchResult } from "../clients/browser";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
+import PluginStatus from "../components/PluginStatus/PluginStatus";
+
 import { llmGenerate } from "../llmClient";
 import { ModelDescription } from "./modelsDescriptions";
+const id = MODEL_NAMES.DBC_WEB_SEARCH;
 
 async function finalAnswer({
   messages,
@@ -38,7 +41,7 @@ async function finalAnswer({
   say("\n\nKilder:\n");
   say(
     Object.values(validatedSources?.slice(0, 5))
-      .map((s) => " * " + s.href + "\n    " + s.content)
+      .map((s) => " * " + s.href + "\n    " + s.content?.slice(0, 100) + "...")
       .join("\n"),
   );
 }
@@ -247,7 +250,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     },
     ...messages,
   ];
-  say("Undersøger forespørgsel...\n\n");
+  // say("Undersøger forespørgsel...\n\n");
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Undersøger forespørgsel...`,
+  });
   const performSearch = await searchIsRequired({
     messages,
     parameters,
@@ -256,16 +264,23 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   let queries: string[] = [];
   if (performSearch) {
-    say("Søgning påkrævet\n\n");
+    // say("Jeg laver en websøgning...\n\n");
+
+    PluginStatus.serialize({
+      say,
+      pluginName: id,
+      description: `Jeg laver en websøgning...`,
+    });
+
     queries = await detectQuestions({ messages, parameters });
     if (queries.length === 0) {
       say(
         "Sikke et antiklimaks, jeg kunne ikke finde ud af at lave søgninger!",
       );
     } else {
-      say(
-        `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
-      );
+      // say(
+      //   `Påtænker at lave ${queries.length} søgning${queries.length === 1 ? "" : "er"}:\n\n`,
+      // );
     }
   }
   // say("Søger\n\n");
@@ -277,19 +292,30 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     const q = queries[i];
 
     await new Promise((r) => setTimeout(r, 1200));
-    say(` * ${q}...`);
+    PluginStatus.serialize({
+      say,
+      pluginName: id,
+      description: `Søger på: ${q}...`,
+    });
+    // say(` * ${q}...`);
 
     const results = await search(site + q);
-    say(` Hits: ${results.length}\n`);
+    // say(` Hits: ${results.length}\n`);
+
+    // PluginStatus.serialize({
+    //   say,
+    //   pluginName: id,
+    //   description:`Hits: ${results.length}\n`,
+    // });
     searchResults.push(results as SearchResult[]);
   }
 
-  say("\n\n");
+  //say("\n\n");
   let mergedResults = mergeLists(searchResults)?.slice(0, 20) || [];
 
-  say(
-    `Validerer ${mergedResults.length} søgeresultat${mergedResults.length === 1 ? "" : "er"} \n\n`,
-  );
+  // say(
+  //   `Validerer ${mergedResults.length} søgeresultat${mergedResults.length === 1 ? "" : "er"} \n\n`,
+  // );
 
   const validatedSources = (
     await Promise.all(
@@ -302,11 +328,20 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
         return { ...entry, isValidSource };
       }),
     )
-  ).filter((entry) => entry.isValidSource);
+  )
+    .filter((entry) => entry.isValidSource)
+    .map((entry) => ({
+      ...entry,
+      content: entry.content.replace(/<\/?strong>/gm, ""),
+    }));
 
   const uniqSources: any = {};
   validatedSources?.forEach((s) => (uniqSources[s.href] = s));
-
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Færdig.`,
+  });
   if (validatedSources?.length > 0) {
     await finalAnswer({ messages, parameters, say, validatedSources });
   } else {

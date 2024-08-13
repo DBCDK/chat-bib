@@ -5,7 +5,10 @@ import { log } from "dbc-node-logger";
 
 const serverConfig = getServerSideConfig();
 
-const dispatcher = new ProxyAgent("http://dmzproxy.dbc.dk:3128");
+const dispatcher =
+  process.env.NODE_ENV === "development"
+    ? undefined
+    : new ProxyAgent("http://dmzproxy.dbc.dk:3128");
 export async function search(q: string): Promise<SearchResult[]> {
   const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(q)}`;
   const res = await fetch(url, {
@@ -20,11 +23,14 @@ export async function search(q: string): Promise<SearchResult[]> {
   try {
     const json = JSON.parse(text);
 
-    //   console.log(JSON.stringify(json, null, 2));
+    // console.log(JSON.stringify(json, null, 2));
 
     return (
       json?.web?.results?.map((r: any) => {
-        return { href: r.url, content: r.description };
+        return {
+          href: r.url,
+          content: r.description + r.extra_snippets?.join("\n"),
+        };
       }) || []
     );
   } catch (e) {

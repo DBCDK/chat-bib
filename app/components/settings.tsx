@@ -671,7 +671,7 @@ export function Settings() {
           <div className="window-action-button">
             <IconButton
               icon={<CloseIcon />}
-              onClick={() => navigate(Path.Home)}
+              onClick={() => navigate(Path.Chat)}
               bordered
             />
           </div>

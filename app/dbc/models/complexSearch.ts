@@ -3,11 +3,35 @@ import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 
+const allowedIndexes = [
+  { searchIndexes: "term.general", description: "general søgning" },
+  { searchIndexes: "term.title", description: "Søg efter titel et værk" },
+  {
+    searchIndexes: "term.creatorcontributor",
+    description: 'forfatternavn. Eksempel: term.creatorcontributor="Murakami"',
+  },
+  {
+    searchIndexes: "term.subject",
+    description: 'emne. Eksempel: term.subject="kaffe"',
+  },
+  {
+    searchIndexes: "phrase.mainlanguage",
+    description:
+      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK! KUN PÅ DANSK. DU MÅ IKKE SKRIVE PÅ ENGELSK!",
+  },
+  // {
+  //   searchIndexes: "worktype",
+  //   description:
+  //     "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil)",
+  // },
+];
+
 interface FormatedWork {
   title: string;
   cover: string;
   abstract: string;
   workId: string;
+  creators: string[];
 }
 async function finalAnswer({
   messages,
@@ -46,18 +70,12 @@ async function finalAnswer({
     say, // Remove this, if you don't want it to stream directly to client
   });
 }
-type SimpleSearchQuery = {
-  all?: string;
-  title?: string;
-  creator?: string;
-  subject?: string;
-};
 
-async function searchByCQL(
+export async function searchByCQL(
   cql: string,
   offset: number = 0,
   limit: number = 35,
-): Promise<any[]> {
+): Promise<FormatedWork[]> {
   const client = initializeApollo();
 
   const COMPLEX_SEARCH_QUERY = gql`
@@ -75,6 +93,9 @@ async function searchByCQL(
             main
           }
           abstract
+          creators {
+            display
+          }
           manifestations {
             latest {
               cover {
@@ -109,6 +130,7 @@ async function searchByCQL(
           abstract: w.abstract[0],
           cover: w.manifestations[0]?.first?.cover?.detail_500,
           workId: w.workId,
+          creators: w.creators.map((c: any) => c.display),
         };
         return formatedWork;
       });
@@ -117,76 +139,6 @@ async function searchByCQL(
   } catch (error) {
     console.log("EEROR: ", error);
 
-    return [];
-  }
-}
-
-async function searchWorks(
-  query: SimpleSearchQuery,
-  offset: number = 0,
-  limit: number = 35,
-): Promise<any[]> {
-  //remove null values
-  const filteredSearchQuery = Object.fromEntries(
-    Object.entries(query).filter(([key, value]) => value != null),
-  );
-
-  const client = initializeApollo();
-
-  const SEARCH_WORKS_QUERY = gql`
-    query Example_BasicSearch(
-      $q: SearchQuery!
-      $offset: Int!
-      $limit: PaginationLimit!
-    ) {
-      search(q: $q) {
-        works(offset: $offset, limit: $limit) {
-          workId
-          titles {
-            main
-          }
-          abstract
-          manifestations {
-            first {
-              cover {
-                detail_500
-              }
-            }
-          }
-        }
-      }
-    }
-  `;
-
-  try {
-    const { data } = await client.query({
-      query: SEARCH_WORKS_QUERY,
-      variables: {
-        q: filteredSearchQuery,
-        offset,
-        limit,
-      },
-    });
-    //filter for works that has an abstract. Look only on the first 15 works
-    const works = data?.search?.works
-      ?.filter((w: any) => w?.abstract[0]?.length > 0)
-      .slice(0, 15);
-
-    function formatedWorks(works: any[]) {
-      return works.map((w) => {
-        const formatedWork = {
-          title: w.titles.main[0],
-          abstract: w.abstract[0],
-          cover: w.manifestations[0]?.first?.cover?.detail_500,
-          workId: w.workId,
-        };
-        return formatedWork;
-      });
-    }
-    return formatedWorks(works);
-  } catch (error) {
-    console.error("Error performing GraphQL search:", error);
-    //  throw new Error('Failed to fetch data');
     return [];
   }
 }
@@ -248,16 +200,6 @@ Du returnerer KUN dette json format, aldrig andet:
   return res as Boolean;
 }
 
-type SearchObject = {
-  title?: string;
-  author?: string;
-  subject?: string;
-  all?: string;
-};
-let str = `  {"title": null,
-"author": null,
-"subject": "krimi"}</s>
-`;
 const searchIndexes: { [key: string]: string } = {
   title: "term.title",
   language: "phrase.language",
@@ -265,24 +207,8 @@ const searchIndexes: { [key: string]: string } = {
   subject: "term.subject",
   worktype: "worktype",
 };
-function searchObjectToCQL(searchObject: SearchObject) {
-  let cql = "";
 
-  Object.keys(searchObject).forEach((key, i) => {
-    if (key in searchIndexes) {
-      const searchIndex = searchIndexes[key];
-
-      const values = searchObject[key]?.split(",");
-      values.map((value, indx) => {
-        cql += `${i === 0 && indx === 0 ? "" : " AND "}${searchIndex}=${value}`;
-      });
-    }
-  });
-
-  return cql;
-}
-
-async function promptToSearchObject({
+export async function promptToCQL({
   messages,
   parameters,
   say,
@@ -290,94 +216,37 @@ async function promptToSearchObject({
   messages: Message[];
   parameters: any;
   say: Function;
-}): Promise<SearchObject | null> {
-  function extractJsonFromText(text: string): SearchObject | null {
-    // Regular expression to find JSON object in the input string, accounting for possible newlines and spaces
-    const jsonRegex = /{[^]*}/;
+}): Promise<string | null> {
+  const newSystemPrompt = `
+Ud fra samtalen, skal du lave en CQL-søgning.
 
-    // Use the regex to extract the JSON object string
-    const jsonString = text.match(jsonRegex);
+Et "værk" er en bog, artikel, film, musik, spil eller andet materiale.s
 
-    if (jsonString) {
-      try {
-        // Parse the JSON string into an object
-        const jsonObject = JSON.parse(jsonString[0]);
-        return jsonObject;
-      } catch (error) {
-        console.error("Failed to parse JSON:", error);
-        return null;
-      }
-    } else {
-      console.error("No JSON object found in the input string.");
-      return null;
-    }
-  }
+Her er de indekser du kan bruge: ${JSON.stringify(allowedIndexes)}. Du må aldrig brug andre indekser end dem der er nævnt her.
 
-  function validateSearchObject(searchObject: SearchObject | null) {
-    if (!searchObject) {
-      return null;
-    }
-    //only user messages
-    const messagesToString = messages
-      .map((e) => (e.role == "user" ? e.content : ""))
-      .join(" ")
-      .toLowerCase();
+Du kan bruge disse logiske operatorer "AND", "OR", "NOT" mellem indekserne. Disse må ikke stå lige efter hindande. DU må ikke skrive "term.creatorcontributor="Yuval" AND NOT term.mainlanguage="dansk"".
 
-    console.log("\nmessagesToString", messagesToString);
-    //filter for null values
-    let filteredObject = Object.fromEntries(
-      Object.entries(searchObject).filter(([key, value]) => {
-        console.log("\n  Object.entries(searchObject).filter value", value);
-        return value != null; // && messagesToString.includes(value.toLowerCase());
-      }),
-    );
+Det første ord i en sætning skal altid være et indeks. Du må ikke starte med en logiske operator.
 
-    // if (!filteredObject.all && filteredObject.subject?.split(" ").length > 1) {
-    //   filteredObject.all = filteredObject.subject + "";
-    //   delete filteredObject.subject;
-    // }
-    // if(filteredObject?.all){
-    //   filteredObject.all = filteredObject.all.replaceAll(" og "," ");
 
-    // }
-    console.log("\n🍕beforefilteredObject", searchObject);
+Hvis du er i tvivl om nogle af værdierne skal du ikke svare på dem. Du må ikke bare gætte. 
 
-    console.log("\n🍕filteredObject", filteredObject);
-
-    console.log("\n\n\n\n\n\n\n\n\n\n\n#################################\n\n");
-    return filteredObject;
-  }
-
-  const systemPrompt = `
-Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
-Og et emne som der søges om.
-
-Du svarer ALDRIG selv på spørgsmålet.
-Du returnerer "null", hvis der ikke indegår et forfatternavn i samtalen.
-Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatternavn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
-Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen.
-Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
-Hvis der er noget i samtalen som er relevant for søgningen og som ikke er et emne, en titel, eller en forfatter, skal du sætte den i "all".
-
-Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
+HVIS VÆRDIEN IKKE STÅR I SAMTALEN, MÅ DU IKKE SVARE PÅ DET. DU MÅ IKKE TIFØJE VÆRDIER SOM IKKE ER NÆVNT I SAMTALEN!
 
 Du skal skrive på dansk. Kun på dansk. 
 
-Du returnerer KUN dette json format, aldrig andet:
-{"title": null | titel på bog, 
- "author": null| navn på forfatter, 
- "subject": null| emne som der skal søges på,
- "language": null | sprog som der ønskes. Hvis flere sprog retunere en kommasepareret liste. (eksempelvis dansk,engelsk,fransk),
- "worktype": null | type af materiale. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil) ],
- 
- }
+Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling")
+
+Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE ANDET END CQL-STRENGEN!!
+
+
 
 
   `;
 
   const copy = [
     ...messages.filter((entry) => entry.role !== "system"),
-    { role: "system", content: systemPrompt } as Message,
+    { role: "system", content: newSystemPrompt } as Message,
   ];
   const controller = new AbortController();
 
@@ -388,13 +257,7 @@ Du returnerer KUN dette json format, aldrig andet:
     // say,
   });
   console.log("\n\n\n\n⏳promptToSearchObject.res", res);
-
-  const searchObject = extractJsonFromText(res);
-  console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
-
-  const validatedSearchObject = validateSearchObject(searchObject);
-  console.log("\n\n\nalidatedSearchObject.searchObject", validatedSearchObject);
-  return validatedSearchObject;
+  return res?.replaceAll("</s>", "") || null;
 }
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
@@ -403,41 +266,22 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     parameters,
     say,
   });
-  if (messages.length === 3) {
-    say(
-      `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
-    );
-  }
+  // if (messages.length === 3) {
+  //   say(
+  //     `\n\n\n\n 🚧OBS. modellen er ikke 100% færdig endnu. Følgende indekser er implementeret: ${Object.values(searchIndexes).join(" , ")}\n\n\n\n \n\n\n\n  `,
+  //   );
+  // }
   if (shouldPerformSearch) {
     say(`\nAnalyserer..\n`);
 
-    const searchObject =
-      (await promptToSearchObject({
-        messages,
-        parameters,
-        say,
-      })) || {};
-    say(
-      "\nJeg laver en søgning til complex search🔎 \n\n" +
-        JSON.stringify(searchObject) +
-        "\n\n",
-    );
-
-    const cql = searchObjectToCQL(searchObject);
+    const cql = await promptToCQL({
+      messages,
+      parameters,
+      say,
+    });
 
     say("\nJeg laver denne cql søgning: \n\n" + cql + "\n\n");
-
-    if (Object.keys(searchObject).length > 0) {
-      const searchQuery = {
-        title: searchObject?.title,
-        creator: searchObject?.author,
-        subject: searchObject?.subject,
-        all: searchObject?.all,
-      };
-      console.log(
-        "\n\n\n\n\n\n\n\nLaver søgning til complex search: ",
-        JSON.stringify(searchQuery),
-      );
+    if (cql) {
       const works = await searchByCQL(cql);
 
       console.log("\n\n 🚨🚨🚨🚨 here are the works BY CQLlll: ", works);
@@ -454,8 +298,6 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
       say("\nKunne ikke lave en søge query fra din prompt.\n");
     }
   } else {
-    // say(`\n Der er ikke behov for at lave en søgning \n`);
-
     await llmGenerate({
       messages,
       parameters,
