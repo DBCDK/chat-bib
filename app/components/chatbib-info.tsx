@@ -34,8 +34,7 @@ export function ChatbibIntro() {
             text={Locale.NewChat.EmptyChat}
             onClick={() => {
               chatStore.newSession();
-
-              navigate(Path.Chat);
+              navigate(Path.NewChat);
             }}
             type="primary"
             shadow

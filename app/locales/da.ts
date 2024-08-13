@@ -459,8 +459,8 @@ const da = {
   NewChat: {
     Return: "Tilbage",
     Skip: "Start bare",
-    Title: "Vælg en persona",
-    SubTitle: "Du kan vælge en persona eller starte en tom chat",
+    Title: "Vælg en model",
+    SubTitle: "Du kan vælge en af de fire modeller til at starte en chat",
     More: "Find flere",
     NotShow: "Vis aldrig igen",
     Close: "Luk",

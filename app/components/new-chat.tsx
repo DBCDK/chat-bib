@@ -173,15 +173,9 @@ export function NewChat() {
           })}
         </div>
       }
-
+      {/* 
       <div className={styles["actions"]}>
-        {/* <IconButton
-          text={Locale.NewChat.More}
-          onClick={() => navigate(Path.Masks)}
-          icon={<EyeIcon />}
-          bordered
-          shadow
-        /> */}
+
 
         <IconButton
           size={5}
@@ -192,7 +186,7 @@ export function NewChat() {
           shadow
           className={styles["new-default-chat"]}
         />
-      </div>
+      </div> */}
 
       {/* <div className={styles["masks"]} ref={maskRef}>
         {groups.map((masks, i) => (
