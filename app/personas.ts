@@ -93,7 +93,7 @@ export const PERSONAS = [
   },
   {
     name: "Faktalink",
-    description: "Jeg kan hjælpe dig med at finde information fra Faktalink.",
+    description: "Find information fra Faktalink.",
     image: "avatar3.svg",
     mask: {
       id: "100030",
@@ -134,7 +134,7 @@ export const PERSONAS = [
   },
   {
     name: "Websøgning",
-    description: "Jeg kan hjælpe dig med at finde information på internettet.",
+    description: "Find information på internettet.",
     image: "avatar2.svg",
     mask: {
       id: "100029",
