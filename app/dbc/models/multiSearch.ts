@@ -37,6 +37,12 @@ async function complexSearchResults({
       throw new Error("Could not create cql query from prompt");
     }
 
+    PluginStatus.serialize({
+      say,
+      pluginName: id,
+      description: `Søger på ${cql}`,
+    });
+
     // say("\nLaver søgning med følgende cql: " + cql + "\n\n");
 
     console.log(
@@ -79,6 +85,11 @@ async function simpleSearchResults({
       "\n\n",
   );
 
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Søger på ${JSON.stringify(searchQuery)}`,
+  });
   const works = await searchSimpleSearch(searchQuery);
 
   return works;
@@ -197,20 +208,17 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   //   say,
   //   close,
   // });
-  const simpleSearchWorks = await simpleSearchResults({
-    messages,
-    parameters,
-    say,
-    close,
-  });
-  // say(`Jeg fandt ${vectorWorks.length} værker i vector databasen\n\n`);
-  //  console.log("\n\n\n\nvectorWorks", vectorWorks);
-  //say("\nSøger efter værker... ");
 
   PluginStatus.serialize({
     say,
     pluginName: id,
     description: `Søger efter værker...`,
+  });
+  const simpleSearchWorks = await simpleSearchResults({
+    messages,
+    parameters,
+    say,
+    close,
   });
 
   PluginStatus.serialize({
