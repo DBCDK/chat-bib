@@ -460,7 +460,7 @@ const da = {
     Return: "Tilbage",
     Skip: "Start bare",
     Title: "Vælg en model",
-    SubTitle: "Du kan vælge en af de fire modeller til at starte en chat",
+    SubTitle: "Du kan vælge en af de fire modeller for at starte en chat.",
     More: "Find flere",
     NotShow: "Vis aldrig igen",
     Close: "Luk",

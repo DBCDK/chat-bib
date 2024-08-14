@@ -339,7 +339,7 @@ function ClearContextDivider() {
 }
 
 function ChatAction(props: {
-  text: string;
+  text?: string;
   icon: JSX.Element;
   onClick: () => void;
 }) {
@@ -380,9 +380,11 @@ function ChatAction(props: {
       <div ref={iconRef} className={styles["icon"]}>
         {props.icon}
       </div>
-      <div className={styles["text"]} ref={textRef}>
-        {props.text}
-      </div>
+      {props.text && (
+        <div className={styles["text"]} ref={textRef}>
+          {props.text}
+        </div>
+      )}
     </div>
   );
 }
@@ -538,6 +540,7 @@ export function ChatActions(props: {
         />
       )}
       {/* <ChatAction
+      className={styles["theme-action"]}
         onClick={nextTheme}
         text={Locale.Chat.InputActions.Theme[theme]}
         icon={
@@ -742,6 +745,16 @@ function _Chat() {
       trailing: true,
     },
   );
+
+  // switch themes
+  const theme = config.theme;
+  function nextTheme() {
+    const themes = [Theme.Light, Theme.Dark]; //Theme.Auto,
+    const themeIndex = themes.indexOf(theme);
+    const nextIndex = (themeIndex + 1) % themes.length;
+    const nextTheme = themes[nextIndex];
+    config.update((config) => (config.theme = nextTheme));
+  }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
@@ -1212,6 +1225,59 @@ function _Chat() {
 
   return (
     <div className={styles.chat} key={session.id}>
+      <div
+        className={`window-header ${styles.headerContainer}`}
+        data-tauri-drag-region
+      >
+        {isMobileScreen && (
+          <div className="window-actions">
+            <div className={"window-action-button"}>
+              <IconButton
+                icon={<ReturnIcon />}
+                bordered
+                title={Locale.Chat.Actions.ChatList}
+                onClick={() =>
+                  navigate(`${Path.Chat}?showSideBar=true`, { replace: true })
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        <ChatAction
+          onClick={nextTheme}
+          //  text={Locale.Chat.InputActions.Theme[theme]}
+          icon={
+            <>
+              {theme === Theme.Auto ? (
+                <AutoIcon />
+              ) : theme === Theme.Light ? (
+                <LightIcon />
+              ) : theme === Theme.Dark ? (
+                <DarkIcon />
+              ) : null}
+            </>
+          }
+        />
+      </div>
+
+      {/* <div className="window-header" data-tauri-drag-region>
+        <ChatAction
+          onClick={nextTheme}
+          text={Locale.Chat.InputActions.Theme[theme]}
+          icon={
+            <>
+              {theme === Theme.Auto ? (
+                <AutoIcon />
+              ) : theme === Theme.Light ? (
+                <LightIcon />
+              ) : theme === Theme.Dark ? (
+                <DarkIcon />
+              ) : null}
+            </>
+          }
+        />
+      </div> */}
       {
         // <div className="window-header" data-tauri-drag-region>
         //   {isMobileScreen && (

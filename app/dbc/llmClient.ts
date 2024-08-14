@@ -38,7 +38,7 @@ export async function llmGenerate(input: LLMRequest) {
 
   delete parameters.model;
   delete parameters.cutOff;
-
+  console.log("nput.messages", input.messages);
   const fetchUrl = serverConfig.generateStreamUrl;
   const requestBodyStr = JSON.stringify({
     inputs: llmFormat(input.messages),
@@ -49,6 +49,12 @@ export async function llmGenerate(input: LLMRequest) {
   let firstToken: number = -1;
   const controller = input?.controller || new AbortController();
   try {
+    console.log("\n\n\n\n------\nfetchUrl", fetchUrl);
+    console.log("fetchOptions", fetchOptions);
+    console.log("requestBodyStr", requestBodyStr, "\n\n\n");
+    console.log("controller", controller, "\n\n\n");
+    console.log("\n\n\n\n\n---");
+
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
       body: requestBodyStr,
@@ -72,6 +78,7 @@ export async function llmGenerate(input: LLMRequest) {
         try {
           // console.log("decodedValue", decodedValue);
           const obj = JSON.parse(decodedValue);
+          console.log("\n\nobj", obj);
           generatedText += obj?.token?.text;
 
           input.say?.(obj);
