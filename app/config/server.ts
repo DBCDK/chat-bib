@@ -107,6 +107,7 @@ export const getServerSideConfig = () => {
 
   return {
     braveKey: process.env.BRAVE_KEY,
+    faktaChatUrl: process.env.FAKTA_CHAT_URL,
     generateStreamUrl:
       process.env.GENERATE_STREAM_URL ||
       // "http://hawkeye-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",

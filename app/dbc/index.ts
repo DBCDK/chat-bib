@@ -10,7 +10,7 @@ export type CustomModel = {
 };
 
 export type Message = {
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "tool";
   content: string;
 };
 
@@ -19,6 +19,7 @@ export type LLMParameters = {
   temperature?: number;
   top_p?: number;
   presence_penalty?: number;
+  repetition_penalty?: number;
   frequency_penalty?: number;
   max_new_tokens?: number;
   stream?: boolean;
@@ -49,6 +50,7 @@ export enum MODEL_NAMES {
   DBC_GENERAL_MODEL = "dbc-general-model",
   DBC_VECTOR_DB = "dbc-vector-db",
   DBC_MULTI_SEARCH = "dbc-multi-search",
+  DBC_FAKTA_CHAT = "dbc-fakta-chat",
 }
 
 const defaultModel = MODEL_NAMES.DBC_WEB_SEARCH_2;
