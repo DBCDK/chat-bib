@@ -10,6 +10,7 @@ import multiSearch from "@/app/dbc/models/multiSearch";
 import vectorLibrarian from "@/app/dbc/models/theVectorLibrarian";
 import plugins from "@/app/dbc/models/plugins";
 import websearch2 from "@/app/dbc/models/websearch-2";
+import faktachat from "@/app/dbc/models/faktachat";
 
 import { MODEL_NAMES } from "@/app/dbc";
 
@@ -29,6 +30,7 @@ const models = {
   [MODEL_NAMES.DBC_PLUGINS]: plugins,
   [MODEL_NAMES.DBC_WEB_SEARCH_2]: websearch2,
   [MODEL_NAMES.DBC_VECTOR_LIBRARIAN]: vectorLibrarian,
+  [MODEL_NAMES.DBC_FAKTA_CHAT]: faktachat,
 };
 
 export default models;

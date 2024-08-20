@@ -116,7 +116,7 @@ export const PERSONAS = [
         },
       ],
       modelConfig: {
-        model: "gpt-4",
+        model: MODEL_NAMES.DBC_FAKTA_CHAT,
         temperature: 0.3,
         top_p: 1,
         max_tokens: 2000,
