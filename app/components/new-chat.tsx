@@ -15,6 +15,7 @@ import { useCommand } from "../command";
 import { showConfirm } from "./ui-lib";
 import { BUILTIN_MASK_STORE } from "../masks";
 import { Persona, PERSONAS } from "../personas";
+import { useMobileScreen } from "../utils";
 
 function MaskItem(props: { mask: Mask; onClick?: () => void }) {
   return (
@@ -73,9 +74,9 @@ function useMaskGroup(masks: Mask[]) {
 export function NewChat() {
   const chatStore = useChatStore();
   const maskStore = useMaskStore();
-
+  const isMobileScreen = useMobileScreen();
   const masks = maskStore.getAll();
-  const exam = masks.find((msk) => msk.lang === "en");
+  const exam = masks.find((msk) => msk.lang === "da");
   console.log("exam", exam);
 
   const groups = useMaskGroup(masks);
@@ -120,11 +121,13 @@ export function NewChat() {
           text={Locale.NewChat.Return}
           onClick={() => navigate(Path.Home)}
         ></IconButton> */}
-        <IconButton
-          icon={<CloseIcon />}
-          text={Locale.NewChat.Close}
-          onClick={() => navigate(Path.Home)}
-        ></IconButton>
+        {isMobileScreen && (
+          <IconButton
+            icon={<CloseIcon />}
+            text={Locale.NewChat.Close}
+            onClick={() => navigate(Path.Home)}
+          ></IconButton>
+        )}
         {/* {!state?.fromHome && (
           <IconButton
             text={Locale.NewChat.NotShow}

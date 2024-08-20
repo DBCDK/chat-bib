@@ -1259,6 +1259,20 @@ function _Chat() {
             </>
           }
         />
+
+        {!isMobileScreen && (
+          <div className={`window-header-title ${styles["chat-body-title"]}`}>
+            <div
+              className={`window-header-main-title ${styles["chat-body-main-title"]}`}
+              onClickCapture={() => setIsEditingMessage(true)}
+            >
+              {!session.topic ? DEFAULT_TOPIC : session.topic}
+            </div>
+            <div className="window-header-sub-title">
+              {Locale.Chat.SubTitle(session.messages.length)}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* <div className="window-header" data-tauri-drag-region>
