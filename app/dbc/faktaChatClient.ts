@@ -38,7 +38,7 @@ export async function llmGenerate(input: LLMRequest) {
   let firstToken: number = -1;
   const controller = input?.controller || new AbortController();
   try {
-    const res = await fetch(fetchUrl, {
+    const res = await fetch(fetchUrl || "", {
       ...fetchOptions,
       body: requestBodyStr,
       signal: controller?.signal,
