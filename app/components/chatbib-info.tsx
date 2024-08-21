@@ -33,7 +33,7 @@ export function ChatbibIntro() {
             className={styles["new-chat-button"]}
             text={Locale.NewChat.EmptyChat}
             onClick={() => {
-              chatStore.newSession();
+              //  chatStore.newSession();
               navigate(Path.NewChat);
             }}
             type="primary"
