@@ -379,6 +379,7 @@ Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hv
 Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen. Hvis der ikke er en titel i samtalen, skal du returnere null.
 Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
 Du returnerer "null", hvis der ikke bliver bedt om et specifikt sprog.
+Du retunerer "null", hvis der ikke bedt om det skal være childrenOrAdults.
 
 DU MÅ IKKE SELV UDFYLDE VÆRDIERNE. DU MÅ KUN RETUNERE DET SOM ER I SAMTALEN.
 
