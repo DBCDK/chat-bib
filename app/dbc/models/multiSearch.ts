@@ -272,6 +272,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     });
     await finalAnswer({ messages, parameters, works, say });
   }
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Fullført.`,
+  });
 
   // We just pass it through to the LLM backend
   //   await llmGenerate({
