@@ -15,7 +15,8 @@
   --hover-color: #f3f3f3;
   --bar-color: rgba(0, 0, 0, 0.1);
   --theme-color: var(--gray);
-
+// --card-color: var(--second);
+--card-color:#f2f1e9;
   /* shadow */
   --shadow: 50px 50px 100px 10px rgb(0, 0, 0, 0.1);
   --card-shadow: 0px 2px 4px 0px rgb(0, 0, 0, 0.05);
@@ -46,6 +47,9 @@
   --border-darker: rgba(255, 255, 255, 0.2);
 
   --theme-color: var(--gray);
+
+  --card-color:#121212e6;
+
 
   div:not(.no-dark) > svg {
     filter: invert(0.5);

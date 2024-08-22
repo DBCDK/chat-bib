@@ -1,11 +1,8 @@
+"use client";
 import { useQuery, gql } from "@apollo/client";
-import {
-  BEGIN_COMPONENT,
-  DELIMITER,
-  encodeValue,
-  END_COMPONENT,
-} from "../constants";
 import styles from "./Carousel.module.css";
+import { useEffect, useState } from "react";
+import { useWindowSize } from "@/app/utils";
 
 const GET_MATERIALS = gql`
   query Get_Works($workIds: [String!]!) {
@@ -17,18 +14,6 @@ const GET_MATERIALS = gql`
       abstract
       creators {
         display
-      }
-      subjects {
-        dbcVerified {
-          display
-          ... on SubjectText {
-            language {
-              display
-              isoCode
-            }
-          }
-          type
-        }
       }
       workYear {
         year
@@ -50,11 +35,6 @@ const GET_MATERIALS = gql`
           cover {
             origin
             detail
-          }
-          materialTypes {
-            materialTypeSpecific {
-              code
-            }
           }
         }
       }
@@ -104,8 +84,6 @@ function sortByMaterialtype(a: any) {
   return 0;
 }
 
-const name = "Carousel";
-
 function Carousel({
   workIds,
   complete,
@@ -117,41 +95,124 @@ function Carousel({
     variables: { workIds },
     skip: !complete || !workIds,
   });
-  const isLoading = !complete || loading;
 
+  const [selectedWork, setSelectedWork] = useState<any>(null);
+
+  useEffect(() => {
+    if (data?.works[0]) {
+      setSelectedWork(data.works[0]);
+    }
+  }, [data]);
+
+  const handleClick = (work: any) => {
+    setSelectedWork(work);
+  };
+
+  const isLoading = !complete || loading;
+  if (!workIds || workIds?.length === 0) {
+    return null;
+  }
   return (
     <div className={styles.container}>
-      {data?.works?.map((work: any) => {
-        const cover = getCoverImage(work?.manifestations?.mostRelevant)?.detail;
-        return (
-          <div key={work.workId}>
-            <a
-              href={`https://bibliotek.dk/materiale/titel/${encodeURIComponent(work?.workId)}`}
-              target={"_blank"}
-            >
-              <img src={cover} />
-            </a>
-          </div>
-        );
-      })}
+      {workIds?.length > 1 && (
+        <div className={styles.carousel}>
+          {data?.works?.map((work: any) => {
+            const cover = getCoverImage(
+              work?.manifestations?.mostRelevant,
+            )?.detail;
+            return (
+              <div
+                key={work.workId}
+                className={`${styles.item} ${selectedWork?.workId === work.workId ? styles.selected : ""}`}
+              >
+                <img
+                  src={cover}
+                  alt={work.titles?.main[0]}
+                  onClick={() => handleClick(work)}
+                  className={styles.coverImage}
+                />
+
+                {/* <p>{work.titles?.main[0]}</p> */}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <InfoBox selectedWork={selectedWork} />
     </div>
   );
 }
-function serialize({ say, workIds }: { say: Function; workIds: string[] }) {
-  say(BEGIN_COMPONENT);
-  say(encodeValue(name));
-  say(DELIMITER);
-  say(encodeValue(JSON.stringify(workIds)));
-  say(END_COMPONENT);
-}
-function deserialize(parts: string[], complete: Boolean) {
-  const [workIds] = parts;
 
-  return <Carousel workIds={JSON.parse(workIds || "[]")} complete={complete} />;
+function InfoBox({ selectedWork }: { selectedWork: any }) {
+  const { width } = useWindowSize();
+  const isSmallScreen = width < 800;
+  if (!selectedWork) {
+    return null;
+  }
+
+  const link = `https://bibliotek.dk/materiale/titel/${encodeURIComponent(selectedWork?.workId)}`;
+  const cover = getCoverImage(
+    selectedWork?.manifestations?.mostRelevant,
+  )?.detail;
+  console.log("selectedWork", selectedWork);
+  return (
+    <div className={styles.infoBox}>
+      <div className={styles.divider}></div>
+
+      <div className={styles.infoboxContent}>
+        <img
+          src={cover}
+          alt={selectedWork.titles?.main[0]}
+          //   onClick={() => handleClick(work)}
+          className={styles.coverImage}
+        />
+
+        <div>
+          <h2>{selectedWork.titles?.main[0]}</h2>
+          <p>{selectedWork.abstract}</p>
+          {!isSmallScreen && (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.linkButton}
+            >
+              Se på bibliotek.dk
+            </a>
+          )}
+        </div>
+        <div className={styles.bookInfo}>
+          <p>
+            <strong>
+              {`Forfatter${selectedWork.creators?.length > 1 ? "e" : ""}: `}{" "}
+            </strong>
+            {`${selectedWork.creators?.map((creator: any) => creator.display).join(", ") || " -"}`}
+          </p>
+          <p>
+            <strong> {`Sprog: `}</strong>
+            {`${selectedWork.mainLanguages?.map((lang: any) => lang.display).join(", ") || " - "}`}
+          </p>
+
+          {
+            <p>
+              <strong> {`Udgivelsesår: `} </strong>
+              {`${selectedWork.workYear?.year || " -"}`}
+            </p>
+          }
+        </div>
+        {isSmallScreen && (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.linkButton}
+          >
+            Se på bibliotek.dk
+          </a>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default {
-  name,
-  serialize,
-  deserialize,
-};
+export { Carousel, InfoBox };

@@ -1,4 +1,4 @@
-import Carousel from "./Carousel/Carousel";
+import Carousel from "./Carousel/Index";
 import { decodeValue } from "./constants";
 import ExampleComponent from "./ExampleComponent";
 import MaterialCard from "./MaterialCard/MaterialCard";

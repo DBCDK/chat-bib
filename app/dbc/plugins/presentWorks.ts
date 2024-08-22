@@ -1,5 +1,5 @@
 import { PluginContext, PluginResponse, PLUGINS, PluginType } from ".";
-import Carousel from "../components/Carousel/Carousel";
+import Carousel from "../components/Carousel/Index";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { llmGenerate } from "../llmClient";
 

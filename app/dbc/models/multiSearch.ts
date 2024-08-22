@@ -4,6 +4,7 @@
 // combine results and return best match
 
 import { searchWorks as searchVectorWorks } from "../clients/vectorDB";
+import Carousel from "../components/Carousel/Index";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
@@ -185,21 +186,20 @@ async function finalAnswer({
   const finalAnswer = await llmGenerate({
     messages: copy,
     parameters,
-    say: (message: string) => {
-      // console.log("\n\n in SAY FINAL ANSWER: ", message);
-
-      //TODO: check if the message is a workId, if so send materialCard with that workId
-      say(message);
-    },
+    say,
   });
 
-  say("\n\n\n\n");
+  //  say("\n\n\n\n");
   console.log("\n\nfinal answer works!!: ", works, "\n\n\n works");
+  const carousel: string[] = [];
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
-      MaterialCard.serialize({ say, workId: work.workId });
+      //MaterialCard.serialize({ say, workId: work.workId });
+      carousel.push(work.workId);
     }
   });
+  console.log("\n\n\n\n\n carousel to be serlized", carousel);
+  Carousel.serialize({ say: say, workIds: carousel });
 }
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
   // const vectorWorks = await vectorDBResults({
@@ -226,17 +226,17 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     pluginName: id,
     description: `Første søgning foretaget... `,
   });
-  const complexSearchWorks = await complexSearchResults({
-    messages,
-    parameters,
-    say,
-    close,
-  });
+  // const complexSearchWorks = await complexSearchResults({
+  //   messages,
+  //   parameters,
+  //   say,
+  //   close,
+  // });
   //say("\nFørste søgning foretaget... ");
   //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
-  console.log(
-    `Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`,
-  );
+  // console.log(
+  //   `Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`,
+  // );
   // console.log("\n\n\n\ncomplexSearchWorks", complexSearchWorks);
 
   //say("\nAnden søgning foretaget... ");
@@ -252,11 +252,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
   //filter away same results
-  const works = [...complexSearchWorks, ...simpleSearchWorks].filter(
+  //...complexSearchWorks,
+  const works = [...simpleSearchWorks].filter(
     (work, index, self) =>
       index === self.findIndex((w) => w.workId === work.workId),
   );
-
+  console.log("works", works);
   //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
   //say(`Jeg fandt i alt ${works.length} værker\n\n`);
 
