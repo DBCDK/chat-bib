@@ -91,7 +91,7 @@ async function simpleSearchResults({
     pluginName: id,
     description: `Søger på ${JSON.stringify(searchQuery)}`,
   });
-  const works = await searchSimpleSearch(searchQuery);
+  const works = await searchSimpleSearch(searchQuery, 0, 50);
 
   return works;
 }

@@ -132,7 +132,7 @@ export async function searchWorks(
         q: filteredSearchQuery,
         filters: filteredFilters,
         offset: 0,
-        limit: 35,
+        limit: limit,
       },
     });
     //filter for works that has an abstract. Look only on the first 15 works
@@ -361,19 +361,7 @@ export async function promptToSearchObject({
   }
 
   const systemPrompt = `
-Ud fra samtalen, skal du finde ud af om brugeren eftersøger en titel på en bog. En forfatter på en bog. 
-Og et emne som der søges om.
-
-Du svarer ALDRIG selv på spørgsmålet.
-Du returnerer "null", hvis der ikke indegår et forfatternavn i samtalen.
-Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatternavn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
-Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen.
-Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
-Hvis der er noget i samtalen som er relevant for søgningen og som ikke er et emne, en titel, eller en forfatter, skal du sætte den i "all".
-
-Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
-
-Du skal skrive på dansk. Kun på dansk. 
+Ud fra samtalen, skal du skal du lave en søge query. 
 
 Du returnerer KUN dette json format, aldrig andet:
 {"title": titel på bog, 
@@ -384,6 +372,22 @@ Du returnerer KUN dette json format, aldrig andet:
  "childrenOrAdults":  "til børn" eller "til voksne",
  "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
   }
+
+Du svarer ALDRIG selv på spørgsmålet.
+Du returnerer "null", hvis der ikke indegår et forfatternavn i samtalen.
+Du returnerer forfatternavnet, hvis der indegår et forfatternavn i samtalen. Hvis forfatternavn ikke fremgår direkte i samtalen, må du ikke skrive den. Retunere null istedet.
+Du returnerer titel, hvis der indegår en titel på en bog i samtalen. Skriv titelen præcist som den står i samtalen. Du må IKKE tilføje ekstra tekst til titlen. Hvis der ikke er en titel i samtalen, skal du returnere null.
+Du returnerer emne, hvis der indegår et emne i samtalen. Retunere null, hvis der ikke er et emne i samtalen.
+Du returnerer "null", hvis der ikke bliver bedt om et specifikt sprog.
+
+DU MÅ IKKE SELV UDFYLDE VÆRDIERNE. DU MÅ KUN RETUNERE DET SOM ER I SAMTALEN.
+
+Hvis der er noget i samtalen som er relevant for søgningen og som ikke er et emne, en titel, eller en forfatter, skal du sætte den i "all".
+
+Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bare gætte. 
+
+Du skal skrive på dansk. Kun på dansk. 
+
 
   Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mellem felterne.
   `;
