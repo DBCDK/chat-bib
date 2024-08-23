@@ -49,7 +49,7 @@ async function complexSearchResults({
     console.log(
       "\n\n\nLaver complex søgning med følgende cql: " + cql + "\n\n",
     );
-    return await searchByCQL(cql);
+    return await searchByCQL(cql, 0, 50);
   } catch (error) {
     return [];
   }
@@ -226,12 +226,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     pluginName: id,
     description: `Første søgning foretaget... `,
   });
-  // const complexSearchWorks = await complexSearchResults({
-  //   messages,
-  //   parameters,
-  //   say,
-  //   close,
-  // });
+  const complexSearchWorks = await complexSearchResults({
+    messages,
+    parameters,
+    say,
+    close,
+  });
   //say("\nFørste søgning foretaget... ");
   //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
   // console.log(
@@ -253,7 +253,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
   //filter away same results
   //...complexSearchWorks,
-  const works = [...simpleSearchWorks].filter(
+  const works = [...complexSearchWorks, ...simpleSearchWorks].filter(
     (work, index, self) =>
       index === self.findIndex((w) => w.workId === work.workId),
   );
@@ -275,7 +275,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   PluginStatus.serialize({
     say,
     pluginName: id,
-    description: `Fullført.`,
+    description: `Fuldført.`,
   });
 
   // We just pass it through to the LLM backend
