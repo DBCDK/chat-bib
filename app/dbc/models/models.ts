@@ -11,12 +11,14 @@ import vectorLibrarian from "@/app/dbc/models/theVectorLibrarian";
 import plugins from "@/app/dbc/models/plugins";
 import websearch2 from "@/app/dbc/models/websearch-2";
 import faktachat from "@/app/dbc/models/faktachat";
+import tools from "@/app/dbc/models/tools";
 
 import { MODEL_NAMES } from "@/app/dbc";
 
 const models = {
   [MODEL_NAMES.DBC_SIMPLE_SEARCH]: simpleSearch,
   [MODEL_NAMES.DBC_COMPLEX_SEARCH]: complexSearch,
+  [MODEL_NAMES.DBC_TOOLS]: tools,
 
   [MODEL_NAMES.DBC_BASE]: base,
   [MODEL_NAMES.DBC_WEB_SEARCH]: websearch,

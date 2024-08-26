@@ -106,6 +106,7 @@ export const getServerSideConfig = () => {
   ).split(",");
 
   return {
+    tgiGroqUrl: process.env.TGI_GROQ_URL,
     braveKey: process.env.BRAVE_KEY,
     faktaChatUrl: process.env.FAKTA_CHAT_URL,
     generateStreamUrl:
