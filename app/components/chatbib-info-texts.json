@@ -15,7 +15,7 @@
     "text": "De tekniske partnere i ChatBib er DBC Digital og KOMBIT. En del biblioteksansatte har desuden allerede sagt ja\ntil at deltage i projektet.\nDBC Digital har mere end 10 års erfaring med udvikling og drift af AI-baserede systemer og machine learning. Vi\narbejder med sprogmodeller i relation til metadataskabelse, søgning, recommendere og chatgrænseflader.\nKOMBIT og DBC Digital er partnere i DSK, Dansk Sprogmodel Konsortium.\nDBC Digital arbejder sammen med flere universiteter og offentlige virksomheder i relation til AI."
   },
   {
-    "id": "FBI-databrond",
+    "id": "fbi-databrond",
     "title": "Integration med FBI-databrønd",
     "text": "Der arbejdes på at gøre prototypen til en såkaldt RAG (Retrieval-Augmented-Generation), således at der søges\ni udvalgte dele af FBI-brønden, fx bibliotek.dk."
   },
