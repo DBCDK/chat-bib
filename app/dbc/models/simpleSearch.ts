@@ -364,13 +364,13 @@ export async function promptToSearchObject({
 Ud fra samtalen, skal du skal du lave en søge query. 
 
 Du returnerer KUN dette json format, aldrig andet:
-{"title": titel på bog, 
- "creator": navn på forfatter,
- "subject":  emne som der skal søges på,
- "all": general søgning for flere ord. Der søges på stikord. Ikke lange sætninger. ordene skal kun være relateret til værket. Eksempelvis emne, navn på forfatter, titel på bog, land osv..
- "mainLanguages": liste ad sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk"),
+{"title": "titel på bog", 
+ "creator": "navn på forfatter",
+ "subject":  "emne som der skal søges på",
+ "all": "general søgning for flere ord. Der søges på stikord. Ikke lange sætninger. ordene skal kun være relateret til værket. Eksempelvis emne, navn på forfatter, titel på bog, land osv. Det skal være en streng. Der må kun indeholde maksimum 2 ord. Udfyld kun hvis det er nødevændigt.", 
+ "mainLanguages": "liste af sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk")",
  "childrenOrAdults":  "til børn" eller "til voksne",
- "workTypes": liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ],
+ "workTypes": "liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ]",
   }
 
 Du svarer ALDRIG selv på spørgsmålet.
@@ -389,8 +389,9 @@ Hvis du er i tvivl om nogle af værdierne skal du retunere null. Du må ikke bar
 
 Du skal skrive på dansk. Kun på dansk. 
 
+Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mellem felterne.
 
-  Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mellem felterne.
+
   `;
 
   /**
