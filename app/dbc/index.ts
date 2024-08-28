@@ -37,6 +37,7 @@ export type LLMRequest = {
 // Only allow dbc-base for now
 export enum MODEL_NAMES {
   DBC_BASE = "dbc-base",
+  DBC_TOOLS = "dbc-tools",
   DBC_WEB_SEARCH = "dbc-web-search",
   DBC_WEB_SEARCH_2 = "dbc-web-search-2",
   DBC_SIMPLE_SEARCH = "dbc-simple-search",
