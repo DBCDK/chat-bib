@@ -185,7 +185,7 @@ export class DBCApi implements LLMApi {
             const fetchText = remainText.slice(0, fetchCount);
             responseText += fetchText;
             remainText = remainText.slice(fetchCount);
-            console.log(responseText);
+            //console.log(responseText);
             options.onUpdate?.(responseText, fetchText);
           }
 
