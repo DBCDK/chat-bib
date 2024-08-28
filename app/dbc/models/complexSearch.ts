@@ -242,28 +242,44 @@ Du skal skrive på dansk. Kun på dansk.
 
 Du returnerer KUN en CQL-streng. Eksempelvis (term.title="harry potter" AND term.creatorcontributor="rowling")
 
-Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE ANDET END CQL-STRENGEN!!
+HUSK. DU MÅ IKKE SKRIVE TO LOGISKE OPERATORER EFTER HINANDEN. DU MÅ IKKE STARTE MED EN LOGISK OPERATOR.
 
+Start dit svar med denne format   <CQL>Kortfattet men præcist svar på det givne udsagn</CQL>
 
+Eksempelvis:  <CQL>term.title="harry potter" AND term.creatorcontributor="rowling"</CQL>`;
 
-
-  `;
+  //Retunere kun cql-streng. Skriv ikke andet end cq-strengen. DU MÅ IKKE SKRIVE ANDET END CQL-STRENGEN!!
 
   const copy = [
     ...messages.filter((entry) => entry.role !== "system"),
     { role: "system", content: newSystemPrompt } as Message,
   ];
   const controller = new AbortController();
-
-  const res = await llmGenerate({
+  let text = "";
+  let cql = "";
+  await llmGenerate({
     controller,
     messages: copy,
     parameters,
-    // say,
+    say: (chunk: any) => {
+      text += chunk?.token?.text || "";
+
+      if (text.toLocaleUpperCase().includes("<CQL>")) {
+        text = "";
+      } else if (text.toLocaleUpperCase().includes("</CQL>")) {
+        cql = text.replace("</CQL>", "");
+        console.log("Before abort: cql", cql);
+        controller.abort();
+      }
+    },
   });
+
+  console.log("\n\n\n\nFOUND THIS CQL cql\n", cql, "\n\n\n");
+
   //TODO: make a validator. if search index is not in allowedIndexes, remove from cql
-  console.log("\n\n\n\n⏳promptToSearchObject.res", res);
-  return res?.replaceAll("</s>", "") || null;
+  console.log("\n\n\n\n⏳promptToSearchObject.res", cql);
+  return cql;
+  // return res?.replaceAll("</s>", "") || null;
 }
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {

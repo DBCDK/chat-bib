@@ -79,10 +79,13 @@ export async function searchWorks(
     Object.entries(query.filters ?? {}).filter(([key, value]) => value != null),
   );
 
-  console.log("\n\n\n\n\n\n filteredFilters", filteredFilters + "\n\n\n");
+  console.log(
+    "\n\n\n\n\n\n filteredFilters",
+    JSON.stringify(filteredFilters) + "\n\n\n",
+  );
   console.log(
     "\n\n\n\n\n\n filteredSearchQuery",
-    filteredSearchQuery + "\n\n\n",
+    JSON.stringify(filteredSearchQuery) + "\n\n\n",
   );
 
   const client = initializeApollo();
@@ -368,7 +371,7 @@ Du returnerer KUN dette json format, aldrig andet:
  "creator": "navn på forfatter",
  "subject":  "emne som der skal søges på",
  "all": "general søgning for flere ord. Der søges på stikord. Ikke lange sætninger. ordene skal kun være relateret til værket. Eksempelvis emne, navn på forfatter, titel på bog, land osv. Det skal være en streng. Der må kun indeholde maksimum 2 ord. Udfyld kun hvis det er nødevændigt.", 
- "mainLanguages": "liste af sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk")",
+ "mainLanguages": "liste af sprog som der ønskes. Hvis flere sprog retunere et array. Skriv det fulde navn. på dansk. (eksempelvis "dansk", "engelsk", "fransk")". Hvis der ikke er et specifikt sprog, retunere null",
  "childrenOrAdults":  "til børn" eller "til voksne",
  "workTypes": "liste af typer af materialer. Det kan kun være en eller flere af følgende værdier. [Bøger, Artikler, Film, Musik, Spil ]",
   }
@@ -406,17 +409,27 @@ Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mell
     { role: "system", content: systemPrompt } as Message,
   ];
   const controller = new AbortController();
+  let text = "";
+  let searchObject = null;
 
-  const res = await llmGenerate({
+  await llmGenerate({
     controller,
     messages: copy,
     parameters,
-    // say,
+    say: (chunk: any) => {
+      //stop once we have the json object
+      text += chunk?.token?.text || "";
+      const jsonObject = extractJsonFromText(text);
+      if (jsonObject) {
+        searchObject = jsonObject;
+        controller.abort();
+      }
+    }, //stop once we have the json object
   });
-  console.log("\n\n\n\n⏳promptToSearchObject.res", res);
-
-  const searchObject = extractJsonFromText(res);
-  console.log("\n\n\n\n⏳promptToSearchObject.searchObject", searchObject);
+  console.log(
+    "\n\n\n\n⏳🚀🚨promptToSearchObject.extractedJsonextractedJsonextractedJson extractedJson",
+    searchObject,
+  );
 
   const query = extractQueryFromSearchObject(searchObject || {});
   const validatedSearchObject = validateQuery(query);
