@@ -7,7 +7,7 @@ import { searchWorks } from "../clients/vectorDB";
 
 export interface FormatedWork {
   title: string;
-  cover: string;
+  //cover: string;
   abstract: string;
   workId: string; //workId
 }

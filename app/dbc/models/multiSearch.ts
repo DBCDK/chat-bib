@@ -137,23 +137,9 @@ async function finalAnswer({
   parameters: any;
   say: Function;
 }) {
-  const systemPrompt = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
-  
- værker:  ${JSON.stringify(works)}
-    
-  Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
-
-  For hver bog, SKAL du skrive en sætning der fortæller om bogen. 
-
-    Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
-
-    Sæt workId fra de givne værker istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:xxxxxxxxx
-
-    Vis en liste med en sætning der fortæller om bogen.
-  `;
   const systemPrompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
   
-  værker:  ${JSON.stringify(works)}
+  værker:  ${JSON.stringify(works.slice(0, 15))}
      
    Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
  
@@ -163,15 +149,6 @@ async function finalAnswer({
   //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
   //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
 
-  const prompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
-  
- værker:  ${JSON.stringify(works)}
-    
-  Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
-
-  DU MÅ IKKE SKRIVE ANDET INFO OM VÆRKERNE. IKKE titel, forfatter eller andet info. KUN VÆRK ID'ER.
-  Skriv værkerne i denne format: #værkId1, #værkId2, #værkId3, #værkId4, #værkId5
-  `;
   const copy = [...messages];
   copy.push({
     role: "system",
@@ -191,6 +168,8 @@ async function finalAnswer({
 
   //  say("\n\n\n\n");
   console.log("\n\nfinal answer works!!: ", works, "\n\n\n works");
+  console.log("\n\nfinal answer works!!: ", works?.length, "\n\n\n works");
+
   const carousel: string[] = [];
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
@@ -296,3 +275,27 @@ export const modelDescription: ModelDescription = {
 export default {
   generate,
 } as CustomModel;
+
+// const systemPrompt = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker.
+
+//   værker:  ${JSON.stringify(works)}
+
+//    Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
+
+//    For hver bog, SKAL du skrive en sætning der fortæller om bogen.
+
+//      Du skal lave en link til bogen i denne format: https://bibliotek.dk/work/{workId}
+
+//      Sæt workId fra de givne værker istedet for {workId}. Eksempelvis: https://bibliotek.dk/work/work-of:870970-basis:xxxxxxxxx
+
+//      Vis en liste med en sætning der fortæller om bogen.
+//    `;
+//   const prompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker.
+
+//  værker:  ${JSON.stringify(works)}
+
+//   Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
+
+//   DU MÅ IKKE SKRIVE ANDET INFO OM VÆRKERNE. IKKE titel, forfatter eller andet info. KUN VÆRK ID'ER.
+//   Skriv værkerne i denne format: #værkId1, #værkId2, #værkId3, #værkId4, #værkId5
+//   `;

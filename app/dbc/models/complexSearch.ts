@@ -18,18 +18,22 @@ const allowedIndexes = [
   {
     searchIndexes: "phrase.mainlanguage",
     description:
-      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK! KUN PÅ DANSK. DU MÅ IKKE SKRIVE PÅ ENGELSK!",
+      "Sprog. Indexet er phrase.mainlanguage. SKRIV SPROGET PÅ DANSK. Skriv fulde navn på sproget. Eksempelvis: fransk, spansk, italiensk osv.) SKRIV SPROGET PÅ DANSK! KUN PÅ DANSK. DU MÅ IKKE SKRIVE PÅ ENGELSK! Udflyd kun hvis sproget er nævnt i samtalen.",
   },
   {
     searchIndexes: "worktype",
     description:
       "materiale type. Det kan kun være én af følgende (literature (bøger) , article(artikler), movie (film), music(musik), game(spil). Her er nogle eksempler: worktype=literature OR worktype=article OR worktype=movie OR worktype=music OR worktype=game",
   },
+  {
+    searchIndexes: "phrase.genreAndForm",
+    description: "Genre.  Her er nogle ",
+  },
 ];
 
 interface FormatedWork {
   title: string;
-  cover: string;
+  //cover: string;
   abstract: string;
   workId: string;
   creators: string[];
@@ -99,13 +103,6 @@ export async function searchByCQL(
           creators {
             display
           }
-          manifestations {
-            latest {
-              cover {
-                detail_500
-              }
-            }
-          }
         }
       }
     }
@@ -131,7 +128,7 @@ export async function searchByCQL(
         const formatedWork = {
           title: w.titles.main[0],
           abstract: w.abstract[0],
-          cover: w.manifestations[0]?.first?.cover?.detail_500,
+          // cover: w.manifestations[0]?.first?.cover?.detail_500,
           workId: w.workId,
           creators: w.creators.map((c: any) => c.display),
         };
