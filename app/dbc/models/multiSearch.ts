@@ -139,7 +139,7 @@ async function finalAnswer({
 }) {
   const systemPrompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
   
-  værker:  ${JSON.stringify(works.slice(0, 15))}
+  værker:  ${JSON.stringify(works.slice(0, 20))}
      
    Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
  

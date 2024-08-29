@@ -138,10 +138,10 @@ export async function searchWorks(
         limit: limit,
       },
     });
-    //filter for works that has an abstract. Look only on the first 15 works
+    //filter for works that has an abstract. Look only on the first 10 works
     const works = data?.search?.works
       ?.filter((w: any) => w?.abstract[0]?.length > 0)
-      .slice(0, 15);
+      .slice(0, 10);
 
     function formatedWorks(works: any[]) {
       return works.map((w) => {

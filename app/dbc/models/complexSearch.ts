@@ -122,7 +122,7 @@ export async function searchByCQL(
     console.log("cql", cql);
     const works = data?.complexSearch?.works
       ?.filter((w: any) => w?.abstract[0]?.length > 0)
-      .slice(0, 15);
+      .slice(0, 10);
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {
