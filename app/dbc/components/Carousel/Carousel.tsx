@@ -25,17 +25,11 @@ const GET_MATERIALS = gql`
         display
       }
       manifestations {
-        first {
+        latest {
           edition {
             publicationYear {
               display
             }
-          }
-        }
-        latest {
-          pid
-          cover {
-            detail
           }
         }
         mostRelevant {
@@ -158,7 +152,7 @@ function InfoBox({ selectedWork }: { selectedWork: any }) {
   }
 
   const publicationYear =
-    selectedWork?.manifestations?.first?.edition?.publicationYear?.display;
+    selectedWork?.manifestations?.latest?.edition?.publicationYear?.display;
   const link = `https://bibliotek.dk/materiale/titel/${encodeURIComponent(selectedWork?.workId)}`;
   const cover = getCoverImage(
     selectedWork?.manifestations?.mostRelevant,
@@ -204,7 +198,7 @@ function InfoBox({ selectedWork }: { selectedWork: any }) {
 
           {
             <p>
-              <strong> {`Udgivelsesår: `} </strong>
+              <strong> {`Udgivet: `} </strong>
               {`${publicationYear || " -"}`}
             </p>
           }
