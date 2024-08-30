@@ -142,10 +142,10 @@ export function MessageSelector(props: {
   }, [startIndex, endIndex]);
 
   const LATEST_COUNT = 4;
-
+  return null;
   return (
     <div className={styles["message-selector"]}>
-      <div className={styles["message-filter"]}>
+      {/* <div className={styles["message-filter"]}>
         <input
           type="text"
           placeholder={Locale.Select.Search}
@@ -186,7 +186,7 @@ export function MessageSelector(props: {
             }
           />
         </div>
-      </div>
+      </div> */}
 
       <div className={styles["messages"]}>
         {messages.map((m, i) => {

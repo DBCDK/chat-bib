@@ -109,13 +109,14 @@
     background-color: var(--gray);
 
     .chat-info {
-      background-color: var(--second);
+      //      background-color: var(--second);
+      border-bottom: 1px solid var(--dark-text);
       padding: 20px;
-      border-radius: 10px;
+      // border-radius: 10px;
       margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      align-items: flex-start;
       position: relative;
       overflow: hidden;
 
@@ -160,11 +161,11 @@
 
       .chat-info-item {
         font-size: 12px;
-        color: var(--primary);
+        // color: var(--primary);
         padding: 2px 15px;
         border-radius: 10px;
-        background-color: var(--white);
-        box-shadow: var(--card-shadow);
+        // background-color: var(--white);
+        // box-shadow: var(--card-shadow);
 
         &:not(:last-child) {
           margin-bottom: 5px;
@@ -206,7 +207,7 @@
         }
 
         @media screen and (max-width: 600px) {
-          $image-width: calc(calc(100vw/2)/var(--image-count));
+          $image-width: calc(calc(100vw / 2) / var(--image-count));
 
           .message-image-multi {
             width: $image-width;
@@ -214,13 +215,13 @@
           }
 
           .message-image {
-            max-width: calc(100vw/3*2);
+            max-width: calc(100vw / 3 * 2);
           }
         }
 
         @media screen and (min-width: 600px) {
-          $max-image-width: calc(900px/3*2/var(--image-count));
-          $image-width: calc(80vw/3*2/var(--image-count));
+          $max-image-width: calc(900px / 3 * 2 / var(--image-count));
+          $image-width: calc(80vw / 3 * 2 / var(--image-count));
 
           .message-image-multi {
             width: $image-width;
@@ -230,7 +231,7 @@
           }
 
           .message-image {
-            max-width: calc(100vw/3*2);
+            max-width: calc(100vw / 3 * 2);
           }
         }
 
@@ -267,5 +268,21 @@
     }
   }
 
-  .default-theme {}
+  .default-theme {
+  }
+}
+
+.newChatButton {
+  background-color: var(--primary);
+  width: 300px;
+  color: white;
+
+  margin: auto;
+  margin-bottom: 16px;
+}
+.newChatButton svg {
+  filter: invert(0) !important;
+}
+.chatBasicInfo {
+  margin-right: 10px;
 }

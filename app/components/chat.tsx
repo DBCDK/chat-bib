@@ -1243,22 +1243,31 @@ function _Chat() {
             </div>
           </div>
         )}
+        <div className={styles.topbarButtonContainer}>
+          <ChatAction
+            onClick={nextTheme}
+            //  text={Locale.Chat.InputActions.Theme[theme]}
+            icon={
+              <>
+                {theme === Theme.Auto ? (
+                  <AutoIcon />
+                ) : theme === Theme.Light ? (
+                  <LightIcon />
+                ) : theme === Theme.Dark ? (
+                  <DarkIcon />
+                ) : null}
+              </>
+            }
+          />
 
-        <ChatAction
-          onClick={nextTheme}
-          //  text={Locale.Chat.InputActions.Theme[theme]}
-          icon={
-            <>
-              {theme === Theme.Auto ? (
-                <AutoIcon />
-              ) : theme === Theme.Light ? (
-                <LightIcon />
-              ) : theme === Theme.Dark ? (
-                <DarkIcon />
-              ) : null}
-            </>
-          }
-        />
+          <IconButton
+            icon={<ExportIcon />}
+            title={Locale.Chat.Actions.Export}
+            onClick={() => {
+              setShowExport(true);
+            }}
+          />
+        </div>
 
         {!isMobileScreen && (
           <div className={`window-header-title ${styles["chat-body-title"]}`}>
