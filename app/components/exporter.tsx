@@ -32,7 +32,7 @@ import { Avatar } from "./emoji";
 import dynamic from "next/dynamic";
 import NextImage from "next/image";
 
-import { toBlob, toPng } from "html-to-image";
+import { toBlob, toPng, toJpeg } from "html-to-image";
 import { DEFAULT_MASK_AVATAR } from "../store/mask";
 
 import { prettyObject } from "../utils/format";
@@ -53,18 +53,18 @@ export function ExportMessageModal(props: { onClose: () => void }) {
       <Modal
         title={Locale.Export.Title}
         onClose={props.onClose}
-        footer={
-          <div
-            style={{
-              width: "100%",
-              textAlign: "center",
-              fontSize: 14,
-              opacity: 0.5,
-            }}
-          >
-            {Locale.Exporter.Description.Title}
-          </div>
-        }
+        // footer={
+        //   <div
+        //     style={{
+        //       width: "100%",
+        //       textAlign: "center",
+        //       fontSize: 14,
+        //       opacity: 0.5,
+        //     }}
+        //   >
+        //     {Locale.Exporter.Description.Title}
+        //   </div>
+        // }
       >
         <div style={{ minHeight: "40vh" }}>
           <MessageExporter />
@@ -521,8 +521,10 @@ export function ImagePreviewer(props: {
     console.log("previewRef", previewRef);
     const dom = previewRef.current;
     console.log("dom", dom);
-
-    if (!dom) return;
+    if (!dom) {
+      console.error("DOM element not found", dom);
+      return;
+    }
 
     const isApp = getClientConfig()?.isApp;
     console.log("isApp", isApp);
@@ -583,20 +585,20 @@ export function ImagePreviewer(props: {
   console.log("props.messages", props.messages);
   return (
     <div className={styles["image-previewer"]}>
-      <PreviewActions
+      {/* <PreviewActions
         copy={copy}
         download={download}
         showCopy={!isMobile}
         messages={props.messages}
+      /> */}
+      <IconButton
+        className={styles.newChatButton}
+        size={4}
+        icon={<DownloadIcon />}
+        text={"Gem som billede"}
+        onClick={download}
+        shadow
       />
-      {/* <IconButton
-          className={styles.newChatButton}
-          size={4}
-          icon={<DownloadIcon />}
-          text={"Exportér chatTT"}
-          onClick={download}
-          shadow
-        /> */}
       <div
         className={`${styles["preview-body"]} ${styles["default-theme"]}`}
         ref={previewRef}

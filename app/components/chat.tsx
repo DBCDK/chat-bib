@@ -1259,14 +1259,15 @@ function _Chat() {
               </>
             }
           />
-
-          <IconButton
-            icon={<ExportIcon />}
-            title={Locale.Chat.Actions.Export}
-            onClick={() => {
-              setShowExport(true);
-            }}
-          />
+          {false && (
+            <IconButton
+              icon={<ExportIcon />}
+              title={Locale.Chat.Actions.Export}
+              onClick={() => {
+                setShowExport(true);
+              }}
+            />
+          )}
         </div>
 
         {!isMobileScreen && (
