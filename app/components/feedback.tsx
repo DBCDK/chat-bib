@@ -18,12 +18,13 @@ export function FeedbackModal(props: {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [attachScreenshot, setAttachScreenshot] = useState(true);
+  const [showEmptyTextWarning, setShowEmptyTextWarning] = useState(false);
 
   const handleSendFeedback = async () => {
     const messages = session?.messages;
 
     if (feedbackText.trim() === "") {
-      alert("Please enter your feedback before submitting.");
+      setShowEmptyTextWarning(true);
       return;
     }
     try {
@@ -77,7 +78,7 @@ export function FeedbackModal(props: {
           <textarea
             id="chat-input"
             ref={inputRef}
-            className={styles["chat-input"]}
+            className={`${styles["chat-input"]} ${showEmptyTextWarning ? styles["textWarning"] : ""}`}
             placeholder={Locale.Feedback.Placeholder}
             onInput={(e) => setFeedbackText(e.currentTarget.value)}
             value={feedbackText}

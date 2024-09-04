@@ -10,8 +10,8 @@ import { log } from "dbc-node-logger";
  */
 function cleanText(inputText: string): string {
   const cleanedText = inputText
-    .replace(/PluginStatusComponent_dbc-general-model_/g, "")
-    .replace(/_?\[\]/g, "")
+    .replace(/PluginStatusComponent_dbc-general-model_/g, "\n")
+    .replace(/_?\[\]/g, "\n")
     .trim();
 
   return cleanedText;
@@ -37,11 +37,11 @@ async function handle(req: Request) {
       maxMessages: Infinity,
       maxConnections: 20,
     });
-    const recipients = process.env.FEEDBACK_MAILS;
+    const chatbibMail = process.env.FEEDBACK_MAIL;
 
-    if (!recipients) {
+    if (!chatbibMail) {
       //todo error dbc log
-      log.error("Error in feedback endpoint. env.FEEDBACK_MAILS is not set");
+      log.error("Error in feedback endpoint. env.FEEDBACK_MAIL is not set");
       return NextResponse.json({
         success: false,
         message: "Something went wrong.",
@@ -49,8 +49,8 @@ async function handle(req: Request) {
     }
     const parsedMessages = JSON.parse(messages);
     const mailOptions = {
-      from: "feedback@chatbib.dbc.dk",
-      to: recipients,
+      from: chatbibMail,
+      to: chatbibMail,
       subject: "Chatbib feedback",
       html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
