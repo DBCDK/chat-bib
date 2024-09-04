@@ -13,7 +13,7 @@ import MinIcon from "../icons/min.svg";
 import Locale from "../locales";
 
 import { createRoot } from "react-dom/client";
-import React, { HTMLProps, useEffect, useState } from "react";
+import React, { HTMLProps, useEffect, useRef, useState } from "react";
 import { IconButton } from "./button";
 
 export function Popover(props: {
@@ -103,6 +103,30 @@ interface ModalProps {
   onClose?: () => void;
 }
 export function Modal(props: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        props.onClose?.();
+      }
+    };
+
+    const onClickOutside = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        props.onClose?.();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onClickOutside);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onClickOutside);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -122,6 +146,7 @@ export function Modal(props: ModalProps) {
 
   return (
     <div
+      ref={modalRef}
       className={
         styles["modal-container"] + ` ${isMax && styles["modal-container-max"]}`
       }
