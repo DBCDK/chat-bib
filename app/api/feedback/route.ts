@@ -37,13 +37,14 @@ async function handle(req: Request) {
       maxMessages: Infinity,
       maxConnections: 20,
     });
-    const recipients = process.env.FEEDBACK_MAILS;
+    const recipients = "feedback.chatbib@dbc.dk"; //process.env.FEEDBACK_MAILS;
     //todo remove log
     log.info(
-      "ERROR from vector database client: " +
+      "In feedback endpoint " +
         JSON.stringify({
           feedbackText,
           messages,
+          recipients,
         }),
     );
     if (!recipients) {
