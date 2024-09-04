@@ -37,16 +37,8 @@ async function handle(req: Request) {
       maxMessages: Infinity,
       maxConnections: 20,
     });
-    const recipients = "feedback.chatbib@dbc.dk"; //process.env.FEEDBACK_MAILS;
-    //todo remove log
-    log.info(
-      "In feedback endpoint " +
-        JSON.stringify({
-          feedbackText,
-          messages,
-          recipients,
-        }),
-    );
+    const recipients = process.env.FEEDBACK_MAILS;
+
     if (!recipients) {
       //todo error dbc log
       log.error("Error in feedback endpoint. env.FEEDBACK_MAILS is not set");
