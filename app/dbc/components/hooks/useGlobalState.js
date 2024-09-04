@@ -1,3 +1,4 @@
+"use client";
 import useSWR, { mutate } from "swr";
 let globalState = {};
 

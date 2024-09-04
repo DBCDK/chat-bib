@@ -1,4 +1,3 @@
-import en from "./en";
 import da, { LocaleType } from "./da";
 
 import { merge } from "../utils/merge";
