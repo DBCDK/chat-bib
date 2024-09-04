@@ -32,7 +32,7 @@ import { Avatar } from "./emoji";
 import dynamic from "next/dynamic";
 import NextImage from "next/image";
 
-import { toBlob, toPng } from "html-to-image";
+import { toBlob, toPng, toJpeg } from "html-to-image";
 import { DEFAULT_MASK_AVATAR } from "../store/mask";
 
 import { prettyObject } from "../utils/format";
@@ -53,18 +53,18 @@ export function ExportMessageModal(props: { onClose: () => void }) {
       <Modal
         title={Locale.Export.Title}
         onClose={props.onClose}
-        footer={
-          <div
-            style={{
-              width: "100%",
-              textAlign: "center",
-              fontSize: 14,
-              opacity: 0.5,
-            }}
-          >
-            {Locale.Exporter.Description.Title}
-          </div>
-        }
+        // footer={
+        //   <div
+        //     style={{
+        //       width: "100%",
+        //       textAlign: "center",
+        //       fontSize: 14,
+        //       opacity: 0.5,
+        //     }}
+        //   >
+        //     {Locale.Exporter.Description.Title}
+        //   </div>
+        // }
       >
         <div style={{ minHeight: "40vh" }}>
           <MessageExporter />
@@ -153,10 +153,10 @@ export function MessageExporter() {
     useSteps(steps);
   const formats = ["text", "image", "json"] as const;
   type ExportFormat = (typeof formats)[number];
-
+  const [showImagePreview, setShowImagePReview] = useState(false);
   const [exportConfig, setExportConfig] = useState({
     format: "image" as ExportFormat,
-    includeContext: true,
+    includeContext: false,
   });
 
   function updateExportConfig(updater: (config: typeof exportConfig) => void) {
@@ -198,16 +198,16 @@ export function MessageExporter() {
   }
   return (
     <>
-      <Steps
+      {/* <Steps
         steps={steps}
         index={currentStepIndex}
         onStepChange={setCurrentStepIndex}
-      />
+      /> */}
       <div
         className={styles["message-exporter-body"]}
         style={currentStep.value !== "select" ? { display: "none" } : {}}
       >
-        <List>
+        {/* <List>
           <ListItem
             title={Locale.Export.Format.Title}
             subTitle={Locale.Export.Format.SubTitle}
@@ -242,16 +242,18 @@ export function MessageExporter() {
               }}
             ></input>
           </ListItem>
-        </List>
+        </List> */}
+
         <MessageSelector
           selection={selection}
           updateSelection={updateSelection}
           defaultSelectAll
         />
       </div>
-      {currentStep.value === "preview" && (
-        <div className={styles["message-exporter-body"]}>{preview()}</div>
-      )}
+
+      <div className={styles["message-exporter-body"]}>
+        {<ImagePreviewer messages={selectedMessages} topic={session.topic} />}
+      </div>
     </>
   );
 }
@@ -301,7 +303,53 @@ export function RenderExport(props: {
     </div>
   );
 }
+const onRenderMsgs = (msgs: ChatMessage[]) => {
+  var api: ClientApi;
+  // if (config.modelConfig.model.startsWith("gemini")) {
+  //   api = new ClientApi(ModelProvider.GeminiPro);
+  // } else if (identifyDefaultClaudeModel(config.modelConfig.model)) {
+  //   api = new ClientApi(ModelProvider.Claude);
+  // } else {
 
+  // }
+  api = new ClientApi(ModelProvider.GPT);
+  api
+    .share(msgs)
+    .then((res) => {
+      if (!res) return;
+      showModal({
+        title: Locale.Export.Share,
+        children: [
+          <input
+            type="text"
+            value={res}
+            key="input"
+            style={{
+              width: "100%",
+              maxWidth: "unset",
+            }}
+            readOnly
+            onClick={(e) => e.currentTarget.select()}
+          ></input>,
+        ],
+        actions: [
+          <IconButton
+            icon={<CopyIcon />}
+            text={Locale.Chat.Actions.Copy}
+            key="copy"
+            onClick={() => copyToClipboard(res)}
+          />,
+        ],
+      });
+      setTimeout(() => {
+        window.open(res, "_blank");
+      }, 800);
+    })
+    .catch((e) => {
+      console.error("[Share]", e);
+      showToast(prettyObject(e));
+    });
+};
 export function PreviewActions(props: {
   download: () => void;
   copy: () => void;
@@ -418,6 +466,7 @@ function ExportAvatar(props: { avatar: string }) {
   if (props.avatar === DEFAULT_MASK_AVATAR) {
     return (
       <img
+        //todo change to dbcdigital logo
         src={BotIcon.src}
         width={30}
         height={30}
@@ -470,7 +519,10 @@ export function ImagePreviewer(props: {
   const download = async () => {
     showToast(Locale.Export.Image.Toast);
     const dom = previewRef.current;
-    if (!dom) return;
+    if (!dom) {
+      console.error("DOM element not found", dom);
+      return;
+    }
 
     const isApp = getClientConfig()?.isApp;
 
@@ -493,7 +545,6 @@ export function ImagePreviewer(props: {
               },
             ],
           });
-
           if (result !== null) {
             const response = await fetch(blob);
             const buffer = await response.arrayBuffer();
@@ -514,6 +565,7 @@ export function ImagePreviewer(props: {
         refreshPreview();
       }
     } catch (error) {
+      console.log("error", error);
       showToast(Locale.Download.Failed);
     }
   };
@@ -524,37 +576,45 @@ export function ImagePreviewer(props: {
       dom.innerHTML = dom.innerHTML; // Refresh the content of the preview by resetting its HTML for fix a bug glitching
     }
   };
-
   return (
     <div className={styles["image-previewer"]}>
-      <PreviewActions
+      {/* <PreviewActions
         copy={copy}
         download={download}
         showCopy={!isMobile}
         messages={props.messages}
+      /> */}
+      <IconButton
+        className={styles.newChatButton}
+        size={4}
+        icon={<DownloadIcon />}
+        text={"Gem som billede"}
+        onClick={download}
+        shadow
       />
       <div
         className={`${styles["preview-body"]} ${styles["default-theme"]}`}
         ref={previewRef}
       >
         <div className={styles["chat-info"]}>
-          <div className={styles["logo"] + " no-dark"}>
+          {/* <div className={styles["logo"] + " no-dark"}>
             <NextImage
+              //todo change to dbcdigital logo
               src={ChatGptIcon.src}
               alt="logo"
               width={50}
               height={50}
             />
-          </div>
+          </div> */}
 
-          <div>
+          <div className={styles.chatBasicInfo}>
             <div className={styles["main-title"]}>ChatBib</div>
             <div className={styles["sub-title"]}>DBC Digital A/S</div>
-            <div className={styles["icons"]}>
+            {/* <div className={styles["icons"]}>
               <ExportAvatar avatar={config.avatar} />
               <span className={styles["icon-space"]}>&</span>
               <ExportAvatar avatar={mask.avatar} />
-            </div>
+            </div> */}
           </div>
           <div>
             <div className={styles["chat-info-item"]}>
@@ -567,10 +627,7 @@ export function ImagePreviewer(props: {
               {Locale.Exporter.Topic}: {session.topic}
             </div>
             <div className={styles["chat-info-item"]}>
-              {Locale.Exporter.Time}:{" "}
-              {new Date(
-                props.messages.at(-1)?.date ?? Date.now(),
-              ).toLocaleString()}
+              {Locale.Exporter.Time}: {props.messages[0]?.date ?? Date.now()}
             </div>
           </div>
         </div>

@@ -265,7 +265,7 @@ function DangerItems() {
   );
 }
 
-function CheckButton() {
+export function CheckButton() {
   const syncStore = useSyncStore();
 
   const couldCheck = useMemo(() => {

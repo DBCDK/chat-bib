@@ -214,7 +214,7 @@ export class DBCApi implements LLMApi {
         function getToken(line: string) {
           try {
             const jsonObj = JSON.parse(line?.replace("data: ", ""));
-            console.log(jsonObj);
+            //  console.log(jsonObj);
             if (!jsonObj?.token?.special) {
               return jsonObj?.token?.text || "";
             }

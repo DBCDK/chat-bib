@@ -21,6 +21,7 @@ import PromptIcon from "../icons/prompt.svg";
 import MaskIcon from "../icons/mask.svg";
 import MaxIcon from "../icons/max.svg";
 import MinIcon from "../icons/min.svg";
+import EmailIcon from "../icons/email.svg";
 import ResetIcon from "../icons/reload.svg";
 import BreakIcon from "../icons/break.svg";
 import SettingsIcon from "../icons/chat-settings.svg";
@@ -95,10 +96,13 @@ import { useMaskStore } from "../store/mask";
 import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
 import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
+
+import { FeedbackModal } from "./feedback";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
 import { MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
+import exp from "constants";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -342,6 +346,7 @@ function ChatAction(props: {
   text?: string;
   icon: JSX.Element;
   onClick: () => void;
+  expand?: boolean;
 }) {
   const iconRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -360,6 +365,12 @@ function ChatAction(props: {
       icon: iconWidth,
     });
   }
+
+  useEffect(() => {
+    if (props.expand) {
+      setTimeout(updateWidth, 1);
+    }
+  }, [props.expand]);
 
   return (
     <div
@@ -430,6 +441,7 @@ export function ChatActions(props: {
   showPromptHints: () => void;
   hitBottom: boolean;
   uploading: boolean;
+  setShowFeedback: (_: boolean) => void;
 }) {
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -510,6 +522,16 @@ export function ChatActions(props: {
 
   return (
     <div className={styles["chat-input-actions"]}>
+      <IconButton
+        className={styles.feedback}
+        text={Locale.Chat.InputActions.Feedback}
+        // icon={<EmailIcon />}
+        key="feedback"
+        onClick={() => {
+          //   props.onClose();
+          props.setShowFeedback(true);
+        }}
+      />
       {couldStop && (
         <ChatAction
           onClick={stopAll}
@@ -694,6 +716,7 @@ function _Chat() {
   const fontSize = config.fontSize;
 
   const [showExport, setShowExport] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState("");
@@ -1243,22 +1266,32 @@ function _Chat() {
             </div>
           </div>
         )}
-
-        <ChatAction
-          onClick={nextTheme}
-          //  text={Locale.Chat.InputActions.Theme[theme]}
-          icon={
-            <>
-              {theme === Theme.Auto ? (
-                <AutoIcon />
-              ) : theme === Theme.Light ? (
-                <LightIcon />
-              ) : theme === Theme.Dark ? (
-                <DarkIcon />
-              ) : null}
-            </>
-          }
-        />
+        <div className={styles.topbarButtonContainer}>
+          <ChatAction
+            onClick={nextTheme}
+            //  text={Locale.Chat.InputActions.Theme[theme]}
+            icon={
+              <>
+                {theme === Theme.Auto ? (
+                  <AutoIcon />
+                ) : theme === Theme.Light ? (
+                  <LightIcon />
+                ) : theme === Theme.Dark ? (
+                  <DarkIcon />
+                ) : null}
+              </>
+            }
+          />
+          {true && (
+            <IconButton
+              icon={<ExportIcon />}
+              title={Locale.Chat.Actions.Export}
+              onClick={() => {
+                setShowExport(true);
+              }}
+            />
+          )}
+        </div>
 
         {!isMobileScreen && (
           <div className={`window-header-title ${styles["chat-body-title"]}`}>
@@ -1577,6 +1610,7 @@ function _Chat() {
                 setUserInput("/");
                 onSearch("");
               }}
+              setShowFeedback={setShowFeedback}
             />
           }
           <label
@@ -1640,6 +1674,13 @@ function _Chat() {
 
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal
+          chatRef={scrollRef}
+          onClose={() => setShowFeedback(false)}
+        />
       )}
 
       {isEditingMessage && (
