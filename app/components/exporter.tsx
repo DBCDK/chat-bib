@@ -518,25 +518,20 @@ export function ImagePreviewer(props: {
 
   const download = async () => {
     showToast(Locale.Export.Image.Toast);
-    console.log("previewRef", previewRef);
     const dom = previewRef.current;
-    console.log("dom", dom);
     if (!dom) {
       console.error("DOM element not found", dom);
       return;
     }
 
     const isApp = getClientConfig()?.isApp;
-    console.log("isApp", isApp);
 
     try {
       const blob = await toPng(dom);
-      console.log("blob", blob);
       if (!blob) return;
 
       if (isMobile || (isApp && window.__TAURI__)) {
         if (isApp && window.__TAURI__) {
-          console.log("window.__TAURI__", window.__TAURI__);
           const result = await window.__TAURI__.dialog.save({
             defaultPath: `${props.topic}.png`,
             filters: [
@@ -550,7 +545,6 @@ export function ImagePreviewer(props: {
               },
             ],
           });
-          console.log("result", result);
           if (result !== null) {
             const response = await fetch(blob);
             const buffer = await response.arrayBuffer();
@@ -582,7 +576,6 @@ export function ImagePreviewer(props: {
       dom.innerHTML = dom.innerHTML; // Refresh the content of the preview by resetting its HTML for fix a bug glitching
     }
   };
-  console.log("props.messages", props.messages);
   return (
     <div className={styles["image-previewer"]}>
       {/* <PreviewActions

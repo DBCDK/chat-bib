@@ -42,8 +42,8 @@ export function FeedbackModal(props: {
 
       if (response.ok) {
         showToast("Tak for din feedback!");
-        setFeedbackText(""); // Clear the input after submission
-        props.onClose(); // Close the modal after successful submission
+        setFeedbackText("");
+        props.onClose();
       } else {
         showToast("Noget gik galt. Prøv igen.");
       }
