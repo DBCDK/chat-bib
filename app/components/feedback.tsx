@@ -21,7 +21,6 @@ export function FeedbackModal(props: {
 
   const handleSendFeedback = async () => {
     const messages = session?.messages;
-    const chatHtml = props.chatRef.current?.innerHTML || "";
 
     if (feedbackText.trim() === "") {
       alert("Please enter your feedback before submitting.");
@@ -36,7 +35,6 @@ export function FeedbackModal(props: {
         body: JSON.stringify({
           feedbackText: feedbackText,
           messages: attachScreenshot ? JSON.stringify(messages) : [],
-          chatHtml: attachScreenshot ? chatHtml : "",
         }),
       });
 

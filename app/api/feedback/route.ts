@@ -1,6 +1,7 @@
 import { decodeValue } from "@/app/dbc/components/constants";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { log } from "dbc-node-logger";
 
 /**
  * removes component prefixes and suffixes. Ex. PluginStatusComponent_dbc etc.
@@ -20,7 +21,7 @@ function cleanText(inputText: string): string {
 async function handle(req: Request) {
   try {
     const body = await req.json();
-    const { feedbackText, messages, chatHtml } = body;
+    const { feedbackText, messages } = body;
     if (!feedbackText) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -37,9 +38,17 @@ async function handle(req: Request) {
       maxConnections: 20,
     });
     const recipients = process.env.FEEDBACK_MAILS;
-
+    //todo remove log
+    log.info(
+      "ERROR from vector database client: " +
+        JSON.stringify({
+          feedbackText,
+          messages,
+        }),
+    );
     if (!recipients) {
       //todo error dbc log
+      log.error("Error in feedback endpoint. env.FEEDBACK_MAILS is not set");
       return NextResponse.json({
         success: false,
         message: "Something went wrong.",
