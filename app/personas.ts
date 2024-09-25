@@ -50,8 +50,7 @@ export const PERSONAS = [
   },
   {
     name: "Bibliotek.dk",
-    description:
-      "Denne model kan anbefale og søge efter værker på bibliotek.dk.",
+    description: "Få hjælp til at finde materialer på Bibliotek.dk.",
     image: "avatar1.svg",
     mask: {
       id: "100028",
@@ -73,9 +72,12 @@ export const PERSONAS = [
           date: "",
         },
       ],
-
+      availableModels: [
+        MODEL_NAMES.DBC_MULTI_SEARCH,
+        MODEL_NAMES.DBC_MULTI_SEARCH_NO_CONTEXT,
+      ],
       modelConfig: {
-        model: MODEL_NAMES.DBC_MULTI_SEARCH,
+        model: MODEL_NAMES.DBC_MULTI_SEARCH_NO_CONTEXT,
         temperature: 0.3,
         top_p: 1,
         max_tokens: 2000,

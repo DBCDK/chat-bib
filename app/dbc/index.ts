@@ -4,6 +4,7 @@ export type GenerateRequest = {
   say: Function;
   close: Function;
   conversationId?: string;
+  useContextForSearch?: Boolean;
 };
 export type CustomModel = {
   generate: (input: GenerateRequest) => void;
@@ -51,6 +52,7 @@ export enum MODEL_NAMES {
   DBC_GENERAL_MODEL = "dbc-general-model",
   DBC_VECTOR_DB = "dbc-vector-db",
   DBC_MULTI_SEARCH = "dbc-multi-search",
+  DBC_MULTI_SEARCH_NO_CONTEXT = "dbc-multi-search-no-context",
   DBC_FAKTA_CHAT = "dbc-fakta-chat",
 }
 

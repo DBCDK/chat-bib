@@ -103,6 +103,7 @@ import { useAllModels } from "../utils/hooks";
 import { MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
 import exp from "constants";
+import { DbcSettings } from "./dbcsettings";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -522,6 +523,7 @@ export function ChatActions(props: {
 
   return (
     <div className={styles["chat-input-actions"]}>
+      <DbcSettings />
       <IconButton
         className={styles.feedback}
         text={Locale.Chat.InputActions.Feedback}

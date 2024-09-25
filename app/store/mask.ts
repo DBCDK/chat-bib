@@ -5,6 +5,7 @@ import { ModelConfig, useAppConfig } from "./config";
 import { StoreKey } from "../constant";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
+import { MODEL_NAMES } from "../dbc";
 
 export type Mask = {
   id: string;
@@ -17,6 +18,7 @@ export type Mask = {
   modelConfig: ModelConfig;
   lang: Lang;
   builtin: boolean;
+  availableModels?: MODEL_NAMES[];
 };
 
 export const DEFAULT_MASK_STATE = {

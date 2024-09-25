@@ -180,7 +180,13 @@ async function finalAnswer({
   console.log("\n\n\n\n\n carousel to be serlized", carousel);
   Carousel.serialize({ say: say, workIds: carousel });
 }
-async function generate({ messages, parameters, say, close }: GenerateRequest) {
+async function generate({
+  messages,
+  parameters,
+  say,
+  close,
+  useContextForSearch = true,
+}: GenerateRequest) {
   // const vectorWorks = await vectorDBResults({
   //   messages,
   //   parameters,
@@ -191,10 +197,17 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   PluginStatus.serialize({
     say,
     pluginName: id,
-    description: `Søger efter værker...`,
+    description: useContextForSearch
+      ? "Bruger hele beskedhistorik til at danne søgninger"
+      : "Bruger seneste besked til at danne søgninger",
   });
+
+  const messagesForSearch = useContextForSearch
+    ? messages
+    : [messages[messages.length - 1]];
+
   const simpleSearchWorks = await simpleSearchResults({
-    messages,
+    messages: messagesForSearch,
     parameters,
     say,
     close,
@@ -206,7 +219,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     description: `Første søgning foretaget... `,
   });
   const complexSearchWorks = await complexSearchResults({
-    messages,
+    messages: messagesForSearch,
     parameters,
     say,
     close,
