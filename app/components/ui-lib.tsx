@@ -155,12 +155,12 @@ export function Modal(props: ModalProps) {
         <div className={styles["modal-title"]}>{props.title}</div>
 
         <div className={styles["modal-header-actions"]}>
-          <div
+          {/* <div
             className={styles["modal-header-action"]}
             onClick={() => setMax(!isMax)}
           >
             {isMax ? <MinIcon /> : <MaxIcon />}
-          </div>
+          </div> */}
           <div
             className={styles["modal-header-action"]}
             onClick={props.onClose}
@@ -172,16 +172,18 @@ export function Modal(props: ModalProps) {
 
       <div className={styles["modal-content"]}>{props.children}</div>
 
-      <div className={styles["modal-footer"]}>
-        {props.footer}
-        <div className={styles["modal-actions"]}>
-          {props.actions?.map((action, i) => (
-            <div key={i} className={styles["modal-action"]}>
-              {action}
-            </div>
-          ))}
+      {props.footer && (
+        <div className={styles["modal-footer"]}>
+          {props.footer}
+          <div className={styles["modal-actions"]}>
+            {props.actions?.map((action, i) => (
+              <div key={i} className={styles["modal-action"]}>
+                {action}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -493,6 +495,7 @@ export function Selector<T>(props: {
                 {selected ? (
                   <div
                     style={{
+                      marginLeft: "30px",
                       height: 10,
                       width: 10,
                       backgroundColor: "var(--primary)",
@@ -507,6 +510,94 @@ export function Selector<T>(props: {
           })}
         </List>
       </div>
+    </div>
+  );
+}
+
+export function ExpandablList(props: {
+  children: React.ReactNode;
+  id?: string;
+}) {
+  return (
+    <div className={styles["base-list"]} id={props.id}>
+      {props.children}
+    </div>
+  );
+}
+
+function BaseListItem(props: {
+  title: string;
+  subTitle?: string;
+  children?: JSX.Element | JSX.Element[];
+  icon?: JSX.Element;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={styles["base-list-item"] + ` ${props.className || ""}`}
+      onClick={props.onClick}
+    >
+      {props.children}
+      <div className={styles["list-header"]}>
+        {props.icon && <div className={styles["list-icon"]}>{props.icon}</div>}
+        <div className={styles["list-item-title"]}>
+          <div className={styles.flex}>{props.title}</div>
+          {props.subTitle && (
+            <div className={styles["list-item-sub-title"]}>
+              {props.subTitle}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+export function BaseSelector<T>(props: {
+  items: Array<{
+    title: string;
+    subTitle?: string;
+    value: T;
+  }>;
+  defaultSelectedValue?: T;
+  onSelection?: (selection: T[]) => void;
+  multiple?: boolean;
+}) {
+  return (
+    <div className={styles["baseselector-content"]}>
+      <ExpandablList>
+        {props.items.map((item, i) => {
+          const selected = props.defaultSelectedValue === item.value;
+          return (
+            <BaseListItem
+              className={styles["selector-item"]}
+              key={i}
+              title={item.title}
+              subTitle={item.subTitle}
+              onClick={() => {
+                props.onSelection?.([item.value]);
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    margin: 3,
+                    marginRight: 14,
+                    marginLeft: 12,
+                    height: 14,
+                    width: 14,
+                    backgroundColor: selected
+                      ? "var(--primary)"
+                      : "transparent",
+                    border: `1px solid var(--primary)`,
+                    borderRadius: 14,
+                  }}
+                ></div>
+              </div>
+            </BaseListItem>
+          );
+        })}
+      </ExpandablList>
     </div>
   );
 }

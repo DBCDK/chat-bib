@@ -1,0 +1,28 @@
+.modal {
+  h3 {
+    margin-top: 0px;
+  }
+}
+
+.description {
+  margin-bottom: 28px;
+}
+
+.settingsbutton {
+  margin-right: 16px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  border-radius: 20px;
+  font-size: 12px;
+  background-color: var(--white);
+  color: var(--black);
+  border: var(--border-in-light);
+  padding: 14px 10px;
+  animation: chat_slide-in__nvZgA ease 0.3s;
+  box-shadow: var(--card-shadow);
+  transition: width ease 0.3s;
+  align-items: center;
+  height: 16px;
+  width: var(--icon-width);
+  overflow: hidden;
+}
