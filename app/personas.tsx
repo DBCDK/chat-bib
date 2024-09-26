@@ -10,7 +10,7 @@ export const PERSONAS = [
   {
     name: "Chatbib",
     description:
-      "En chatbot, der kan hjælpe med at besvare generelle spørgsmål.",
+      "Chatbot, der kan hjælpe med at besvare generelle spørgsmål baseret på generativ AI og den viden der er indbygget i sprogmodellen.",
     image: "avatar4.svg",
     mask: {
       id: "100031",
@@ -50,7 +50,8 @@ export const PERSONAS = [
   },
   {
     name: "Bibliotek.dk",
-    description: "Få hjælp til at finde materialer på Bibliotek.dk.",
+    description:
+      "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
     image: "avatar1.svg",
     mask: {
       id: "100028",
@@ -94,8 +95,9 @@ export const PERSONAS = [
     },
   },
   {
-    name: "Faktalink",
-    description: "Find information fra Faktalink.",
+    name: "FaktaChat",
+    description:
+      "Chatbot der anvender en såkaldt RAG-model, hvor svarene baserer sig på fakta, som bibliotekerne kan stå inde for. Prototypen anvender foreløbig udelukkende artikler fra Faktalink, men kan henad vejen udbygges til at inkludere andre troværdige bibliotekskilder.",
     image: "avatar3.svg",
     mask: {
       id: "100030",
@@ -136,7 +138,23 @@ export const PERSONAS = [
   },
   {
     name: "Websøgning",
-    description: "Find information på internettet.",
+    description: (
+      <div>
+        Chatbot der anvender en søgemaskine der returnerer links til relevante
+        sider på Nettet uden reklamer og indblanding af økonomiske interesser.
+        Den anvender{" "}
+        <a
+          href="https://brave.com/search/api/"
+          target="_blank"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          Brave Search API
+        </a>
+        .
+      </div>
+    ),
     image: "avatar2.svg",
     mask: {
       id: "100029",
