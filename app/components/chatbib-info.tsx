@@ -74,7 +74,11 @@ const Accordion: React.FC<AccordionProps> = ({ content }) => {
             </div>
 
             <div
-              ref={(el) => (contentRefs.current[item.id] = el)}
+              ref={(el) => {
+                if (el) {
+                  contentRefs.current[item.id] = el;
+                }
+              }}
               className={styles.accordionContent}
               style={{
                 maxHeight: `${contentHeight}px`,
