@@ -37,7 +37,6 @@ padding-top: 20px;
   margin-bottom: 30px;
   cursor: pointer;
   transition: max-height 0.5s ease-in;
-  max-height: 90px;
   overflow: hidden;
   border-radius: 2px;
 
@@ -48,7 +47,6 @@ padding-top: 20px;
   }
 
   &.isOpen {
-    max-height: 550px;
     padding: 10px;
     .arrowIcon {
       transform: rotate(180deg) scale(2);
@@ -59,6 +57,7 @@ padding-top: 20px;
 .contentItem p {
   margin: 0;
   padding: 0;
+  padding-bottom: 8px;
   transition: opacity 0.3s ease-in-out;
   opacity: 0;
 }
@@ -123,5 +122,26 @@ padding-bottom: 20px;
         display: flex;
         justify-content: flex-start;
       }
+  }
+}
+
+.conversation  {
+  margin-left: 24px;
+
+  div {
+    margin-bottom: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    .role {
+      
+      font-weight: 600;
+    }
+    .content {
+      margin-left: 24px;
+
+      .actions {
+        // color: var(--dark-text);
+      }
+    }
   }
 }
