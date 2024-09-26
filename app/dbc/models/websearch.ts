@@ -188,7 +188,7 @@ Nuværende årstal: 2024
 
 Ud fra samtalen, skal du nedbryde brugerens forespørgsel til én eller maks tre meget simple Google søgninger.
 Hver søgning SKAL KUN svare på ét spørgsmål. UNDGÅ at lave søgninger der svarer på samme spørgsmål.
-Du skal returnere JSON liste (KUN indeholdende strenge). Lav søgningerne på både dansk og engelsk.
+Du skal returnere JSON liste (KUN indeholdende strenge).
 
 Eksempel input:
 
@@ -196,7 +196,7 @@ Hvad er forskellen i længde på den kinesiske og berlinmuren?
 
 Eksempel output
 
-["kinesiske mur længde", "chinese wall length", "berlinmuren længde", "berlin wall length"]
+["kinesiske mur længde", "berlinmuren længde"]
 
   `;
   const copy = [
@@ -205,7 +205,8 @@ Eksempel output
   ];
   const controller = new AbortController();
   let text = "";
-  const arrayMatcher = /\[(?:\s*"(?:[^"]*)"\s*,?)*\]/;
+  // Justér regex til at matche array uden JSON.parse
+  const arrayMatcher = /\[(.*)\]/s; // Matcher alt inden i firkantede parenteser, inklusive nye linjer
 
   return await new Promise(async (resolve) => {
     let res: string[] = [];
@@ -215,12 +216,22 @@ Eksempel output
       parameters,
       say: (chunk: any) => {
         text += chunk?.token?.text || "";
+
         const match = text.match(arrayMatcher);
-        if (match?.[0]) {
+        if (match?.[1]) {
           try {
-            res = JSON.parse(match?.[0]);
+            let possibleArray = match[1].trim();
+
+            // Splitter på strenge med eller uden komma eller newline som separator
+            res = possibleArray
+              .split(/"\s*(?:,|\n)\s*"/) // Splitter på kommaer eller linjeskift, omgivet af anførselstegn
+              .map((item) => item.replace(/^"|"$/g, "").trim()) // Fjerner anførselstegn og trimmer
+              .filter((item) => item.length > 0); // Filtrerer tomme elementer
+
             controller.abort();
-          } catch (e) {}
+          } catch (e) {
+            console.error("Error processing text:", e);
+          }
         }
       },
     });
@@ -269,10 +280,11 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     PluginStatus.serialize({
       say,
       pluginName: id,
-      description: `Jeg laver en websøgning...`,
+      description: `Laver søgestrenge...`,
     });
 
     queries = await detectQuestions({ messages, parameters });
+
     if (queries.length === 0) {
       say(
         "Sikke et antiklimaks, jeg kunne ikke finde ud af at lave søgninger!",
@@ -291,7 +303,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   for (let i = 0; i < queries.length; i++) {
     const q = queries[i];
 
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 50));
     PluginStatus.serialize({
       say,
       pluginName: id,
