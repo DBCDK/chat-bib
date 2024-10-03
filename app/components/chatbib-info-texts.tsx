@@ -24,7 +24,20 @@ export default [
   {
     id: "privatliv",
     title: "Privatliv og GDPR",
-    text: "ChatBib samler ikke data op om dig. Parterne bag ChatBib har et kompromisløst fokus på privatliv og GDPR.\nSprogmodeller og Chat afvikles på DBCs datacentre i Danmark.",
+    text: (
+      <div>
+        <p>
+          ChatBib samler ikke data op om dig. Parterne bag ChatBib har et
+          kompromisløst fokus på privatliv og GDPR. Sprogmodeller og Chat
+          afvikles på DBCs datacentre i Danmark.
+        </p>
+        <p>
+          ChatBib er et system baseret på AI og som bruger skal du derfor vide
+          at det er en maskine du interagere med og den tekst du ser er
+          genereret af AI.
+        </p>
+      </div>
+    ),
   },
 
   {

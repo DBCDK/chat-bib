@@ -174,8 +174,9 @@ export function SideBar(props: { className?: string }) {
       <div className={styles["sidebar-disclaimer"]}>
         <h2>Disclaimer</h2>
         <p>
-          ChatBib er en prototype designet til at udforske ny teknologi. Den kan
-          give forkerte svar. <Link to={Path.Home}>Læs mere her</Link>.
+          ChatBib er en prototype designet til at udforske ny teknologi. Som
+          bruger skal du vide at de svar du får er genereret af AI og kan være
+          forkerte. <Link to={Path.Home}>Læs mere her</Link>.
         </p>
       </div>
       {/* 
