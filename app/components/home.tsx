@@ -33,6 +33,7 @@ import { useAccessStore } from "../store";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { initializeApollo } from "../client/apolloClient";
 import { ApolloProvider } from "@apollo/client";
+import Cookies from "./cookies";
 
 const client = initializeApollo();
 
@@ -139,6 +140,8 @@ function Screen() {
   const config = useAppConfig();
   const location = useLocation();
   const isHome = location.pathname === Path.Home;
+  const isCookies = location.pathname === Path.Cookies;
+
   const isAuth = location.pathname === Path.Auth;
   const isMobileScreen = useMobileScreen();
   const shouldTightBorder = !isHome; //true
@@ -167,7 +170,7 @@ function Screen() {
         </>
       ) : (
         <>
-          {!isHome && (
+          {!isCookies && !isHome && (
             <SideBar className={showSideBar ? styles["sidebar-show"] : ""} />
           )}
 
@@ -181,6 +184,7 @@ function Screen() {
               {/* <Route path={Path.Masks} element={<MaskPage />} /> */}
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
+              <Route path={Path.Cookies} element={<Cookies />} />
             </Routes>
           </div>
         </>
