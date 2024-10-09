@@ -11,16 +11,19 @@ const dispatcher =
     : new ProxyAgent("http://dmzproxy.dbc.dk:3128");
 export async function search(q: string): Promise<SearchResult[]> {
   const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(q)}`;
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "X-Subscription-Token": serverConfig.braveKey || "",
-      "cache-control": "no-cache",
-    },
-    dispatcher,
-  });
-  const text: any = await res.text();
+
+  let res;
+  let text: string = "";
   try {
+    res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "X-Subscription-Token": serverConfig.braveKey || "",
+        "cache-control": "no-cache",
+      },
+      dispatcher,
+    });
+    text = await res.text();
     const json = JSON.parse(text);
 
     // console.log(JSON.stringify(json, null, 2));
@@ -33,12 +36,13 @@ export async function search(q: string): Promise<SearchResult[]> {
         };
       }) || []
     );
-  } catch (e) {
+  } catch (e: any) {
     log.error(
       "ERROR from brave search api: " +
         JSON.stringify({
           url,
           text,
+          stacktrace: e.stack,
         }),
     );
     return [];
