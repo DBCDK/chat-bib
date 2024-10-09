@@ -7,6 +7,7 @@ import { type Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerSideConfig } from "./config/server";
 import { GoogleTagManager } from "@next/third-parties/google";
+import Script from "next/script";
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
@@ -33,8 +34,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="da">
       <head>
+        <Script
+          id="Cookiebot"
+          src="https://consent.cookiebot.com/uc.js"
+          data-cbid={process.env.NEXT_PUBLIC_COOKIEBOT_ID}
+          data-blockingmode="auto"
+          type="text/javascript"
+        ></Script>
         <meta name="config" content={JSON.stringify(getClientConfig())} />
         <meta
           name="viewport"
