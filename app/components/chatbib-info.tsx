@@ -151,6 +151,12 @@ export function ChatbibIntro() {
               </a>
               <br />
             </p>
+
+            <p>
+              <a className="external-link" onClick={() => Cookiebot.show()}>
+                Administrér cookies
+              </a>
+            </p>
           </div>
 
           <div className={styles.logoContainer}>

@@ -33,7 +33,6 @@ import { useAccessStore } from "../store";
 import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { initializeApollo } from "../client/apolloClient";
 import { ApolloProvider } from "@apollo/client";
-import Cookies from "./cookies";
 
 const client = initializeApollo();
 
@@ -140,7 +139,6 @@ function Screen() {
   const config = useAppConfig();
   const location = useLocation();
   const isHome = location.pathname === Path.Home;
-  const isCookies = location.pathname === Path.Cookies;
 
   const isAuth = location.pathname === Path.Auth;
   const isMobileScreen = useMobileScreen();
@@ -167,12 +165,12 @@ function Screen() {
         </>
       ) : (
         <>
-          {!isCookies && !isHome && (
+          {!isHome && (
             <SideBar className={showSideBar ? styles["sidebar-show"] : ""} />
           )}
 
           <div
-            className={` ${isHome || isCookies ? "" : styles["window-content"]} ${isCookies ? styles["cookies-container"] : ""}`}
+            className={` ${isHome ? "" : styles["window-content"]}`}
             id={SlotID.AppBody}
           >
             <Routes>
@@ -181,7 +179,6 @@ function Screen() {
               {/* <Route path={Path.Masks} element={<MaskPage />} /> */}
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
-              <Route path={Path.Cookies} element={<Cookies />} />
             </Routes>
           </div>
         </>
