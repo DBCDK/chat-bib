@@ -28,3 +28,5 @@ declare interface Window {
     };
   };
 }
+//cookiebot script
+declare const Cookiebot: any;
