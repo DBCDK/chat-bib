@@ -837,7 +837,7 @@ function _Chat() {
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
     setAutoScroll(true);
-    const modelName = session.mask.name;
+    const modelName = session?.mask?.name;
     trackMatomoEvent("Chat", "Send message", modelName);
   };
 
