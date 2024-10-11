@@ -151,9 +151,6 @@ function Screen() {
   useEffect(() => {
     loadAsyncGoogleFont();
   }, []);
-  console.log("isHome", isHome);
-  console.log(" location.pathname", location.pathname);
-  console.log("Path.Home", Path.Home);
 
   return (
     <div
@@ -175,7 +172,7 @@ function Screen() {
           )}
 
           <div
-            className={` ${isHome ? "" : styles["window-content"]}`}
+            className={` ${isHome || isCookies ? "" : styles["window-content"]} ${isCookies ? styles["cookies-container"] : ""}`}
             id={SlotID.AppBody}
           >
             <Routes>
