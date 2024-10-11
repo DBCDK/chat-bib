@@ -60,6 +60,7 @@ import {
   getMessageTextContent,
   getMessageImages,
   isVisionModel,
+  trackMatomoEvent,
 } from "../utils";
 
 import { compressImage } from "@/app/utils/chat";
@@ -836,6 +837,8 @@ function _Chat() {
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
     setAutoScroll(true);
+    const modelName = session?.mask?.name;
+    trackMatomoEvent("Chat", "Send message", modelName);
   };
 
   const onPromptSelect = (prompt: RenderPompt) => {
