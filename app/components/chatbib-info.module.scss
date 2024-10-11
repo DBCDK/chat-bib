@@ -7,13 +7,17 @@
   width: 100vw;
   padding: 10px 20px;
   user-select: text;
-}
-.container p{
-  line-height: 24px;
 
+  @media (max-width: 550px) {
+    padding-left: 30px;
+    padding-top: 30px;
+  }
+}
+.container p {
+  line-height: 24px;
 }
 .content {
-padding-top: 20px;
+  padding-top: 20px;
   max-width: 750px;
 
   @media screen and (max-width: 800px) {
@@ -88,44 +92,45 @@ padding-top: 20px;
 .arrowIcon {
   transform: scale(2);
   margin-right: 10px;
-  transition: transform 0.3s ease; 
-
+  transition: transform 0.3s ease;
 }
 
-.footer{
+.footer {
   margin-top: 100px;
   padding-top: 20px;
   border-top: var(--border-in-light);
-padding-bottom: 20px;
+  padding-bottom: 20px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   width: 100%;
   gap: 10px;
   align-items: flex-start;
-  h4{
+  h4 {
     margin-bottom: 0px;
   }
-  p{
-  margin-top: 10px;;
+  p {
+    margin-top: 10px;
   }
-.logoContainer{
-  display: flex;
-  justify-content: flex-end;
-}
+  .logoContainer {
+    display: flex;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 550px) {
   .footer {
-      grid-template-columns: 1fr;
-      grid-row-gap: 10px; 
-      .logoContainer{
-        display: flex;
-        justify-content: flex-start;
-      }
+    grid-template-columns: 1fr;
+    grid-row-gap: 10px;
+    padding-left: 10px;
+
+    .logoContainer {
+      display: flex;
+      justify-content: flex-start;
+    }
   }
 }
 
-.conversation  {
+.conversation {
   margin-left: 24px;
 
   div {
@@ -133,7 +138,6 @@ padding-bottom: 20px;
     margin-top: 12px;
     font-size: 13px;
     .role {
-      
       font-weight: 600;
     }
     .content {
@@ -145,7 +149,7 @@ padding-bottom: 20px;
     }
   }
 }
-.cookieButton{
+.cookieButton {
   color: -webkit-link;
   cursor: pointer;
   text-decoration: underline;
