@@ -167,7 +167,7 @@ export function NewChat() {
                 className={styles["persona"]}
                 onClick={() => {
                   startChat(persona.mask);
-                  trackMatomoEvent("Chat", "Click on persona", persona.name);
+                  trackMatomoEvent("Chat", "Click on persona", persona?.name);
                 }}
               >
                 <h2>{persona.name}</h2>
