@@ -143,7 +143,6 @@ const CustomComponent = ({ children }: any) => {
 };
 
 function _MarkDownContent(props: { content: string }) {
-  console.log("MARKDOWN CONTENT", props.content);
   const escapedContent = useMemo(() => {
     return escapeBrackets(escapeDollarNumber(props.content));
   }, [props.content]);

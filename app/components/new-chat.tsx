@@ -15,7 +15,7 @@ import { useCommand } from "../command";
 import { showConfirm } from "./ui-lib";
 import { BUILTIN_MASK_STORE } from "../masks";
 import { Persona, PERSONAS } from "../personas";
-import { useMobileScreen } from "../utils";
+import { trackMatomoEvent, useMobileScreen } from "../utils";
 
 function MaskItem(props: { mask: Mask; onClick?: () => void }) {
   return (
@@ -165,7 +165,10 @@ export function NewChat() {
               <div
                 key={persona.name}
                 className={styles["persona"]}
-                onClick={() => startChat(persona.mask)}
+                onClick={() => {
+                  startChat(persona.mask);
+                  trackMatomoEvent("Chat", "Click on persona", persona.name);
+                }}
               >
                 <h2>{persona.name}</h2>
                 <p>{persona.description}</p>

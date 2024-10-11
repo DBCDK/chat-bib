@@ -264,3 +264,14 @@ export function isVisionModel(model: string) {
     visionKeywords.some((keyword) => model.includes(keyword)) || isGpt4Turbo
   );
 }
+
+//track maotmo event
+export const trackMatomoEvent = (
+  category: string,
+  action: string,
+  name?: string,
+): void => {
+  if (typeof window !== "undefined" && window._paq) {
+    window._paq.push(["trackEvent", category, action, name]);
+  }
+};

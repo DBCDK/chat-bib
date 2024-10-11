@@ -27,6 +27,5 @@ export function setGlobalState(key, value) {
 }
 
 export function getGlobalState(key) {
-  console.log("globalState", globalState);
   return globalState[key];
 }

@@ -57,7 +57,7 @@ export const PERSONAS = [
       id: "100028",
       createdAt: 1688899480410,
       avatar: "1f47e",
-      name: "Bibliotekaren Birgitte",
+      name: "Bibliotek.dk",
       context: [
         {
           id: "Copilot-0",
@@ -103,7 +103,7 @@ export const PERSONAS = [
       id: "100030",
       createdAt: 1688899480410,
       avatar: "1f47e",
-      name: "Faktalink",
+      name: "FaktaChat",
       context: [
         {
           id: "Copilot-0",
