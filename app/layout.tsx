@@ -53,7 +53,7 @@ export default function RootLayout({
         />
         <Script
           id="Cookiebot"
-          src="https://consent.cookiebot.com/uc.js"
+          src="https://consent.cookiebot.eu/uc.js"
           data-cbid={process.env.NEXT_PUBLIC_COOKIEBOT_ID}
           data-blockingmode="auto"
           type="text/javascript"
