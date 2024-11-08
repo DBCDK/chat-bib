@@ -263,9 +263,6 @@ Command-line tool to call:
       lines = lines.map((line: string, index: number) =>
         index === lines.length - 1 ? line : line + "\n",
       );
-      //   console.log("lines: ", lines);
-      //   console.log("Processing new chunk:", chunk);
-      //   console.log("Current text:", text);
 
       for (let i = offset; i < lines.length; i++) {
         let line = lines[i];

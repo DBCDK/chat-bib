@@ -92,10 +92,10 @@ export async function searchWorks(
 
   const SEARCH_WORKS_QUERY = gql`
     query Example_BasicSearch(
-      $q: SearchQuery!
+      $q: SearchQueryInput!
       $offset: Int!
-      $limit: PaginationLimit!
-      $filters: SearchFilters!
+      $limit: PaginationLimitScalar!
+      $filters: SearchFiltersInput!
     ) {
       search(q: $q, filters: $filters) {
         works(offset: $offset, limit: $limit) {
@@ -207,7 +207,6 @@ Du returnerer KUN dette json format, aldrig andet:
       say: (chunk: any) => {
         text += chunk?.token?.text || "";
         const noSpaces = text.replace(/\s/g, "");
-        console.log("text", text);
         if (noSpaces.includes('"ns":1')) {
           shouldSearch = true;
           controller.abort();

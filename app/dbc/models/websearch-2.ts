@@ -10,7 +10,7 @@ const SEARCH_WORKS_QUERY = gql`
   query Example_BasicSearch(
     $q: SearchQuery!
     $offset: Int!
-    $limit: PaginationLimit!
+    $limit: PaginationLimitScalar!
   ) {
     search(q: $q) {
       works(offset: $offset, limit: $limit) {
@@ -363,7 +363,6 @@ Eksempel:
       parameters,
       say: (chunk: any) => {
         text += chunk?.token?.text || "";
-        console.log(text);
         const match = text.match(arrayMatcher);
         if (match?.[0]) {
           try {

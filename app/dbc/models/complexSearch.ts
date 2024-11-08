@@ -89,7 +89,7 @@ export async function searchByCQL(
     query Example_ComplexSearch(
       $cql: String!
       $offset: Int!
-      $limit: PaginationLimit!
+      $limit: PaginationLimitScalar!
     ) {
       complexSearch(cql: $cql) {
         hitcount

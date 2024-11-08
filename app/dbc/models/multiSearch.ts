@@ -166,18 +166,17 @@ async function finalAnswer({
     say,
   });
 
-  //  say("\n\n\n\n");
-  console.log("\n\nfinal answer works!!: ", works, "\n\n\n works");
-  console.log("\n\nfinal answer works!!: ", works?.length, "\n\n\n works");
+  console.log("\n\nfinal answer: ", finalAnswer);
 
   const carousel: string[] = [];
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
+      console.log("carousel.works.forEach", work);
+
       //MaterialCard.serialize({ say, workId: work.workId });
       carousel.push(work.workId);
     }
   });
-  console.log("\n\n\n\n\n carousel to be serlized", carousel);
   Carousel.serialize({ say: say, workIds: carousel });
 }
 async function generate({
@@ -212,7 +211,7 @@ async function generate({
     say,
     close,
   });
-
+  console.log("\n\n\nsimpleSearchWorksss🎂", simpleSearchWorks?.length);
   PluginStatus.serialize({
     say,
     pluginName: id,
@@ -224,34 +223,18 @@ async function generate({
     say,
     close,
   });
-  //say("\nFørste søgning foretaget... ");
-  //say(`Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`);
-  // console.log(
-  //   `Jeg fandt ${complexSearchWorks.length} værker i complex search \n\n`,
-  // );
-  // console.log("\n\n\n\ncomplexSearchWorks", complexSearchWorks);
 
-  //say("\nAnden søgning foretaget... ");
+  console.log("\n\n\ncomplexSearchWorks ☀️🎨", complexSearchWorks?.length);
+
   PluginStatus.serialize({
     say,
     pluginName: id,
     description: `Anden søgning foretaget... `,
   });
-  //  say(`Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`);
-  console.log(
-    `Jeg fandt ${simpleSearchWorks.length} værker i simple search \n\n`,
-  );
-
-  // console.log("\n\n\n\nimpleSearchWorks", simpleSearchWorks);
-  //filter away same results
-  //...complexSearchWorks,
   const works = [...complexSearchWorks, ...simpleSearchWorks].filter(
     (work, index, self) =>
       index === self.findIndex((w) => w.workId === work.workId),
   );
-  console.log("works", works);
-  //const works = [...vectorWorks, ...complexSearchWorks, ...simpleSearchWorks];
-  //say(`Jeg fandt i alt ${works.length} værker\n\n`);
 
   if (works.length === 0) {
     say("Jeg fandt desværre ingen værker. Prøv at stille et andet spørgsmål");

@@ -137,7 +137,6 @@ export class ClientApi {
         },
       ]);
 
-    console.log("[Share]", messages, msgs);
     const clientConfig = getClientConfig();
     const proxyUrl = "/sharegpt";
     const rawUrl = "https://sharegpt.com/api/conversations";
@@ -154,7 +153,6 @@ export class ClientApi {
     });
 
     const resJson = await res.json();
-    console.log("[Share]", resJson);
     if (resJson.id) {
       return `https://shareg.pt/${resJson.id}`;
     }

@@ -97,6 +97,10 @@ function Carousel({
     skip: !complete || !workIds,
   });
 
+  console.log("error", error);
+  console.log("data", data);
+  console.log("loading", loading);
+
   const [selectedWork, setSelectedWork] = useState<any>(null);
 
   useEffect(() => {

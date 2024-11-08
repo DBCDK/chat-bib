@@ -108,8 +108,6 @@ export class TGIApi implements LLMApi {
       baseUrl = "https://" + baseUrl;
     }
 
-    console.log("[Proxy Endpoint] ", baseUrl, path);
-
     return [baseUrl, path].join("/");
   }
 
@@ -148,8 +146,6 @@ export class TGIApi implements LLMApi {
     if (visionModel && modelConfig.model.includes("preview")) {
       requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
     }
-
-    console.log("[Request] openai payload: ", requestPayload);
 
     const shouldStream = !!options.config.stream;
     const controller = new AbortController();
@@ -353,7 +349,6 @@ export class TGIApi implements LLMApi {
 
     const resJson = (await res.json()) as OpenAIListModelResponse;
     const chatModels = resJson.data?.filter((m) => m.id.startsWith("gpt-"));
-    console.log("[Models]", chatModels);
 
     if (!chatModels) {
       return [];
