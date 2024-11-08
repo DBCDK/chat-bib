@@ -21,7 +21,7 @@ function cleanText(inputText: string): string {
 async function handle(req: Request) {
   try {
     const body = await req.json();
-    const { feedbackText, messages } = body;
+    const { feedbackText, messages, maskName } = body;
     if (!feedbackText) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -51,11 +51,15 @@ async function handle(req: Request) {
     const mailOptions = {
       from: chatbibMail,
       to: chatbibMail,
-      subject: "Chatbib feedback",
+      subject: `Feedback (${maskName})`,
       html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
         <h2 style="color: #333;">Ny Feedback</h2>
-        
+
+       <h3 style="color: #0056b3;">Modelnavn:</h3>
+        <p style="margin-bottom: 20px;">
+          ${maskName}
+        </p>
         <h3 style="color: #0056b3;">Feedback tekst:</h3>
         <p style="margin-bottom: 20px;">
           ${feedbackText}

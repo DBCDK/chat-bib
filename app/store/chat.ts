@@ -314,7 +314,6 @@ export const useChatStore = createPersistStore(
         const modelConfig = session.mask.modelConfig;
 
         const userContent = fillTemplateWith(content, modelConfig);
-        console.log("[User Input] after template: ", userContent);
 
         let mContent: string | MultimodalContent[] = userContent;
 
@@ -620,13 +619,6 @@ export const useChatStore = createPersistStore(
         }
 
         const lastSummarizeIndex = session.messages.length;
-
-        console.log(
-          "[Chat History] ",
-          toBeSummarizedMsgs,
-          historyMsgLength,
-          modelConfig.compressMessageLengthThreshold,
-        );
 
         if (
           (toBeSummarizedMsgs.length >= modelConfig.historyMessageCount ||

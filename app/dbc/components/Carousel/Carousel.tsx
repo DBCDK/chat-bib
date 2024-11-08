@@ -157,7 +157,7 @@ function InfoBox({ selectedWork }: { selectedWork: any }) {
   const cover = getCoverImage(
     selectedWork?.manifestations?.mostRelevant,
   )?.detail;
-  console.log("selectedWork", selectedWork);
+
   return (
     <div className={styles.infoBox}>
       <div className={styles.divider}></div>
