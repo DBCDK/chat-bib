@@ -8,7 +8,7 @@ import {
 import styles from "./MaterialCard.module.css";
 
 const GET_MATERIAL = gql`
-  query Get_Work($workId: String!) {
+  query Chatbib_Get_Work($workId: String!) {
     work(id: $workId) {
       workId
       titles {

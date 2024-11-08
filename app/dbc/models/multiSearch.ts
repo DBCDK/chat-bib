@@ -44,11 +44,6 @@ async function complexSearchResults({
       description: `Søger på ${cql}`,
     });
 
-    // say("\nLaver søgning med følgende cql: " + cql + "\n\n");
-
-    console.log(
-      "\n\n\nLaver complex søgning med følgende cql: " + cql + "\n\n",
-    );
     return await searchByCQL(cql, 0, 50);
   } catch (error) {
     return [];
@@ -75,16 +70,6 @@ async function simpleSearchResults({
     },
     filters: { ...searchObject.filters },
   };
-  //   say(
-  //     "\nLaver søgning med følgende query: " +
-  //       JSON.stringify(searchQuery) +
-  //       "\n\n",
-  //   );
-  console.log(
-    "\nLaver simple search søgning med følgende query: " +
-      JSON.stringify(searchQuery) +
-      "\n\n",
-  );
 
   PluginStatus.serialize({
     say,
@@ -109,12 +94,8 @@ async function vectorDBResults({
       parameters,
       say,
     });
-    // say("\nVector søgning  q: " + searchQuery + "\n\n");
-    console.log("\nVector søgning  q: " + searchQuery + "\n\n");
 
     if (searchQuery && searchQuery !== "null") {
-      console.log("\n\n\n\n\n\n\n\nLaver søgning til vector DB: ", searchQuery);
-
       const works = await searchVectorWorks(searchQuery);
       return works;
     } else {
@@ -166,13 +147,9 @@ async function finalAnswer({
     say,
   });
 
-  console.log("\n\nfinal answer: ", finalAnswer);
-
   const carousel: string[] = [];
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
-      console.log("carousel.works.forEach", work);
-
       //MaterialCard.serialize({ say, workId: work.workId });
       carousel.push(work.workId);
     }
@@ -211,7 +188,6 @@ async function generate({
     say,
     close,
   });
-  console.log("\n\n\nsimpleSearchWorksss🎂", simpleSearchWorks?.length);
   PluginStatus.serialize({
     say,
     pluginName: id,
@@ -223,8 +199,6 @@ async function generate({
     say,
     close,
   });
-
-  console.log("\n\n\ncomplexSearchWorks ☀️🎨", complexSearchWorks?.length);
 
   PluginStatus.serialize({
     say,

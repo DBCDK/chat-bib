@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useWindowSize } from "@/app/utils";
 
 const GET_MATERIALS = gql`
-  query Get_Works($workIds: [String!]!) {
+  query Chatbib_Get_Works_Carosuel($workIds: [String!]!) {
     works(id: $workIds) {
       workId
       titles {
@@ -96,10 +96,6 @@ function Carousel({
     variables: { workIds },
     skip: !complete || !workIds,
   });
-
-  console.log("error", error);
-  console.log("data", data);
-  console.log("loading", loading);
 
   const [selectedWork, setSelectedWork] = useState<any>(null);
 
