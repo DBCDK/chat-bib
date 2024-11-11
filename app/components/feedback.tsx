@@ -22,7 +22,7 @@ export function FeedbackModal(props: {
 
   const handleSendFeedback = async () => {
     const messages = session?.messages;
-
+    const maskName = session?.mask?.name;
     if (feedbackText.trim() === "") {
       setShowEmptyTextWarning(true);
       return;
@@ -36,6 +36,7 @@ export function FeedbackModal(props: {
         body: JSON.stringify({
           feedbackText: feedbackText,
           messages: attachScreenshot ? JSON.stringify(messages) : [],
+          maskName: maskName,
         }),
       });
 
@@ -47,7 +48,6 @@ export function FeedbackModal(props: {
         showToast("Noget gik galt. Prøv igen.");
       }
     } catch (error) {
-      console.error("Error submitting feedback:", error);
       showToast("Noget gik galt. Prøv igen.");
     }
   };

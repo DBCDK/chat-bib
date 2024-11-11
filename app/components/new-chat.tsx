@@ -77,7 +77,6 @@ export function NewChat() {
   const isMobileScreen = useMobileScreen();
   const masks = maskStore.getAll();
   const exam = masks.find((msk) => msk.lang === "da");
-  console.log("exam", exam);
 
   const groups = useMaskGroup(masks);
 

@@ -84,12 +84,11 @@ export async function searchByCQL(
   limit: number = 35,
 ): Promise<FormatedWork[]> {
   const client = initializeApollo();
-  console.log("searchByCQL.lmit", limit);
   const COMPLEX_SEARCH_QUERY = gql`
-    query Example_ComplexSearch(
+    query Chatbib_ComplexSearch(
       $cql: String!
       $offset: Int!
-      $limit: PaginationLimit!
+      $limit: PaginationLimitScalar!
     ) {
       complexSearch(cql: $cql) {
         hitcount

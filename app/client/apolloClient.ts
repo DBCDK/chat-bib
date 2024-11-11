@@ -11,7 +11,7 @@ const clientConfig = getClientConfig();
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 const httpLink = new HttpLink({
-  uri: "https://fbi-api.dbc.dk/bibdk21/graphql",
+  uri: process.env.NEXT_PUBLIC_FBI_API_ENDPOINT,
 });
 
 const authLink = setContext((_, { headers }) => {

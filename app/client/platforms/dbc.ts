@@ -86,8 +86,6 @@ export class DBCApi implements LLMApi {
       baseUrl = "https://" + baseUrl;
     }
 
-    console.log("[Proxy Endpoint] ", baseUrl, path);
-
     return [baseUrl, path].join("/");
   }
 
@@ -128,8 +126,6 @@ export class DBCApi implements LLMApi {
       requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
     }
 
-    console.log("[Request] dbc payload: ", requestPayload);
-
     const shouldStream = !!options.config.stream;
     const controller = new AbortController();
     options.onController?.(controller);
@@ -153,8 +149,6 @@ export class DBCApi implements LLMApi {
         conversationId,
       };
 
-      console.log({ llmRequest });
-
       // make a fetch request
       const requestTimeoutId = setTimeout(
         () => controller.abort(),
@@ -170,7 +164,6 @@ export class DBCApi implements LLMApi {
         function animateResponseText() {
           if (finished || controller.signal.aborted) {
             responseText += remainText;
-            console.log("[Response Animation] finished");
             if (responseText?.length === 0) {
               options.onError?.(new Error("empty response from server"));
             }
@@ -185,7 +178,6 @@ export class DBCApi implements LLMApi {
             const fetchText = remainText.slice(0, fetchCount);
             responseText += fetchText;
             remainText = remainText.slice(fetchCount);
-            //console.log(responseText);
             options.onUpdate?.(responseText, fetchText);
           }
 
@@ -214,7 +206,6 @@ export class DBCApi implements LLMApi {
         function getToken(line: string) {
           try {
             const jsonObj = JSON.parse(line?.replace("data: ", ""));
-            //  console.log(jsonObj);
             if (!jsonObj?.token?.special) {
               return jsonObj?.token?.text || "";
             }
@@ -345,7 +336,6 @@ export class DBCApi implements LLMApi {
 
     const resJson = (await res.json()) as OpenAIListModelResponse;
     const chatModels = resJson.data?.filter((m) => m.id.startsWith("gpt-"));
-    console.log("[Models]", chatModels);
 
     if (!chatModels) {
       return [];

@@ -101,7 +101,6 @@ Du returnerer KUN dette json format, aldrig andet:
       say: (chunk: any) => {
         text += chunk?.token?.text || "";
         const noSpaces = text.replace(/\s/g, "");
-        console.log("text", text);
         if (noSpaces.includes('"ns":1')) {
           shouldSearch = true;
           controller.abort();

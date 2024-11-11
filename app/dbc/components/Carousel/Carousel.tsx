@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useWindowSize } from "@/app/utils";
 
 const GET_MATERIALS = gql`
-  query Get_Works($workIds: [String!]!) {
+  query Chatbib_Get_Works_Carosuel($workIds: [String!]!) {
     works(id: $workIds) {
       workId
       titles {
@@ -157,7 +157,7 @@ function InfoBox({ selectedWork }: { selectedWork: any }) {
   const cover = getCoverImage(
     selectedWork?.manifestations?.mostRelevant,
   )?.detail;
-  console.log("selectedWork", selectedWork);
+
   return (
     <div className={styles.infoBox}>
       <div className={styles.divider}></div>

@@ -11,8 +11,6 @@ import {
 
 export class GeminiProApi implements LLMApi {
   extractMessage(res: any) {
-    console.log("[Response] gemini-pro response: ", res);
-
     return (
       res?.candidates?.at(0)?.content?.parts.at(0)?.text ||
       res?.error?.message ||
@@ -202,7 +200,6 @@ export class GeminiProApi implements LLMApi {
                   }
                 }
 
-                console.log("Stream complete");
                 // options.onFinish(responseText + remainText);
                 finished = true;
                 return Promise.resolve();
@@ -258,7 +255,6 @@ export class GeminiProApi implements LLMApi {
         options.onFinish(message);
       }
     } catch (e) {
-      console.log("[Request] failed to make a chat request", e);
       options.onError?.(e as Error);
     }
   }

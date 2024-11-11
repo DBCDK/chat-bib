@@ -73,8 +73,6 @@ const keys = ["claude-2, claude-instant-1"];
 
 export class ClaudeApi implements LLMApi {
   extractMessage(res: any) {
-    console.log("[Response] claude response: ", res);
-
     return res?.content?.[0]?.text;
   }
   async chat(options: ChatOptions): Promise<void> {
@@ -217,7 +215,6 @@ export class ClaudeApi implements LLMApi {
           ...payload,
           async onopen(res) {
             const contentType = res.headers.get("content-type");
-            console.log("response content type: ", contentType);
 
             if (contentType?.startsWith("text/plain")) {
               context.text = await res.clone().text();
