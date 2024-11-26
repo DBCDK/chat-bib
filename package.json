@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.10.8",
-    "@dbcdk/login-nextjs": "^4.0.5",
+    "@dbcdk/login-nextjs": "^4.0.6",
     "@fortaine/fetch-event-source": "^3.0.6",
     "@hello-pangea/dnd": "^16.5.0",
     "@next/third-parties": "^14.1.0",
