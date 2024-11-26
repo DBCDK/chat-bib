@@ -39,7 +39,6 @@ export const getBuildConfig = () => {
     ...commitInfo,
     buildMode,
     isApp,
-    fbiApiToken: process.env.FBI_API_TOKEN,
     template: process.env.DEFAULT_INPUT_TEMPLATE ?? DEFAULT_INPUT_TEMPLATE,
   };
 };
