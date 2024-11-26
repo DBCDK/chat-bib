@@ -5,22 +5,26 @@ import {
   NormalizedCacheObject,
 } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
-import { getClientConfig } from "../config/client";
-const clientConfig = getClientConfig();
+import { getSession } from "next-auth/react";
 
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 const httpLink = new HttpLink({
-  uri: "https://temp.fbi-api.dbc.dk/bibdk21/graphql",
+  uri: "https://fbi-api.dbc.dk/bibdk21/graphql",
 });
 
-const authLink = setContext((_, { headers }) => {
-  const token = clientConfig?.fbiApiToken;
+type Session = {
+  accessToken: string;
+};
+const authLink = setContext(async (_, { headers }) => {
+  const session = (await getSession()) as Session | null;
+  const accessToken = session?.accessToken as string;
+
   // Return the headers to the context so httpLink can read them
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
+      authorization: `Bearer ${accessToken}`,
     },
   };
 });
