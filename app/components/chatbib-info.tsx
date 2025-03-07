@@ -26,6 +26,13 @@ const introText = (
       sektorer. Projektet sigter også på at sikre høje standarder for
       databeskyttelse og privatliv.
     </p>
+    <p>
+      ChatBib er i marts 2025 blevet tilrettet således at der er en række
+      spørgsmål den ikke vil svare på. Dette er et forsøg og det skal justeres i
+      samarbejde med fagfolk for at finde den rigtige balance mellem brugbarhed
+      og sikkerhed. Send meget gerne feedback på dette tiltag (brug feedback
+      knappen eller skriv til chatbib.feedback@dbc.dk).
+    </p>
   </p>
 );
 

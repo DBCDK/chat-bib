@@ -15,7 +15,9 @@ export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
-export const MALICIOUS_ANSWER = `Jeg kan desværre ikke fortsætte samtalen.`;
+export const MALICIOUS_ANSWER = `Jeg kan desværre ikke fortsætte samtalen, da den er på vej ind på et følsomt område. Hvis du er i krise eller har tanker om selvmord, så sig det til nogen, der ikke selv er selvmordstruet. Det hjælper at få sat ord på de svære tanker, og du kan gøre det anonymt.   
+
+Du kan kontakte Livslinien på 70 201 201, chatte på livslinien.dk eller få netrådgivning på skrivdet.dk. Udover Livslinien kan du også få rådgivning hos Startlinjen, Psykiatrifonden, Sct. Nicolai Tjenesten og Børns Vilkår.`;
 
 export enum Path {
   Home = "/",

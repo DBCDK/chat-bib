@@ -4,7 +4,7 @@ export default [
   {
     id: "om",
     title: "ChatBib, professionel dialog – ikke borgeranvendelse",
-    text: "Formålet er at igangsætte konkrete AI-eksperimenter sammen med bibliotekerne, styrke den faglige dialog og\nkritisk vurdere sprogmodellers potentialer og faldgrupper.\nSenere kan det danne basis for chatflader rettet imod borgere ovenpå biblioteksmaterialer, bibliotekernes\nviden og fakta, som bibliotekerne kan stå inde for.\nChatBib er ikke et offentligt produkt. Prototypens målgruppe er udelukkende bibliotekernes ansatte, ikke\nborgere. ChatBib er dog ikke hemmelig, så del bare linket med andre.",
+    text: "Formålet er at igangsætte konkrete AI-eksperimenter sammen med bibliotekerne, styrke den faglige dialog og\nkritisk vurdere sprogmodellers potentialer og faldgrupper.\nSenere kan det danne basis for chatflader rettet imod borgere ovenpå biblioteksmaterialer, bibliotekernes\nviden og fakta, som bibliotekerne kan stå inde for.\nChatBib er ikke et offentligt produkt. Prototypens målgruppe er udelukkende bibliotekernes ansatte, ikke\nborgere.",
   },
   {
     id: "vaer-kritisk",
