@@ -1056,7 +1056,11 @@ function _Chat() {
   }, [msgRenderIndex, renderMessages]);
 
   const hasMalicious = useMemo(() => {
-    return messages.some((m) => m.content === MALICIOUS_ANSWER);
+    return messages.some(
+      (m) =>
+        typeof m.content === "string" &&
+        m?.content?.trim() === MALICIOUS_ANSWER,
+    );
   }, [messages]);
 
   const onChatBodyScroll = (e: HTMLElement) => {
