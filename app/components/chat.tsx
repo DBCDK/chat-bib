@@ -87,6 +87,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
   LAST_INPUT_KEY,
+  MALICIOUS_ANSWER,
   Path,
   REQUEST_TIMEOUT_MS,
   UNFINISHED_INPUT,
@@ -1014,7 +1015,6 @@ function _Chat() {
     }
     context.push(copiedHello);
   }
-
   // preview messages
   const renderMessages = useMemo(() => {
     return context.concat(session.messages as RenderMessage[]).concat(
@@ -1054,6 +1054,10 @@ function _Chat() {
     );
     return renderMessages.slice(msgRenderIndex, endRenderIndex);
   }, [msgRenderIndex, renderMessages]);
+
+  const hasMalicious = useMemo(() => {
+    return messages.some((m) => m.content === MALICIOUS_ANSWER);
+  }, [messages]);
 
   const onChatBodyScroll = (e: HTMLElement) => {
     const bottomHeight = e.scrollTop + e.clientHeight;
@@ -1591,90 +1595,95 @@ function _Chat() {
         </div>
       </div>
 
-      <div className={styles["chat-input-panel-container"]}>
-        <div className={styles["chat-input-panel"]}>
-          <PromptHints prompts={promptHints} onPromptSelect={onPromptSelect} />
+      {!hasMalicious && (
+        <div className={styles["chat-input-panel-container"]}>
+          <div className={styles["chat-input-panel"]}>
+            <PromptHints
+              prompts={promptHints}
+              onPromptSelect={onPromptSelect}
+            />
 
-          {
-            <ChatActions
-              uploadImage={uploadImage}
-              setAttachImages={setAttachImages}
-              setUploading={setUploading}
-              showPromptModal={() => setShowPromptModal(true)}
-              scrollToBottom={scrollToBottom}
-              hitBottom={hitBottom}
-              uploading={uploading}
-              showPromptHints={() => {
-                // Click again to close
-                if (promptHints.length > 0) {
-                  setPromptHints([]);
-                  return;
-                }
-                inputRef.current?.focus();
-                setUserInput("/");
-                onSearch("");
-              }}
-              setShowFeedback={setShowFeedback}
-            />
-          }
-          <label
-            className={`${styles["chat-input-panel-inner"]} ${
-              attachImages.length != 0
-                ? styles["chat-input-panel-inner-attach"]
-                : ""
-            }`}
-            htmlFor="chat-input"
-          >
-            <textarea
-              id="chat-input"
-              ref={inputRef}
-              className={styles["chat-input"]}
-              placeholder={Locale.Chat.Input(submitKey)}
-              onInput={(e) => onInput(e.currentTarget.value)}
-              value={userInput}
-              onKeyDown={onInputKeyDown}
-              onFocus={scrollToBottom}
-              onClick={scrollToBottom}
-              onPaste={handlePaste}
-              rows={inputRows}
-              autoFocus={autoFocus}
-              style={{
-                fontSize: config.fontSize,
-              }}
-            />
-            {attachImages.length != 0 && (
-              <div className={styles["attach-images"]}>
-                {attachImages.map((image, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className={styles["attach-image"]}
-                      style={{ backgroundImage: `url("${image}")` }}
-                    >
-                      <div className={styles["attach-image-mask"]}>
-                        <DeleteImageButton
-                          deleteImage={() => {
-                            setAttachImages(
-                              attachImages.filter((_, i) => i !== index),
-                            );
-                          }}
-                        />
+            {
+              <ChatActions
+                uploadImage={uploadImage}
+                setAttachImages={setAttachImages}
+                setUploading={setUploading}
+                showPromptModal={() => setShowPromptModal(true)}
+                scrollToBottom={scrollToBottom}
+                hitBottom={hitBottom}
+                uploading={uploading}
+                showPromptHints={() => {
+                  // Click again to close
+                  if (promptHints.length > 0) {
+                    setPromptHints([]);
+                    return;
+                  }
+                  inputRef.current?.focus();
+                  setUserInput("/");
+                  onSearch("");
+                }}
+                setShowFeedback={setShowFeedback}
+              />
+            }
+            <label
+              className={`${styles["chat-input-panel-inner"]} ${
+                attachImages.length != 0
+                  ? styles["chat-input-panel-inner-attach"]
+                  : ""
+              }`}
+              htmlFor="chat-input"
+            >
+              <textarea
+                id="chat-input"
+                ref={inputRef}
+                className={styles["chat-input"]}
+                placeholder={Locale.Chat.Input(submitKey)}
+                onInput={(e) => onInput(e.currentTarget.value)}
+                value={userInput}
+                onKeyDown={onInputKeyDown}
+                onFocus={scrollToBottom}
+                onClick={scrollToBottom}
+                onPaste={handlePaste}
+                rows={inputRows}
+                autoFocus={autoFocus}
+                style={{
+                  fontSize: config.fontSize,
+                }}
+              />
+              {attachImages.length != 0 && (
+                <div className={styles["attach-images"]}>
+                  {attachImages.map((image, index) => {
+                    return (
+                      <div
+                        key={index}
+                        className={styles["attach-image"]}
+                        style={{ backgroundImage: `url("${image}")` }}
+                      >
+                        <div className={styles["attach-image-mask"]}>
+                          <DeleteImageButton
+                            deleteImage={() => {
+                              setAttachImages(
+                                attachImages.filter((_, i) => i !== index),
+                              );
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <IconButton
-              icon={<SendWhiteIcon />}
-              text={Locale.Chat.Send}
-              className={styles["chat-input-send"]}
-              type="primary"
-              onClick={() => doSubmit(userInput)}
-            />
-          </label>
+                    );
+                  })}
+                </div>
+              )}
+              <IconButton
+                icon={<SendWhiteIcon />}
+                text={Locale.Chat.Send}
+                className={styles["chat-input-send"]}
+                type="primary"
+                onClick={() => doSubmit(userInput)}
+              />
+            </label>
+          </div>
         </div>
-      </div>
+      )}
 
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
