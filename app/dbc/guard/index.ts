@@ -2,8 +2,10 @@ import { Message } from "..";
 import { llmGenerate } from "../llmClient";
 
 export async function isMalicious(messages: Message[]): Promise<boolean> {
-  const userMessages = messages?.filter((m) => m.role === "user");
-  const text = userMessages?.[userMessages?.length - 1]?.content;
+  const userMessages = messages
+    ?.filter((m) => m.role === "user")
+    ?.map((m) => m.content);
+  const text = userMessages?.join(". ");
 
   const res = await llmGenerate({
     messages: [
