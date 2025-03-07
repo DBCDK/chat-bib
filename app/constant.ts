@@ -15,6 +15,8 @@ export const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 
 export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
+export const MALICIOUS_ANSWER = `Jeg kan desværre ikke fortsætte samtalen.`;
+
 export enum Path {
   Home = "/",
   Chat = "/chat",

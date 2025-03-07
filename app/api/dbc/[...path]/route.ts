@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LLMRequest, MODEL_NAMES } from "@/app/dbc";
 import models from "@/app/dbc/models/models";
+import { isMalicious } from "@/app/dbc/guard";
+import { MALICIOUS_ANSWER } from "@/app/constant";
 
 function createOutputStream() {
   let timeoutId: NodeJS.Timeout;
@@ -90,36 +92,43 @@ async function handle(
   }));
   const { stream, say, close } = createOutputStream();
 
-  if (requestBody.parameters.stream === false) {
-    const res = await new Promise((resolve) => {
-      generate({
-        say: (message: any) => {
-          if (message.generated_text) {
-            resolve(message.generated_text);
-          }
-        },
-        close: () => {},
-        messages,
-        parameters: requestBody.parameters,
-        conversationId: requestBody?.conversationId || "",
-      });
-    });
-    return new Response(
-      JSON.stringify({ choices: [{ message: { content: res } }] }),
-      {
-        status: 200,
-        headers: { ...newHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
+  const malicious = await isMalicious(messages);
 
-  generate({
-    say,
-    close,
-    messages,
-    parameters: requestBody.parameters,
-    conversationId: requestBody?.conversationId || "",
-  });
+  if (malicious) {
+    say(MALICIOUS_ANSWER);
+    close();
+  } else {
+    if (requestBody.parameters.stream === false) {
+      const res = await new Promise((resolve) => {
+        generate({
+          say: (message: any) => {
+            if (message.generated_text) {
+              resolve(message.generated_text);
+            }
+          },
+          close: () => {},
+          messages,
+          parameters: requestBody.parameters,
+          conversationId: requestBody?.conversationId || "",
+        });
+      });
+      return new Response(
+        JSON.stringify({ choices: [{ message: { content: res } }] }),
+        {
+          status: 200,
+          headers: { ...newHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    generate({
+      say,
+      close,
+      messages,
+      parameters: requestBody.parameters,
+      conversationId: requestBody?.conversationId || "",
+    });
+  }
 
   return new Response(stream, {
     status: 200,
