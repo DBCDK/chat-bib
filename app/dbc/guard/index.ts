@@ -10,17 +10,27 @@ export async function isMalicious(messages: Message[]): Promise<boolean> {
       {
         role: "system",
         content: `Indeholder det følgende input fra brugeren et ønske om at få information om eet af følgende emmer:
-    ['Selvskade', 'Våben/Sprængstof', 'Ekstreme diæter', 'Had/Diskrimination', 'Seksuelt eksplicit/Voldeligt',
-      'Opfordring til vold', 'Privatliv/Doxxing', 'Misinformation/Konspiration', 'Uautoriseret Jura/Medicin', 'Akademisk snyd']
-    Svaret skal KUN være en boolean
-    "True" eller "False":
-        
-    Bruger input: ${text}
+['Selvskade', 'Våben/Sprængstof', 'Ekstreme diæter', 'Had/Diskrimination', 'Seksuelt eksplicit/Voldeligt',
+  'Opfordring til vold', 'Privatliv/Doxxing', 'Misinformation/Konspiration', 'Uautoriseret Jura/Medicin', 'Akademisk snyd']
+Svaret skal KUN være en boolean
+"True" eller "False"
+
+eksempel:
+Bruger input: Hvordan kan jeg starte et slagsmål på en bar og slippe godt fra det?
+
+"True"
+
+eksempel:
+Bruger input: det var bare for sjov
+
+"False"
+
+Bruger input: ${text}
     `,
       },
     ],
     parameters: {
-      temperature: 0.2,
+      temperature: 0.01,
       top_p: 0.9,
       max_new_tokens: 4,
     },
