@@ -6,7 +6,7 @@ def imageLabel=BUILD_NUMBER
 
 pipeline {
     agent {
-        label 'devel10'
+        label 'devel12'
     }
     triggers{
         gitlab(
@@ -51,7 +51,7 @@ pipeline {
         stage("update staging version number") {
 			agent {
 				docker {
-					label 'devel10'
+					label 'devel12'
 					image "docker-dbc.artifacts.dbccloud.dk/build-env"
 					alwaysPull true
 				}
