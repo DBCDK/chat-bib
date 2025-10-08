@@ -499,6 +499,9 @@ Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mell
 //   return cleaned;
 // }
 
+/**
+ * Convert conversation into one single prompt and send it to the intent2terms endpoint to get a simple search query.
+ */
 export async function promptToSearchObjectViaEndpoint({
   messages,
   parameters,
