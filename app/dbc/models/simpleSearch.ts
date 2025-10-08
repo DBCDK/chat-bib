@@ -433,71 +433,71 @@ Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mell
   return { query: validatedSearchObject, filters: filters };
 }
 
-/**
- * Function is not used yet. TODO: finish later.
- * Convert conversation into one single prompt
- */
-async function conversationToSingleQuery({
-  messages,
-  parameters,
-}: {
-  messages: Message[];
-  parameters: any;
-}): Promise<string> {
-  console.log("🍊🚧🍊🚧🍊🚧conversationToSingleQuery.messages", messages);
-  const filteredMessages = messages.filter(
-    (m) =>
-      m.role !== "system" &&
-      typeof m.content === "string" &&
-      m.content.trim().length > 0,
-  );
+// /**
+//  * Function is not used yet. TODO: finish later.
+//  * Convert conversation into one single prompt
+//  */
+// async function conversationToSingleQuery({
+//   messages,
+//   parameters,
+// }: {
+//   messages: Message[];
+//   parameters: any;
+// }): Promise<string> {
+//   console.log("🍊🚧🍊🚧🍊🚧conversationToSingleQuery.messages", messages);
+//   const filteredMessages = messages.filter(
+//     (m) =>
+//       m.role !== "system" &&
+//       typeof m.content === "string" &&
+//       m.content.trim().length > 0,
+//   );
 
-  if (filteredMessages.length === 1) {
-    return messages[0].content as string;
-  }
-  const transcript = messages
-    .filter(
-      (m) =>
-        m.role !== "system" &&
-        typeof m.content === "string" &&
-        m.content.trim().length > 0,
-    )
-    .map((m) => {
-      return `${m.role === "assistant" ? "Assistent" : "Bruger"}: ${m.content as string}`;
-    })
-    .join("\n");
-  //transcript has the following format:
-  //Bruger: bog af murakami
-  //Assistent: blah blah blah
-  //Bruger: den skal være på dansk
+//   if (filteredMessages.length === 1) {
+//     return messages[0].content as string;
+//   }
+//   const transcript = messages
+//     .filter(
+//       (m) =>
+//         m.role !== "system" &&
+//         typeof m.content === "string" &&
+//         m.content.trim().length > 0,
+//     )
+//     .map((m) => {
+//       return `${m.role === "assistant" ? "Assistent" : "Bruger"}: ${m.content as string}`;
+//     })
+//     .join("\n");
+//   //transcript has the following format:
+//   //Bruger: bog af murakami
+//   //Assistent: blah blah blah
+//   //Bruger: den skal være på dansk
 
-  const systemPrompt = `
-Du skal omskrive hele samtalen til EN kort søgestreng til biblioteks-søgning.
+//   const systemPrompt = `
+// Du skal omskrive hele samtalen til EN kort søgestreng til biblioteks-søgning.
 
-Krav:
-- Returnér KUN selve søgestrengen, uden citationstegn eller forklaringer.
-- Undlad høflighedsfraser og irrelevante ord.
-- Skriv på dansk.
+// Krav:
+// - Returnér KUN selve søgestrengen, uden citationstegn eller forklaringer.
+// - Undlad høflighedsfraser og irrelevante ord.
+// - Skriv på dansk.
 
-Her er samtalen:
-${transcript}
-`;
+// Her er samtalen:
+// ${transcript}
+// `;
 
-  const copy = [{ role: "system", content: systemPrompt } as Message];
-  const generated = await llmGenerate({
-    messages: copy,
-    parameters,
-  });
-  console.log("\n\n\n\n !!! 🔍conversationToSingleQuery.generated", generated);
+//   const copy = [{ role: "system", content: systemPrompt } as Message];
+//   const generated = await llmGenerate({
+//     messages: copy,
+//     parameters,
+//   });
+//   console.log("\n\n\n\n !!! 🔍conversationToSingleQuery.generated", generated);
 
-  const cleaned = generated
-    .split(/\n|\r/)[0]
-    .trim()
-    .replace(/^["'`“”]+|["'`“”]+$/g, "")
-    .replace(/\s+/g, " ");
+//   const cleaned = generated
+//     .split(/\n|\r/)[0]
+//     .trim()
+//     .replace(/^["'`“”]+|["'`“”]+$/g, "")
+//     .replace(/\s+/g, " ");
 
-  return cleaned;
-}
+//   return cleaned;
+// }
 
 export async function promptToSearchObjectViaEndpoint({
   messages,
