@@ -434,7 +434,8 @@ Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mell
 }
 
 /**
- * TODO: finish later.Convert conversation into one single prompt
+ * Function is not used yet. TODO: finish later.
+ * Convert conversation into one single prompt
  */
 async function conversationToSingleQuery({
   messages,
@@ -519,25 +520,27 @@ export async function promptToSearchObjectViaEndpoint({
     PluginStatus.serialize({
       say,
       pluginName: MODEL_NAMES.DBC_SIMPLE_SEARCH,
-      description: `Søger på ${userQuery}`,
+      description: `Prompt til intent2terms: ${userQuery}`,
     });
 
     if (!userQuery) {
       return { query: {}, filters: {} };
     }
-
+    const intent2termsEndpoint = process.env.INTENT2TERMS_ENDPOINT;
+    if (!intent2termsEndpoint) {
+      console.error("INTENT2TERMS_ENDPOINT is not set");
+      return { query: {}, filters: {} };
+    }
+    console.log("FIUNDINTENT2TERMS_ENDPOINT", intent2termsEndpoint);
     //send prompt to endpoint
-    const response = await fetch(
-      "http://intent2terms-1-0.ai-prod.svc.cloud.dbc.dk/v1/intent2terms",
-      {
-        method: "POST",
-        headers: {
-          accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: userQuery, use_slow_method: false }),
+    const response = await fetch(intent2termsEndpoint, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ query: userQuery, use_slow_method: false }),
+    });
 
     if (!response.ok) {
       console.error(
