@@ -3,6 +3,7 @@ import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
+import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { ModelDescription } from "./modelsDescriptions";
 //TODO MOVE TO A SHARED FILE!
 interface FormatedWork {
@@ -432,6 +433,137 @@ Retunere ikke felterne, hvis de ikke har en værdi. Der skal være et komma mell
   return { query: validatedSearchObject, filters: filters };
 }
 
+// /**
+//  * Function is not used yet. TODO: finish later.
+//  * Convert conversation into one single prompt
+//  */
+// async function conversationToSingleQuery({
+//   messages,
+//   parameters,
+// }: {
+//   messages: Message[];
+//   parameters: any;
+// }): Promise<string> {
+//   console.log("🍊🚧🍊🚧🍊🚧conversationToSingleQuery.messages", messages);
+//   const filteredMessages = messages.filter(
+//     (m) =>
+//       m.role !== "system" &&
+//       typeof m.content === "string" &&
+//       m.content.trim().length > 0,
+//   );
+
+//   if (filteredMessages.length === 1) {
+//     return messages[0].content as string;
+//   }
+//   const transcript = messages
+//     .filter(
+//       (m) =>
+//         m.role !== "system" &&
+//         typeof m.content === "string" &&
+//         m.content.trim().length > 0,
+//     )
+//     .map((m) => {
+//       return `${m.role === "assistant" ? "Assistent" : "Bruger"}: ${m.content as string}`;
+//     })
+//     .join("\n");
+//   //transcript has the following format:
+//   //Bruger: bog af murakami
+//   //Assistent: blah blah blah
+//   //Bruger: den skal være på dansk
+
+//   const systemPrompt = `
+// Du skal omskrive hele samtalen til EN kort søgestreng til biblioteks-søgning.
+
+// Krav:
+// - Returnér KUN selve søgestrengen, uden citationstegn eller forklaringer.
+// - Undlad høflighedsfraser og irrelevante ord.
+// - Skriv på dansk.
+
+// Her er samtalen:
+// ${transcript}
+// `;
+
+//   const copy = [{ role: "system", content: systemPrompt } as Message];
+//   const generated = await llmGenerate({
+//     messages: copy,
+//     parameters,
+//   });
+//   console.log("\n\n\n\n !!! 🔍conversationToSingleQuery.generated", generated);
+
+//   const cleaned = generated
+//     .split(/\n|\r/)[0]
+//     .trim()
+//     .replace(/^["'`“”]+|["'`“”]+$/g, "")
+//     .replace(/\s+/g, " ");
+
+//   return cleaned;
+// }
+
+/**
+ * Convert conversation into one single prompt and send it to the intent2terms endpoint to get a simple search query.
+ */
+export async function promptToSearchObjectViaEndpoint({
+  messages,
+  parameters,
+  say,
+}: {
+  messages: Message[];
+  parameters: any;
+  say: Function;
+}): Promise<{ query: Query; filters?: Filters }> {
+  try {
+    //convert conversation into one single prompt
+    // const userQuery = await conversationToSingleQuery({ messages, parameters });
+    const userQuery = messages
+      .filter((m) => m.role === "user")
+      .map((m) => (typeof m.content === "string" ? m.content : ""))
+      .join(" ")
+      .trim();
+
+    PluginStatus.serialize({
+      say,
+      pluginName: MODEL_NAMES.DBC_SIMPLE_SEARCH,
+      description: `Prompt til intent2terms: ${userQuery}`,
+    });
+
+    if (!userQuery) {
+      return { query: {}, filters: {} };
+    }
+    const intent2termsEndpoint = process.env.INTENT2TERMS_ENDPOINT;
+    if (!intent2termsEndpoint) {
+      console.error("INTENT2TERMS_ENDPOINT is not set");
+      return { query: {}, filters: {} };
+    }
+    console.log("FIUNDINTENT2TERMS_ENDPOINT", intent2termsEndpoint);
+    //send prompt to endpoint
+    const response = await fetch(intent2termsEndpoint, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: userQuery, use_slow_method: false }),
+    });
+
+    if (!response.ok) {
+      console.error(
+        "intent2terms endpoint error",
+        response.status,
+        response.statusText,
+      );
+      return { query: {}, filters: {} };
+    }
+
+    const { q: query, filters } = await response.json();
+
+    //return query //{ query, filters };
+    return { query, filters };
+  } catch (err) {
+    console.error("Failed to convert prompt using endpoint", err);
+    return { query: {}, filters: {} };
+  }
+}
+
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
   const shouldPerformSearch = await searchIsRequired({
     messages,
@@ -442,7 +574,7 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
   if (shouldPerformSearch) {
     say(`\nAnalyserer⏳\n`);
 
-    const searchObject = await promptToSearchObject({
+    const searchObject = await promptToSearchObjectViaEndpoint({
       messages,
       parameters,
       say,

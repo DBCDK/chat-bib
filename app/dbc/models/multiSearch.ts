@@ -12,7 +12,7 @@ import { llmGenerate } from "../llmClient";
 import { promptToCQL, searchByCQL } from "./complexSearch";
 import { ModelDescription } from "./modelsDescriptions";
 import {
-  promptToSearchObject,
+  promptToSearchObjectViaEndpoint,
   searchWorks as searchSimpleSearch,
 } from "./simpleSearch";
 import { FormatedWork, promptToSearchString } from "./vectorDatabase";
@@ -58,7 +58,7 @@ async function simpleSearchResults({
 }: GenerateRequest) {
   //say("🎢 🚨Laver en simple search søgning..\n\n");
   //make sure that gramma errors are corrected.
-  const searchObject = await promptToSearchObject({
+  const searchObject = await promptToSearchObjectViaEndpoint({
     messages,
     parameters,
     say,
@@ -182,29 +182,34 @@ async function generate({
     ? messages
     : [messages[messages.length - 1]];
 
-  const simpleSearchWorks = await simpleSearchResults({
+  const simpleSearchPromise = simpleSearchResults({
     messages: messagesForSearch,
     parameters,
     say,
     close,
   });
-  PluginStatus.serialize({
-    say,
-    pluginName: id,
-    description: `Første søgning foretaget... `,
-  });
-  const complexSearchWorks = await complexSearchResults({
+  const complexSearchPromise = complexSearchResults({
     messages: messagesForSearch,
     parameters,
     say,
     close,
   });
 
+  const [simpleSearchWorks, complexSearchWorks] = await Promise.all([
+    simpleSearchPromise,
+    complexSearchPromise,
+  ]);
+
   PluginStatus.serialize({
     say,
     pluginName: id,
-    description: `Anden søgning foretaget... `,
+    description: `To søgninger foretaget... `,
   });
+  // PluginStatus.serialize({
+  //   say,
+  //   pluginName: id,
+  //   description: `Anden søgning foretaget... `,
+  // });
   const works = [...complexSearchWorks, ...simpleSearchWorks].filter(
     (work, index, self) =>
       index === self.findIndex((w) => w.workId === work.workId),
