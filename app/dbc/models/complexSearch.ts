@@ -82,7 +82,7 @@ async function finalAnswer({
 export async function searchByCQL(
   cql: string,
   offset: number = 0,
-  limit: number = 35,
+  limit: number = 10,
 ): Promise<FormatedWork[]> {
   const client = initializeApollo();
   const COMPLEX_SEARCH_QUERY = gql`
@@ -121,7 +121,7 @@ export async function searchByCQL(
     console.log("🍊🚧🍊🚧🍊🚧COMPLEX data QUERY 🍊🚧🍊🚧:", data);
     console.log("cql", cql);
     const allWorks = data?.complexSearch?.works ?? [];
-    const works = selectWorks(allWorks, 12, 6);
+    const works = allWorks; //selectWorks(allWorks, 12, 6);
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {

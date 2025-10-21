@@ -71,7 +71,7 @@ type SimpleSearchQuery = {
 export async function searchWorks(
   query: SimpleSearchQuery,
   offset: number = 0,
-  limit: number = 35,
+  limit: number = 10,
 ): Promise<FormatedWork[]> {
   //remove null values
   const filteredSearchQuery = Object.fromEntries(
@@ -95,6 +95,9 @@ export async function searchWorks(
           workId
           titles {
             main
+          }
+          fictionNonfiction {
+            display
           }
           abstract
           creators {
@@ -126,11 +129,11 @@ export async function searchWorks(
     });
 
     if (errors) {
-      console.log("\n\n\n\n\n\n\n errors", JSON.stringify(errors));
+      console.log("\n\n\n\n\n\n\n SIMPLESEARCH.errors", JSON.stringify(errors));
     }
     console.log("\n\n\n\n\n\n\n data", JSON.stringify(data));
     const allWorks = data?.search?.works ?? [];
-    const works = selectWorks(allWorks, 12, 6);
+    const works = allWorks; //selectWorks(allWorks, 12, 6);
 
     function formatedWorks(works: any[]) {
       return works.map((w) => {
@@ -535,7 +538,15 @@ export async function promptToSearchObjectViaEndpoint({
       console.error("INTENT2TERMS_ENDPOINT is not set");
       return { query: {}, filters: {} };
     }
-    console.log("FIUNDINTENT2TERMS_ENDPOINT", intent2termsEndpoint);
+    // console.log("FIUNDINTENT2TERMS_ENDPOINT", intent2termsEndpoint);
+
+    const body = {
+      query: userQuery,
+      use_slow_method: Boolean(parameters?.use_slow_method) || false,
+    };
+
+    // console.log("use_slow_method", body);
+
     //send prompt to endpoint
     const response = await fetch(intent2termsEndpoint, {
       method: "POST",
@@ -543,7 +554,7 @@ export async function promptToSearchObjectViaEndpoint({
         accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query: userQuery, use_slow_method: false }),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

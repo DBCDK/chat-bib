@@ -3,6 +3,7 @@ import { useState } from "react";
 import styles from "./dbcsettings.module.scss";
 import { BaseSelector, Modal } from "./ui-lib";
 import { ModelType, useChatStore } from "../store";
+import { SearchSpeed } from "../constant";
 import { IconButton } from "./button";
 import { MODEL_NAMES } from "../dbc";
 import { PERSONAS } from "../personas";
@@ -43,6 +44,9 @@ const MODEL_VARIANT_DESCRIPTIONS: any = {
 export function DbcSettings() {
   const chatStore = useChatStore();
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const session = chatStore.currentSession();
+  const currentSearchSpeed: SearchSpeed =
+    session.dbcSearchSpeed || SearchSpeed.Fast;
 
   const mask = chatStore.currentSession().mask;
   // switch model
@@ -78,6 +82,42 @@ export function DbcSettings() {
           >
             <h3>{persona?.name}</h3>
             <p className={styles.description}>{persona?.description}</p>
+            <h3>Søgehastighed</h3>
+            <div
+              className={styles.radioGroup}
+              role="radiogroup"
+              aria-label="Søgehastighed"
+            >
+              <label className={styles.radioOption}>
+                <input
+                  type="radio"
+                  name="searchSpeed"
+                  value="fast"
+                  checked={currentSearchSpeed === SearchSpeed.Fast}
+                  onChange={() =>
+                    chatStore.updateCurrentSession(
+                      (s) => (s.dbcSearchSpeed = SearchSpeed.Fast),
+                    )
+                  }
+                />
+                <span>Hurtig</span>
+              </label>
+              <label className={styles.radioOption}>
+                <input
+                  type="radio"
+                  name="searchSpeed"
+                  value="slow"
+                  checked={currentSearchSpeed === SearchSpeed.Slow}
+                  onChange={() =>
+                    chatStore.updateCurrentSession(
+                      (s) => (s.dbcSearchSpeed = SearchSpeed.Slow),
+                    )
+                  }
+                />
+                <span>Langsom</span>
+              </label>
+            </div>
+            <h3>Kontekst</h3>
             <BaseSelector
               defaultSelectedValue={currentModel}
               items={
