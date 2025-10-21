@@ -2,6 +2,7 @@ import { initializeApollo } from "@/app/client/apolloClient";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
+import { selectWorks } from "@/app/utils/selectWorks";
 import MaterialCard from "../components/MaterialCard/MaterialCard";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { ModelDescription } from "./modelsDescriptions";
@@ -99,13 +100,6 @@ export async function searchWorks(
           creators {
             display
           }
-          manifestations {
-            latest {
-              cover {
-                detail_500
-              }
-            }
-          }
         }
       }
     }
@@ -121,7 +115,7 @@ export async function searchWorks(
         limit,
       }) + "\n\n\n",
     );
-    const { data } = await client.query({
+    const { data, errors } = await client.query({
       query: SEARCH_WORKS_QUERY,
       variables: {
         q: filteredSearchQuery,
@@ -130,19 +124,26 @@ export async function searchWorks(
         limit: limit,
       },
     });
-    //filter for works that has an abstract. Look only on the first 10 works
-    const works = data?.search?.works
-      ?.filter((w: any) => w?.abstract[0]?.length > 0)
-      .slice(0, 10);
+
+    if (errors) {
+      console.log("\n\n\n\n\n\n\n errors", JSON.stringify(errors));
+    }
+    console.log("\n\n\n\n\n\n\n data", JSON.stringify(data));
+    const allWorks = data?.search?.works ?? [];
+    const works = selectWorks(allWorks, 12, 6);
 
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {
-          title: w.titles.main[0],
-          abstract: w.abstract[0],
-          cover: w.manifestations[0]?.first?.cover?.detail_500,
-          workId: w.workId,
-          creators: w.creators.map((c: any) => c.display),
+          title: Array.isArray(w?.titles?.main)
+            ? w?.titles?.main?.[0] ?? ""
+            : w?.titles?.main ?? "",
+          abstract: w?.abstract?.[0] ?? "",
+          cover: w?.manifestations?.[0]?.first?.cover?.detail_500 ?? "",
+          workId: w?.workId,
+          creators: (w?.creators ?? [])
+            .map((c: any) => c?.display)
+            .filter(Boolean),
         };
         return formatedWork;
       });

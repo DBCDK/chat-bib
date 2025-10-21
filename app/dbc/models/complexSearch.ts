@@ -2,6 +2,7 @@ import { initializeApollo } from "@/app/client/apolloClient";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
+import { selectWorks } from "@/app/utils/selectWorks";
 const workDefinition =
   "Et værk er en bog, en film, en artikel, musik, spil eller andet material som kan lånes på biblioteket.";
 const allowedIndexes = [
@@ -119,9 +120,8 @@ export async function searchByCQL(
 
     console.log("🍊🚧🍊🚧🍊🚧COMPLEX data QUERY 🍊🚧🍊🚧:", data);
     console.log("cql", cql);
-    const works = data?.complexSearch?.works
-      ?.filter((w: any) => w?.abstract[0]?.length > 0)
-      .slice(0, 10);
+    const allWorks = data?.complexSearch?.works ?? [];
+    const works = selectWorks(allWorks, 12, 6);
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {
