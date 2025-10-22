@@ -138,15 +138,11 @@ export async function searchWorks(
     function formatedWorks(works: any[]) {
       return works.map((w) => {
         const formatedWork = {
-          title: Array.isArray(w?.titles?.main)
-            ? w?.titles?.main?.[0] ?? ""
-            : w?.titles?.main ?? "",
+          title: w?.titles?.main?.[0] ?? "",
           abstract: w?.abstract?.[0] ?? "",
           cover: w?.manifestations?.[0]?.first?.cover?.detail_500 ?? "",
           workId: w?.workId,
-          creators: (w?.creators ?? [])
-            .map((c: any) => c?.display)
-            .filter(Boolean),
+          creators: w?.creators?.map((c: any) => c?.display).filter(Boolean),
         };
         return formatedWork;
       });

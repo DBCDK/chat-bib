@@ -99,6 +99,9 @@ export async function searchByCQL(
           titles {
             main
           }
+          fictionNonfiction {
+            display
+          }
           abstract
           creators {
             display
