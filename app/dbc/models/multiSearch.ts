@@ -44,7 +44,7 @@ async function complexSearchResults({
       description: `Søger på ${cql}`,
     });
 
-    return await searchByCQL(cql, 0, 50);
+    return await searchByCQL(cql);
   } catch (error) {
     return [];
   }
@@ -76,7 +76,7 @@ async function simpleSearchResults({
     pluginName: id,
     description: `Søger på ${JSON.stringify(searchQuery)}`,
   });
-  const works = await searchSimpleSearch(searchQuery, 0, 50);
+  const works = await searchSimpleSearch(searchQuery);
 
   return works;
 }
@@ -199,7 +199,6 @@ async function generate({
     simpleSearchPromise,
     complexSearchPromise,
   ]);
-
   PluginStatus.serialize({
     say,
     pluginName: id,

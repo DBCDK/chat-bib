@@ -94,6 +94,49 @@ export const PERSONAS = [
       builtin: true,
     },
   },
+  // {
+  //   name: "SimpleSearch",
+  //   description:
+  //     "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
+  //   image: "avatar1.svg",
+  //   mask: {
+  //     id: "100033",
+  //     createdAt: 1688899480410,
+  //     avatar: "1f47e",
+  //     name: "SimpleSearch",
+  //     context: [
+  //       {
+  //         id: "Copilot-0",
+  //         role: MessageRole.System,
+  //         content: `${defaultSystemPrompt} Du kan hjælpe med at anbefale bøger og søge efter værker på bibliotek.dk.`,
+  //         date: "",
+  //       },
+  //       {
+  //         id: "Copilot-1",
+  //         role: MessageRole.Assistant,
+  //         content:
+  //           "Hej! Hvordan kan jeg hjælpe dig i dag? Jeg kan give anbefalinger og søge efter værker på bibliotek.dk.",
+  //         date: "",
+  //       },
+  //     ],
+  //     availableModels: [MODEL_NAMES.DBC_SIMPLE_SEARCH],
+  //     modelConfig: {
+  //       model: MODEL_NAMES.DBC_SIMPLE_SEARCH,
+  //       temperature: 0.3,
+  //       top_p: 1,
+  //       max_tokens: 2000,
+  //       presence_penalty: 0,
+  //       frequency_penalty: 0,
+  //       sendMemory: true,
+  //       historyMessageCount: 4,
+  //       compressMessageLengthThreshold: 1000,
+  //       enableInjectSystemPrompts: true,
+  //       template: "{{input}}",
+  //     },
+  //     lang: "da" as Lang,
+  //     builtin: true,
+  //   },
+  // },
   {
     name: "FaktaChat",
     description:

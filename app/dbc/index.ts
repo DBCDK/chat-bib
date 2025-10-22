@@ -25,6 +25,8 @@ export type LLMParameters = {
   max_new_tokens?: number;
   stream?: boolean;
   cutOff?: number;
+  // Whether to use the slow method in intent2terms endpoint. Only used in simpleSearch.
+  use_slow_method?: boolean;
 };
 
 export type LLMRequest = {

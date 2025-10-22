@@ -7,7 +7,8 @@ import {
   REQUEST_TIMEOUT_MS,
   ServiceProvider,
 } from "@/app/constant";
-import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
+import { useAccessStore, useChatStore } from "@/app/store";
+import { SearchSpeed } from "@/app/constant";
 
 import {
   ChatOptions,
@@ -102,12 +103,14 @@ export class DBCApi implements LLMApi {
 
     const conversationId = useChatStore.getState().currentSession().id;
     const modelConfig = {
-      ...useAppConfig.getState().modelConfig,
       ...useChatStore.getState().currentSession().mask.modelConfig,
       ...{
         model: options.config.model,
       },
     };
+    const dbcSearchSpeed =
+      useChatStore.getState().currentSession().dbcSearchSpeed ||
+      SearchSpeed.Fast;
 
     const requestPayload: RequestPayload = {
       messages,
@@ -145,6 +148,8 @@ export class DBCApi implements LLMApi {
           frequency_penalty: modelConfig.frequency_penalty,
           model: modelConfig.model as MODEL_NAMES,
           stream: shouldStream,
+          // map UI selection to endpoint param
+          use_slow_method: dbcSearchSpeed === SearchSpeed.Slow,
         },
         conversationId,
       };

@@ -14,6 +14,7 @@ import {
   SUMMARIZE_MODEL,
   GEMINI_SUMMARIZE_MODEL,
 } from "../constant";
+import { SearchSpeed } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
 import { prettyObject } from "../utils/format";
@@ -62,6 +63,8 @@ export interface ChatSession {
   clearContextIndex?: number;
 
   mask: Mask;
+  // DBC simple search speed: per-session
+  dbcSearchSpeed?: SearchSpeed;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -85,6 +88,7 @@ function createEmptySession(): ChatSession {
     lastSummarizeIndex: 0,
 
     mask: createEmptyMask(),
+    dbcSearchSpeed: SearchSpeed.Fast,
   };
 }
 
@@ -606,7 +610,7 @@ export const useChatStore = createPersistStore(
 
         const historyMsgLength = countMessages(toBeSummarizedMsgs);
 
-        if (historyMsgLength > modelConfig?.max_tokens ?? 4000) {
+        if (historyMsgLength > (modelConfig?.max_tokens || 4000)) {
           const n = toBeSummarizedMsgs.length;
           toBeSummarizedMsgs = toBeSummarizedMsgs.slice(
             Math.max(0, n - modelConfig.historyMessageCount),
