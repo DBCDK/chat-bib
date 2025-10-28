@@ -101,7 +101,9 @@ export class DBCApi implements LLMApi {
       content: getMessageTextContent(v),
     }));
 
-    const conversationId = useChatStore.getState().currentSession().id;
+    const conversationId =
+      options.conversationIdOverride ||
+      useChatStore.getState().currentSession().id;
     const modelConfig = {
       ...useChatStore.getState().currentSession().mask.modelConfig,
       ...{
@@ -147,6 +149,8 @@ export class DBCApi implements LLMApi {
           presence_penalty: modelConfig.presence_penalty,
           frequency_penalty: modelConfig.frequency_penalty,
           model: modelConfig.model as MODEL_NAMES,
+          // Forward endpoint llm model if provided
+          llmModel: options.config.llmModel as any,
           stream: shouldStream,
           // map UI selection to endpoint param
           use_slow_method: dbcSearchSpeed === SearchSpeed.Slow,

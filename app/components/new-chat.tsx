@@ -178,20 +178,17 @@ export function NewChat() {
           })}
         </div>
       }
-      {/* 
+
       <div className={styles["actions"]}>
-
-
         <IconButton
           size={5}
-          text={Locale.NewChat.EmptyChat}
-          onClick={() => startChat()}
+          text={Locale.NewChat.MultiLlm}
           //  icon={<ChatIcon />}
           type="primary"
           shadow
           className={styles["new-default-chat"]}
         />
-      </div> */}
+      </div>
 
       {/* <div className={styles["masks"]} ref={maskRef}>
         {groups.map((masks, i) => (

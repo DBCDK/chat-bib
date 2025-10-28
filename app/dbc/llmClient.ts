@@ -2,6 +2,7 @@ import { log } from "dbc-node-logger";
 
 import { getServerSideConfig } from "@/app/config/server";
 import { LLMRequest } from ".";
+import { DBC_LLM_ENDPOINT_MODELS } from "@/app/constant";
 
 const serverConfig = getServerSideConfig();
 
@@ -32,9 +33,15 @@ export async function llmGenerate(input: LLMRequest) {
 
   // MODEL_NAMES are frontend "agents", not actual LLM model names
   // The endpoint only accepts models from DBC_LLM_ENDPOINT_MODELS
-  // For now, always use "chatbib" as the model name
-  // In the future, allow passing a modelName parameter to override this
-  const modelName = "chatbib"; // TODO: Allow overriding via input.model or input.modelName
+  // Use parameters.llmModel when valid; default to "chatbib"
+  const requestedEndpointModel = (parameters as any)?.llmModel as
+    | string
+    | undefined;
+  const modelName = DBC_LLM_ENDPOINT_MODELS.includes(
+    requestedEndpointModel || "",
+  )
+    ? requestedEndpointModel!
+    : "chatbib";
 
   const temperature = parameters.temperature ?? 0.001;
   const maxTokens = parameters.max_new_tokens || 500;

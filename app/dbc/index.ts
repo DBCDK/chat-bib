@@ -17,6 +17,10 @@ export type Message = {
 
 export type LLMParameters = {
   model?: MODEL_NAMES;
+  // Endpoint model to use for the DBC LLM endpoint. This is different from
+  // the high-level agent model above, and maps to one of DBC_LLM_ENDPOINT_MODELS.
+  //TODO: map DBC_LLM_ENDPOINT_MODELS to llmModel
+  llmModel?: "chatbib" | "gemma3-12b" | "skolegpt";
   temperature?: number;
   top_p?: number;
   presence_penalty?: number;
