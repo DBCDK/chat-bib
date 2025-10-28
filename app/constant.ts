@@ -177,3 +177,5 @@ export const internalAllowedWebDavEndpoints = [
   "https://webdav.yandex.com",
   "https://app.koofr.net/dav/Koofr",
 ];
+
+const DBC_LLM_ENDPOINT_MODELS = ["chatbib", "gemma3-12b", "skolegpt"];
