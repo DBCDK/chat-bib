@@ -44,18 +44,21 @@ export async function llmGenerate(input: LLMRequest) {
     : "chatbib";
 
   const temperature = parameters.temperature ?? 0.001;
+  const topP = parameters.top_p ?? 1;
   const maxTokens = parameters.max_new_tokens || 500;
 
   const requestBodyStr = JSON.stringify({
     messages: input.messages,
     model: modelName,
     temperature: temperature,
+    top_p: topP,
     max_tokens: maxTokens,
     presence_penalty: parameters.presence_penalty || 0,
     frequency_penalty: parameters.frequency_penalty || 0,
     stream: true,
   });
 
+  console.log("\n\n\n INPUT MESSAGES", input.messages, "\n\n");
   console.log("GOT REQUEST BODY", requestBodyStr);
 
   let generatedText = "";

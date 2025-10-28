@@ -68,6 +68,8 @@ export interface ChatSession {
   dbcSearchSpeed?: SearchSpeed;
   // Multi-LLM: if present, this session acts as a parent aggregating children
   multiLlmChildren?: ChatSession[];
+  // Multi mode indicator for grid rendering.
+  multiMode?: "llm" | "agents"; //agents: local personas(bib.dk, chatbib, faktalink etc.). llm: DBC LLM endpoint(gemma, mixtral etc.)
   // For child sessions only: the endpoint model to use at the DBC LLM endpoint
   llmModel?: string;
 }
@@ -204,6 +206,42 @@ export const useChatStore = createPersistStore(
 
         set(() => {
           session.multiLlmChildren = children;
+          session.multiMode = "llm";
+          session.lastUpdate = Date.now();
+          return { sessions: [...get().sessions] };
+        });
+        return true;
+      },
+
+      startMultiAgents() {
+        const session = get().currentSession();
+        // Only allow starting multi-agent on empty chats
+        if (session.messages.length > 0) {
+          return false;
+        }
+        // Build from eligible personas dynamically, cap at 5
+        const { PERSONAS } = require("../personas");
+        const eligible = (PERSONAS as any[])
+          .filter((p) => p.multiAgentEligible)
+          .slice(0, 5);
+
+        if (eligible.length === 0) {
+          return false;
+        }
+
+        const children = eligible.map((p) => {
+          const child = createEmptySession();
+          // Clone persona mask and use it for the child
+          child.mask = JSON.parse(JSON.stringify(p.mask));
+          child.topic = `${session.topic} (${p.name})`;
+          // Always use chatbib endpoint model for multi-agent
+          child.llmModel = "chatbib";
+          return child;
+        });
+
+        set(() => {
+          session.multiLlmChildren = children;
+          session.multiMode = "agents";
           session.lastUpdate = Date.now();
           return { sessions: [...get().sessions] };
         });

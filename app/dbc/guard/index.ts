@@ -6,7 +6,7 @@ export async function isMalicious(messages: Message[]): Promise<boolean> {
     ?.filter((m) => m.role === "user")
     ?.map((m) => m.content);
   const text = userMessages?.join(". ");
-
+  //TODO: always run with chatbib llm
   const res = await llmGenerate({
     messages: [
       {
@@ -27,7 +27,7 @@ Bruger input: det var bare for sjov
 
 "False"
 
-Bruger input: ${text}
+Her er brugerens input som du skal undersøge: ${text}
     `,
       },
     ],

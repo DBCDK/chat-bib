@@ -1445,13 +1445,15 @@ function _Chat() {
           setAutoScroll(false);
         }}
       >
-        {/* Multi-LLM grid if present */}
+        {/* Multi grid (LLM or Agents) if present */}
         {session.multiLlmChildren && session.multiLlmChildren.length > 0 ? (
           <div className={styles["multi-llm-grid"]}>
             {session.multiLlmChildren.map((child) => (
               <div key={child.id} className={styles["multi-llm-pane"]}>
                 <div className={styles["multi-llm-pane-header"]}>
-                  {child.llmModel}
+                  {session.multiMode === "agents"
+                    ? child?.mask?.name || ""
+                    : child.llmModel}
                 </div>
                 <div className={styles["multi-llm-messages"]}>
                   {child.messages.map((message) => (
