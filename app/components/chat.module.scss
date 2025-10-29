@@ -717,6 +717,7 @@
   gap: 12px;
   width: 100%;
   max-width: 1040px;
+  height: 100%;
 }
 
 .multi-llm-pane {
@@ -725,6 +726,9 @@
   padding: 8px;
   background: var(--white);
   color: var(--black);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .multi-llm-pane-header {
@@ -733,6 +737,26 @@
 }
 
 .multi-llm-messages {
-  max-height: 60vh;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+}
+
+.multi-llm-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+
+  textarea {
+    flex: 1;
+    border-radius: 8px;
+    border: var(--border-in-light);
+    background-color: var(--dark-gray);
+    color: var(--black);
+    padding: 10px 12px;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+  }
 }

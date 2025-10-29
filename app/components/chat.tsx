@@ -742,6 +742,7 @@ function _Chat() {
   const navigate = useNavigate();
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [childInputs, setChildInputs] = useState<Record<string, string>>({});
 
   // prompt hints
   const promptStore = usePromptStore();
@@ -864,6 +865,22 @@ function _Chat() {
       inputRef.current?.focus();
     }, 30);
   };
+
+  const setChildInput = useCallback((childId: string, value: string) => {
+    setChildInputs((prev) => ({ ...prev, [childId]: value }));
+  }, []);
+
+  const doChildSubmit = useCallback(
+    (childId: string) => {
+      const text = (childInputs[childId] || "").trim();
+      if (text.length === 0) return;
+      chatStore.onUserInputToChild?.(childId, text);
+      setChildInput(childId, "");
+      setAutoScroll(true);
+      scrollDomToBottom();
+    },
+    [chatStore, childInputs, scrollDomToBottom, setAutoScroll, setChildInput],
+  );
 
   // stop response
   const onUserStop = (messageId: string) => {
@@ -1481,6 +1498,31 @@ function _Chat() {
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className={styles["multi-llm-input"]}>
+                  <textarea
+                    rows={1}
+                    placeholder={
+                      session.multiMode === "agents"
+                        ? `Send to ${child?.mask?.name || "this pane"}`
+                        : `Send to ${child.llmModel}`
+                    }
+                    value={childInputs[child.id] || ""}
+                    onInput={(e) =>
+                      setChildInput(child.id, e.currentTarget.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (shouldSubmit(e)) {
+                        doChildSubmit(child.id);
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                  <IconButton
+                    icon={<SendWhiteIcon />}
+                    text={Locale.Chat.Send}
+                    onClick={() => doChildSubmit(child.id)}
+                  />
                 </div>
               </div>
             ))}

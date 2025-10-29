@@ -267,6 +267,17 @@ export const useChatStore = createPersistStore(
         });
       },
 
+      onUserInputToChild(
+        childId: string,
+        content: string,
+        attachImages?: string[],
+      ) {
+        const parent = get().currentSession();
+        const child = parent.multiLlmChildren?.find((c) => c.id === childId);
+        if (!child) return;
+        return get()._onUserInputForChild(parent, child, content, attachImages);
+      },
+
       _getMessagesWithMemoryFor(target: ChatSession) {
         const modelConfig = target.mask.modelConfig;
         const clearContextIndex = target.clearContextIndex ?? 0;
@@ -360,6 +371,19 @@ export const useChatStore = createPersistStore(
           content: mContent,
         });
 
+        // For better UX in multi-pane, display the raw user input immediately
+        // while still sending the templated content to the backend.
+        let uiContent: string | MultimodalContent[] = content;
+        if (attachImages && attachImages.length > 0) {
+          uiContent = [
+            { type: "text" as const, text: content },
+            ...attachImages.map((url) => ({
+              type: "image_url" as const,
+              image_url: { url },
+            })),
+          ];
+        }
+
         const botMessage: ChatMessage = createMessage({
           role: MessageRole.Assistant,
           streaming: true,
@@ -385,7 +409,7 @@ export const useChatStore = createPersistStore(
                 ...childrenCopy[childIndex],
               } as ChatSession;
               targetChild.messages = targetChild.messages.concat([
-                { ...userMessage, content: mContent },
+                { ...userMessage, content: uiContent },
                 botMessage,
               ]);
               childrenCopy[childIndex] = targetChild;
