@@ -3,7 +3,7 @@ import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 import { selectWorks } from "@/app/utils/selectWorks";
-import MaterialCard from "../components/MaterialCard/MaterialCard";
+import Carousel from "../components/Carousel/Index";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 import { ModelDescription } from "./modelsDescriptions";
 //TODO MOVE TO A SHARED FILE!
@@ -50,12 +50,13 @@ async function finalAnswer({
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
   });
-  say("\n\n\n\n");
+  const carousel: string[] = [];
   works.forEach((work) => {
     if (finalAnswer.includes(work.workId)) {
-      MaterialCard.serialize({ say, workId: work.workId });
+      carousel.push(work.workId);
     }
   });
+  Carousel.serialize({ say, workIds: carousel });
 }
 type SimpleSearchQuery = {
   q: {
