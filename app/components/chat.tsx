@@ -743,6 +743,8 @@ function _Chat() {
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [childInputs, setChildInputs] = useState<Record<string, string>>({});
+  const [multiViewMode, setMultiViewMode] = useState<"grid" | "tabs">("grid");
+  const [selectedChildId, setSelectedChildId] = useState<string | undefined>();
 
   // prompt hints
   const promptStore = usePromptStore();
@@ -786,6 +788,17 @@ function _Chat() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
+
+  // Initialize selected child when multi children appear
+  useEffect(() => {
+    if (
+      session.multiLlmChildren &&
+      session.multiLlmChildren.length > 0 &&
+      !selectedChildId
+    ) {
+      setSelectedChildId(session.multiLlmChildren[0].id);
+    }
+  }, [session.multiLlmChildren, selectedChildId]);
 
   // chat commands shortcuts
   const chatCommands = useChatCommand({
@@ -832,9 +845,20 @@ function _Chat() {
     setIsLoading(true);
     const isMulti =
       session.multiLlmChildren && session.multiLlmChildren.length > 0;
-    const p = isMulti
-      ? chatStore.onUserInputSmart(userInput, attachImages)
-      : chatStore.onUserInput(userInput, attachImages);
+    let p: any;
+    if (isMulti) {
+      if (multiViewMode === "tabs" && selectedChildId) {
+        p = chatStore.onUserInputToChild?.(
+          selectedChildId,
+          userInput,
+          attachImages,
+        );
+      } else {
+        p = chatStore.onUserInputSmart(userInput, attachImages);
+      }
+    } else {
+      p = chatStore.onUserInput(userInput, attachImages);
+    }
     Promise.resolve(p).then(() => setIsLoading(false));
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
@@ -1328,6 +1352,19 @@ function _Chat() {
               }
             }}
           />
+          {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
+            <IconButton
+              bordered
+              title={
+                multiViewMode === "grid"
+                  ? "View: Grid (click to Tabs)"
+                  : "View: Tabs (click to Grid)"
+              }
+              onClick={() =>
+                setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
+              }
+            />
+          )}
           {true && (
             <IconButton
               icon={<ExportIcon />}
@@ -1464,68 +1501,161 @@ function _Chat() {
       >
         {/* Multi grid (LLM or Agents) if present */}
         {session.multiLlmChildren && session.multiLlmChildren.length > 0 ? (
-          <div className={styles["multi-llm-grid"]}>
-            {session.multiLlmChildren.map((child) => (
-              <div key={child.id} className={styles["multi-llm-pane"]}>
-                <div className={styles["multi-llm-pane-header"]}>
-                  {session.multiMode === "agents"
-                    ? child?.mask?.name || ""
-                    : child.llmModel}
-                </div>
-                <div className={styles["multi-llm-messages"]}>
-                  {child.messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={
-                        message.role === "user"
-                          ? styles["chat-message-user"]
-                          : styles["chat-message"]
-                      }
-                    >
-                      <div className={styles["chat-message-container"]}>
-                        <div className={styles["chat-message-item"]}>
-                          <Markdown
-                            content={getMessageTextContent(message)}
-                            loading={
-                              message.streaming &&
-                              message.content.length === 0 &&
-                              message.role !== "user"
-                            }
-                            fontSize={fontSize}
-                            parentRef={scrollRef}
-                          />
+          <div className={styles["multi-llm-container"]}>
+            {multiViewMode === "tabs" && (
+              <div className={styles["multi-llm-tabs"]}>
+                {session.multiLlmChildren.map((child) => (
+                  <div
+                    key={child.id}
+                    className={`${styles["multi-llm-tab"]} ${
+                      selectedChildId === child.id ? styles["active"] : ""
+                    }`}
+                    onClick={() => setSelectedChildId(child.id)}
+                  >
+                    {session.multiMode === "agents"
+                      ? child?.mask?.name || ""
+                      : child.llmModel}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {multiViewMode === "grid" ? (
+              <div className={styles["multi-llm-grid"]}>
+                {session.multiLlmChildren.map((child) => (
+                  <div key={child.id} className={styles["multi-llm-pane"]}>
+                    <div className={styles["multi-llm-pane-header"]}>
+                      {session.multiMode === "agents"
+                        ? child?.mask?.name || ""
+                        : child.llmModel}
+                    </div>
+                    <div className={styles["multi-llm-messages"]}>
+                      {child.messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={
+                            message.role === "user"
+                              ? styles["chat-message-user"]
+                              : styles["chat-message"]
+                          }
+                        >
+                          <div className={styles["chat-message-container"]}>
+                            <div className={styles["chat-message-item"]}>
+                              <Markdown
+                                content={getMessageTextContent(message)}
+                                loading={
+                                  message.streaming &&
+                                  message.content.length === 0 &&
+                                  message.role !== "user"
+                                }
+                                fontSize={fontSize}
+                                parentRef={scrollRef}
+                              />
+                            </div>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                    <div className={styles["multi-llm-input"]}>
+                      <textarea
+                        rows={1}
+                        placeholder={
+                          session.multiMode === "agents"
+                            ? `Send to ${child?.mask?.name || "this pane"}`
+                            : `Send to ${child.llmModel}`
+                        }
+                        value={childInputs[child.id] || ""}
+                        onInput={(e) =>
+                          setChildInput(child.id, e.currentTarget.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (shouldSubmit(e)) {
+                            doChildSubmit(child.id);
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      <IconButton
+                        icon={<SendWhiteIcon />}
+                        text={Locale.Chat.Send}
+                        onClick={() => doChildSubmit(child.id)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              (() => {
+                const child =
+                  session.multiLlmChildren.find(
+                    (c) => c.id === selectedChildId,
+                  ) || session.multiLlmChildren[0];
+                if (!child) return null;
+                return (
+                  <div className={styles["multi-llm-single"]}>
+                    <div className={styles["multi-llm-pane"]}>
+                      <div className={styles["multi-llm-pane-header"]}>
+                        {session.multiMode === "agents"
+                          ? child?.mask?.name || ""
+                          : child.llmModel}
+                      </div>
+                      <div className={styles["multi-llm-messages"]}>
+                        {child.messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={
+                              message.role === "user"
+                                ? styles["chat-message-user"]
+                                : styles["chat-message"]
+                            }
+                          >
+                            <div className={styles["chat-message-container"]}>
+                              <div className={styles["chat-message-item"]}>
+                                <Markdown
+                                  content={getMessageTextContent(message)}
+                                  loading={
+                                    message.streaming &&
+                                    message.content.length === 0 &&
+                                    message.role !== "user"
+                                  }
+                                  fontSize={fontSize}
+                                  parentRef={scrollRef}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className={styles["multi-llm-input"]}>
+                        <textarea
+                          rows={1}
+                          placeholder={
+                            session.multiMode === "agents"
+                              ? `Send to ${child?.mask?.name || "this pane"}`
+                              : `Send to ${child.llmModel}`
+                          }
+                          value={childInputs[child.id] || ""}
+                          onInput={(e) =>
+                            setChildInput(child.id, e.currentTarget.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (shouldSubmit(e)) {
+                              doChildSubmit(child.id);
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                        <IconButton
+                          icon={<SendWhiteIcon />}
+                          text={Locale.Chat.Send}
+                          onClick={() => doChildSubmit(child.id)}
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className={styles["multi-llm-input"]}>
-                  <textarea
-                    rows={1}
-                    placeholder={
-                      session.multiMode === "agents"
-                        ? `Send to ${child?.mask?.name || "this pane"}`
-                        : `Send to ${child.llmModel}`
-                    }
-                    value={childInputs[child.id] || ""}
-                    onInput={(e) =>
-                      setChildInput(child.id, e.currentTarget.value)
-                    }
-                    onKeyDown={(e) => {
-                      if (shouldSubmit(e)) {
-                        doChildSubmit(child.id);
-                        e.preventDefault();
-                      }
-                    }}
-                  />
-                  <IconButton
-                    icon={<SendWhiteIcon />}
-                    text={Locale.Chat.Send}
-                    onClick={() => doChildSubmit(child.id)}
-                  />
-                </div>
-              </div>
-            ))}
+                  </div>
+                );
+              })()
+            )}
           </div>
         ) : (
           <div className={styles["chat-messages-container"]}>
@@ -1785,16 +1915,7 @@ function _Chat() {
                 className={styles["chat-input-send"]}
                 type="primary"
                 onClick={() => {
-                  if (
-                    session.multiLlmChildren &&
-                    session.multiLlmChildren.length > 0
-                  ) {
-                    chatStore.onUserInputSmart(userInput, attachImages);
-                    setIsLoading(false);
-                    setAttachImages([]);
-                  } else {
-                    doSubmit(userInput);
-                  }
+                  doSubmit(userInput);
                 }}
               />
             </label>
