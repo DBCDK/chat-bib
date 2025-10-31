@@ -1354,6 +1354,7 @@ function _Chat() {
           />
           {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
             <IconButton
+              icon={multiViewMode === "grid" ? <MinIcon /> : <MaxIcon />}
               bordered
               title={
                 multiViewMode === "grid"

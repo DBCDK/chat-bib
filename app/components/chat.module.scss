@@ -724,8 +724,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   width: 100%;
-  max-width: 1040px;
   height: 100%;
+  max-width: 100%;
+  padding-right: 20px;
 }
 
 .multi-llm-pane {
@@ -737,7 +738,8 @@
   display: flex;
   flex-direction: column;
   min-height: 600px;
-  width: 100%;
+  width: 95%;
+  margin-bottom:20px;
 }
 
 .multi-llm-pane-header {
