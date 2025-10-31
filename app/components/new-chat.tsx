@@ -17,18 +17,6 @@ import { BUILTIN_MASK_STORE } from "../masks";
 import { Persona, PERSONAS } from "../personas";
 import { trackMatomoEvent, useMobileScreen } from "../utils";
 
-function MaskItem(props: { mask: Mask; onClick?: () => void }) {
-  return (
-    <div className={styles["mask"]} onClick={props.onClick}>
-      <MaskAvatar
-        avatar={props.mask.avatar}
-        model={props.mask.modelConfig.model}
-      />
-      <div className={styles["mask-name"] + " one-line"}>{props.mask.name}</div>
-    </div>
-  );
-}
-
 function useMaskGroup(masks: Mask[]) {
   const [groups, setGroups] = useState<Mask[][]>([]);
 
@@ -177,7 +165,15 @@ export function NewChat() {
             );
           })}
         </div>
+       
       }
+      <IconButton
+        shadow
+        className={styles.newMultiChatButton}
+        text={"Start MultiChat"}
+        onClick={() => navigate(Path.MultiChat, { state: { fresh: true } })}
+        size={5}
+      />
       {/* 
       <div className={styles["actions"]}>
 

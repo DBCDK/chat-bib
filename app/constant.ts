@@ -26,6 +26,7 @@ export enum Path {
   NewChat = "/new-chat",
   Masks = "/masks",
   Auth = "/auth",
+  MultiChat = "/multi-chat",
 }
 
 export enum ApiPath {
@@ -67,6 +68,8 @@ export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
 export const STORAGE_KEY = "chatgpt-next-web";
 
 export const REQUEST_TIMEOUT_MS = 60000;
+// MultiChat-only timeout (used to abort per-pane streams); tweak as needed
+export const MULTICHAT_REQUEST_TIMEOUT_MS = 60000;
 
 export const EXPORT_MESSAGE_CLASS_NAME = "export-markdown";
 

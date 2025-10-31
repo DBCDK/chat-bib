@@ -14,6 +14,7 @@ import {
   SUMMARIZE_MODEL,
   GEMINI_SUMMARIZE_MODEL,
 } from "../constant";
+import { MULTICHAT_REQUEST_TIMEOUT_MS } from "../constant";
 import { SearchSpeed } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
@@ -240,6 +241,30 @@ export const useChatStore = createPersistStore(
         }));
       },
 
+      // Create a new session without changing current selection; returns the new session id
+      newSessionNoSelect(mask?: Mask) {
+        const session = createEmptySession();
+
+        const sessionMask = mask ? mask : DEFAULT_SYSTEM_PERSONA.mask;
+        const config = useAppConfig.getState();
+        const globalModelConfig = config.modelConfig;
+
+        session.mask = {
+          ...sessionMask,
+          modelConfig: {
+            ...globalModelConfig,
+            ...sessionMask.modelConfig,
+          },
+        };
+        session.topic = DEFAULT_TOPIC;
+
+        set((state) => ({
+          sessions: state.sessions.concat([session]),
+        }));
+
+        return session.id;
+      },
+
       nextSession(delta: number) {
         const n = get().sessions.length;
         const limit = (x: number) => (x + n) % n;
@@ -302,6 +327,20 @@ export const useChatStore = createPersistStore(
         const session = sessions[index];
 
         return session;
+      },
+
+      getSessionById(sessionId: string) {
+        const sessions = get().sessions;
+        return sessions.find((s) => s.id === sessionId);
+      },
+
+      updateSessionById(sessionId: string, updater: (session: ChatSession) => void) {
+        const sessions = get().sessions;
+        const idx = sessions.findIndex((s) => s.id === sessionId);
+        if (idx >= 0) {
+          updater(sessions[idx]);
+          set(() => ({ sessions }));
+        }
       },
 
       onNewMessage(message: ChatMessage) {
@@ -429,6 +468,170 @@ export const useChatStore = createPersistStore(
               botMessage.id ?? messageIndex,
               controller,
             );
+          },
+        });
+      },
+
+      // Per-session send without attachments; used by MultiChat
+      async onUserInputForSession(sessionId: string, content: string) {
+        const session = get().getSessionById(sessionId);
+        if (!session) return;
+        const modelConfig = session.mask.modelConfig;
+
+        const userContent = fillTemplateWith(content, modelConfig);
+
+        let userMessage: ChatMessage = createMessage({
+          role: MessageRole.User,
+          content: userContent,
+        });
+
+        const botMessage: ChatMessage = createMessage({
+          role: MessageRole.Assistant,
+          streaming: true,
+          model: modelConfig.model,
+        });
+
+        const recentMessages = (() => {
+          const modelCfg = session.mask.modelConfig;
+          const clearContextIndex = session.clearContextIndex ?? 0;
+          const messages = session.messages.slice();
+          const totalMessageCount = session.messages.length;
+          const contextPrompts = session.mask.context.slice();
+          const shouldInjectSystemPrompts =
+            modelCfg.enableInjectSystemPrompts &&
+            session.mask.modelConfig.model.startsWith("gpt-");
+          let systemPrompts: ChatMessage[] = [];
+          systemPrompts = shouldInjectSystemPrompts
+            ? [
+                createMessage({
+                  role: MessageRole.System,
+                  content: fillTemplateWith("", {
+                    ...modelCfg,
+                    template: DEFAULT_SYSTEM_TEMPLATE,
+                  }),
+                }),
+              ]
+            : [];
+          const memoryPrompt = (() => {
+            if (session.memoryPrompt.length) {
+              return {
+                role: MessageRole.System,
+                content: Locale.Store.Prompt.History(session.memoryPrompt),
+                date: "",
+              } as ChatMessage;
+            }
+          })();
+          const shouldSendLongTermMemory =
+            modelCfg.sendMemory &&
+            session.memoryPrompt &&
+            session.memoryPrompt.length > 0 &&
+            session.lastSummarizeIndex > clearContextIndex;
+          const longTermMemoryPrompts =
+            shouldSendLongTermMemory && memoryPrompt ? [memoryPrompt] : [];
+          const longTermMemoryStartIndex = session.lastSummarizeIndex;
+          const shortTermMemoryStartIndex = Math.max(
+            0,
+            totalMessageCount - modelCfg.historyMessageCount,
+          );
+          const memoryStartIndex = shouldSendLongTermMemory
+            ? Math.min(longTermMemoryStartIndex, shortTermMemoryStartIndex)
+            : shortTermMemoryStartIndex;
+          const contextStartIndex = Math.max(clearContextIndex, memoryStartIndex);
+          const maxTokenThreshold = modelConfig.max_tokens;
+          const reversedRecentMessages = [] as ChatMessage[];
+          for (
+            let i = totalMessageCount - 1, tokenCount = 0;
+            i >= contextStartIndex && tokenCount < maxTokenThreshold;
+            i -= 1
+          ) {
+            const msg = messages[i];
+            if (!msg || (msg as any).isError) continue;
+            tokenCount += estimateTokenLength(getMessageTextContent(msg));
+            reversedRecentMessages.push(msg);
+          }
+          const recent = [
+            ...systemPrompts,
+            ...longTermMemoryPrompts,
+            ...contextPrompts,
+            ...reversedRecentMessages.reverse(),
+          ];
+          return recent;
+        })();
+        const sendMessages = recentMessages.concat(userMessage);
+        const messageIndex = session.messages.length + 1;
+
+        get().updateSessionById(sessionId, (s) => {
+          const savedUserMessage = {
+            ...userMessage,
+            content: userContent,
+          };
+          s.messages = s.messages.concat([savedUserMessage, botMessage]);
+        });
+
+        let api: ClientApi;
+        if (modelConfig.model.startsWith("dbc")) {
+          api = new ClientApi(ModelProvider.DBC);
+        } else if (modelConfig.model.startsWith("tgi")) {
+          api = new ClientApi(ModelProvider.TGI);
+        } else if (modelConfig.model.startsWith("gemini")) {
+          api = new ClientApi(ModelProvider.GeminiPro);
+        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
+          api = new ClientApi(ModelProvider.Claude);
+        } else {
+          api = new ClientApi(ModelProvider.GPT);
+        }
+
+        api.llm.chat({
+          messages: sendMessages,
+          config: { ...modelConfig, stream: true },
+          onUpdate(message) {
+            botMessage.streaming = true;
+            if (message) {
+              botMessage.content = message;
+            }
+            get().updateSessionById(sessionId, (s) => {
+              s.messages = s.messages.concat();
+            });
+          },
+          onFinish(message) {
+            botMessage.streaming = false;
+            if (message) {
+              botMessage.content = message;
+              get().updateSessionById(sessionId, (s) => {
+                s.lastUpdate = Date.now();
+              });
+            }
+            ChatControllerPool.remove(sessionId, botMessage.id);
+          },
+          onError(error) {
+            const isAborted = error.message.includes("aborted");
+            botMessage.content +=
+              "\n\n" +
+              prettyObject({
+                error: true,
+                message: error.message,
+              });
+            botMessage.streaming = false;
+            userMessage.isError = !isAborted;
+            botMessage.isError = !isAborted;
+            get().updateSessionById(sessionId, (s) => {
+              s.messages = s.messages.concat();
+            });
+            ChatControllerPool.remove(sessionId, botMessage.id ?? messageIndex);
+            console.error("[MultiChat] failed ", error);
+          },
+          onController(controller) {
+            ChatControllerPool.addController(
+              sessionId,
+              botMessage.id ?? messageIndex,
+              controller,
+            );
+            // MultiChat-specific timeout override
+            setTimeout(() => {
+              try {
+                controller.abort();
+              } catch {}
+            }, MULTICHAT_REQUEST_TIMEOUT_MS);
           },
         });
       },

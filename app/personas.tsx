@@ -51,7 +51,7 @@ export const PERSONAS = [
   {
     name: "Bibliotek.dk",
     description:
-      "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
+      "Chatbot der kan hjælpe med at besvare spørgsmål og vise eksempler fra bibliotek.dk.",
     image: "avatar1.svg",
     mask: {
       id: "100028",
@@ -62,23 +62,19 @@ export const PERSONAS = [
         {
           id: "Copilot-0",
           role: MessageRole.System,
-          content: `${defaultSystemPrompt} Du kan hjælpe med at anbefale bøger og søge efter værker på bibliotek.dk.`,
+          content: `${defaultSystemPrompt}`,
           date: "",
         },
         {
           id: "Copilot-1",
           role: MessageRole.Assistant,
           content:
-            "Hej! Hvordan kan jeg hjælpe dig i dag? Jeg kan give anbefalinger og søge efter værker på bibliotek.dk.",
+            "Hej! Hvordan kan jeg hjælpe dig i dag? \n Jeg er god til at finde information fra bibliotek.dk.",
           date: "",
         },
       ],
-      availableModels: [
-        MODEL_NAMES.DBC_MULTI_SEARCH,
-        MODEL_NAMES.DBC_MULTI_SEARCH_NO_CONTEXT,
-      ],
       modelConfig: {
-        model: MODEL_NAMES.DBC_MULTI_SEARCH_NO_CONTEXT,
+        model: MODEL_NAMES.DBC_WEB_SEARCH_2,
         temperature: 0.3,
         top_p: 1,
         max_tokens: 2000,
@@ -94,64 +90,21 @@ export const PERSONAS = [
       builtin: true,
     },
   },
-  // {
-  //   name: "SimpleSearch",
-  //   description:
-  //     "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
-  //   image: "avatar1.svg",
-  //   mask: {
-  //     id: "100033",
-  //     createdAt: 1688899480410,
-  //     avatar: "1f47e",
-  //     name: "SimpleSearch",
-  //     context: [
-  //       {
-  //         id: "Copilot-0",
-  //         role: MessageRole.System,
-  //         content: `${defaultSystemPrompt} Du kan hjælpe med at anbefale bøger og søge efter værker på bibliotek.dk.`,
-  //         date: "",
-  //       },
-  //       {
-  //         id: "Copilot-1",
-  //         role: MessageRole.Assistant,
-  //         content:
-  //           "Hej! Hvordan kan jeg hjælpe dig i dag? Jeg kan give anbefalinger og søge efter værker på bibliotek.dk.",
-  //         date: "",
-  //       },
-  //     ],
-  //     availableModels: [MODEL_NAMES.DBC_SIMPLE_SEARCH],
-  //     modelConfig: {
-  //       model: MODEL_NAMES.DBC_SIMPLE_SEARCH,
-  //       temperature: 0.3,
-  //       top_p: 1,
-  //       max_tokens: 2000,
-  //       presence_penalty: 0,
-  //       frequency_penalty: 0,
-  //       sendMemory: true,
-  //       historyMessageCount: 4,
-  //       compressMessageLengthThreshold: 1000,
-  //       enableInjectSystemPrompts: true,
-  //       template: "{{input}}",
-  //     },
-  //     lang: "da" as Lang,
-  //     builtin: true,
-  //   },
-  // },
   {
-    name: "FaktaChat",
+    name: "Faktalink",
     description:
-      "Chatbot der anvender en såkaldt RAG-model, hvor svarene baserer sig på fakta, som bibliotekerne kan stå inde for. Prototypen anvender foreløbig udelukkende artikler fra Faktalink, men kan henad vejen udbygges til at inkludere andre troværdige bibliotekskilder.",
+      "Chatbot der kan hjælpe med at finde information fra Faktalink.",
     image: "avatar3.svg",
     mask: {
       id: "100030",
       createdAt: 1688899480410,
       avatar: "1f47e",
-      name: "FaktaChat",
+      name: "Faktalink",
       context: [
         {
           id: "Copilot-0",
           role: MessageRole.System,
-          content: `${defaultSystemPrompt} Du kan hjælpe brugere med at finde information fra Faktalink.`,
+          content: `${defaultSystemPrompt}`,
           date: "",
         },
         {
@@ -181,23 +134,8 @@ export const PERSONAS = [
   },
   {
     name: "Websøgning",
-    description: (
-      <div>
-        Chatbot der anvender en søgemaskine der returnerer links til relevante
-        sider på Nettet uden reklamer og indblanding af økonomiske interesser.
-        Den anvender{" "}
-        <a
-          href="https://brave.com/search/api/"
-          target="_blank"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          Brave Search API
-        </a>
-        .
-      </div>
-    ),
+    description:
+      "Chatbot der anvender en søgemaskine der returnerer links til relevante sider på Nettet uden reklamer og indblanding af økonomiske interesser. Den anvender Brave Search API.",
     image: "avatar2.svg",
     mask: {
       id: "100029",
@@ -241,8 +179,8 @@ export const PERSONAS = [
 export interface Persona {
   name: string;
   description: string;
-  mask: Mask;
   image?: string;
+  mask: Mask;
 }
 
 export const DEFAULT_SYSTEM_PERSONA = {
@@ -286,3 +224,90 @@ export const DEFAULT_SYSTEM_PERSONA = {
     builtin: true,
   },
 };
+
+// Personas that should only appear in MultiChat (not in the New Chat screen)
+export const MULTICHAT_PERSONAS_EXTRA = [
+  {
+    name: "SimpleSearch",
+    description:
+      "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
+    image: "avatar1.svg",
+    mask: {
+      id: "100033",
+      createdAt: 1688899480410,
+      avatar: "1f47e",
+      name: "SimpleSearch",
+      context: [
+        {
+          id: "Copilot-0",
+          role: MessageRole.System,
+          content: `${defaultSystemPrompt} Du kan hjælpe med at anbefale bøger og søge efter værker på bibliotek.dk.`,
+          date: "",
+        },
+        {
+          id: "Copilot-1",
+          role: MessageRole.Assistant,
+          content:
+            "Hej! Hvordan kan jeg hjælpe dig i dag? Jeg kan give anbefalinger og søge efter værker på bibliotek.dk.",
+          date: "",
+        },
+      ],
+      modelConfig: {
+        model: MODEL_NAMES.DBC_SIMPLE_SEARCH,
+        temperature: 0.3,
+        top_p: 1,
+        max_tokens: 2000,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+        sendMemory: true,
+        historyMessageCount: 4,
+        compressMessageLengthThreshold: 1000,
+        enableInjectSystemPrompts: true,
+        template: "{{input}}",
+      },
+      lang: "da" as Lang,
+      builtin: true,
+    },
+  },
+  {
+    name: "ComplexSearch",
+    description:
+      "Chatbot, der udfører avancerede søgninger i FBI-Databrønd med Complex Search.",
+    image: "avatar2.svg",
+    mask: {
+      id: "100034",
+      createdAt: 1688899480410,
+      avatar: "1f47e",
+      name: "ComplexSearch",
+      context: [
+        {
+          id: "Copilot-0",
+          role: MessageRole.System,
+          content: `${defaultSystemPrompt} Brug kun Complex Search til at løse søgeopgaver.`,
+          date: "",
+        },
+        {
+          id: "Copilot-1",
+          role: MessageRole.Assistant,
+          content: "Hej! Hvordan kan jeg hjælpe med en mere avanceret søgning?",
+          date: "",
+        },
+      ],
+      modelConfig: {
+        model: MODEL_NAMES.DBC_COMPLEX_SEARCH,
+        temperature: 0.3,
+        top_p: 1,
+        max_tokens: 2000,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+        sendMemory: true,
+        historyMessageCount: 4,
+        compressMessageLengthThreshold: 1000,
+        enableInjectSystemPrompts: true,
+        template: "{{input}}",
+      },
+      lang: "da" as Lang,
+      builtin: true,
+    },
+  },
+];
