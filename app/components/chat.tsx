@@ -800,6 +800,18 @@ function _Chat() {
     }
   }, [session.multiLlmChildren, selectedChildId]);
 
+  // In multi-LLM mode, start at top and do not auto-scroll
+  useEffect(() => {
+    const multi =
+      session.multiLlmChildren && session.multiLlmChildren.length > 0;
+    if (multi) {
+      setAutoScroll(false);
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo(0, 0);
+      });
+    }
+  }, [session.multiLlmChildren, setAutoScroll]);
+
   // chat commands shortcuts
   const chatCommands = useChatCommand({
     new: () => chatStore.newSession(),
@@ -865,7 +877,11 @@ function _Chat() {
     setUserInput("");
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
-    setAutoScroll(true);
+    if (!isMulti) {
+      setAutoScroll(true);
+    } else {
+      setAutoScroll(false);
+    }
     // Skip Matomo tracking in multi-llm mode
     if (!isMulti) {
       const modelName = session?.mask?.name;
@@ -900,8 +916,6 @@ function _Chat() {
       if (text.length === 0) return;
       chatStore.onUserInputToChild?.(childId, text);
       setChildInput(childId, "");
-      setAutoScroll(true);
-      scrollDomToBottom();
     },
     [chatStore, childInputs, scrollDomToBottom, setAutoScroll, setChildInput],
   );
@@ -1878,8 +1892,26 @@ function _Chat() {
                 onInput={(e) => onInput(e.currentTarget.value)}
                 value={userInput}
                 onKeyDown={onInputKeyDown}
-                onFocus={scrollToBottom}
-                onClick={scrollToBottom}
+                onFocus={() => {
+                  if (
+                    !(
+                      session.multiLlmChildren &&
+                      session.multiLlmChildren.length > 0
+                    )
+                  ) {
+                    scrollToBottom();
+                  }
+                }}
+                onClick={() => {
+                  if (
+                    !(
+                      session.multiLlmChildren &&
+                      session.multiLlmChildren.length > 0
+                    )
+                  ) {
+                    scrollToBottom();
+                  }
+                }}
                 onPaste={handlePaste}
                 rows={inputRows}
                 autoFocus={autoFocus}

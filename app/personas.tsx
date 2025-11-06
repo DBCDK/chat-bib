@@ -205,7 +205,7 @@ export const PERSONAS = [
     name: "SimpleSearch",
     description:
       "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search.",
-    multiAgentEligible: true,
+    multiAgentEligible: false,
     showInNewChat: false,
     image: "avatar1.svg",
     mask: {
@@ -250,7 +250,7 @@ export const PERSONAS = [
     name: "ComplexSearch",
     description:
       "Chatbot der udfører avancerede søgninger i FBI-Databrønd via Complex Search.",
-    multiAgentEligible: true,
+    multiAgentEligible: false,
     showInNewChat: false,
     image: "avatar1.svg",
     mask: {
