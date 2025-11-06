@@ -180,23 +180,9 @@
   font-size: 15px;
 }
 
-
-
-
 @media (max-width: 600px) {
-
-  .new-chat{
+  .new-chat {
     overflow-y: scroll;
     padding-bottom: 20px;
   }
 }
-
-
-// .newMultiChatButton {
-//   background-color: var(--primary);
-//   width: 300px;
-//   color: white;
-//   margin: auto;
-//   margin-top: 50px;
-  
-// }  
