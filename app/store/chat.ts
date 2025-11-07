@@ -208,6 +208,7 @@ export const useChatStore = createPersistStore(
           session.multiLlmChildren = children;
           session.multiMode = "llm";
           session.lastUpdate = Date.now();
+          session.topic = "Multi-LLM";
           return { sessions: [...get().sessions] };
         });
         return true;

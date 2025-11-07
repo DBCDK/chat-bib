@@ -111,6 +111,11 @@ const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
 
+const llModelLabels: Record<string, string> = {
+  //keys are the DBC_LLM_ENDPOINT_MODELS
+  chatbib: "Mixtral",
+  "gemma3-12b": "Gemma 3-12B",
+};
 export function SessionConfigModel(props: { onClose: () => void }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -1542,7 +1547,7 @@ function _Chat() {
                     <div className={styles["multi-llm-pane-header"]}>
                       {session.multiMode === "agents"
                         ? child?.mask?.name || ""
-                        : child.llmModel}
+                        : llModelLabels[child.llmModel || ""] || ""}
                     </div>
                     <div className={styles["multi-llm-messages"]}>
                       {child.messages.map((message) => (

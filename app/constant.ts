@@ -178,4 +178,4 @@ export const internalAllowedWebDavEndpoints = [
   "https://app.koofr.net/dav/Koofr",
 ];
 
-export const DBC_LLM_ENDPOINT_MODELS = ["chatbib", "gemma3-12b", "skolegpt"];
+export const DBC_LLM_ENDPOINT_MODELS = ["chatbib", "gemma3-12b"];
