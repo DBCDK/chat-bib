@@ -243,7 +243,9 @@ async function generate({
 
 export const modelDescription: ModelDescription = {
   name: MODEL_NAMES.DBC_MULTI_SEARCH,
-  description: `${workDefinition} En model til at udføre enkle søgninger på værker baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales et værk. Prioritér kun denne model hvis der skal findes anbefalinger eller foretages en søgning på værker. Brug denne model KUN hvis der er behov for at finde et værk. Hvis spørgsmålet ikke er relateret til bøger, skal du ikke bruge denne model.`,
+  description: `En model der søger og anbefaler værker som bøger, film, musik, spil eller artikler baseret på brugerens forespørgsel. Brug denne model, når brugeren vil finde, sammenligne eller få anbefalinger til konkrete værker. Den håndterer både simple og avancerede søgninger i bibliotekets database. Brug KUN denne model, når spørgsmålet handler om værker eller anbefalinger – ikke ved generelle fakta- eller samtalespørgsmål.`,
+
+  //description: `En model til at udføre enkle søgninger på værker baseret på brugerinput. Brug denne model hvis der skal findes eller anbefales et værk. Prioritér kun denne model hvis der skal findes anbefalinger eller foretages en søgning på værker. Brug denne model KUN hvis der er behov for at finde et værk. Hvis spørgsmålet ikke er relateret til bøger, skal du ikke bruge denne model.`,
 };
 
 export default {

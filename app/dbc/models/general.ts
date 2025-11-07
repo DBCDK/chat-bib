@@ -2,7 +2,6 @@ import models from "@/app/dbc/models/models";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
 import { modelsDescriptions } from "./modelsDescriptions";
-import { extractJsonFromText } from "./utils";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 const id = MODEL_NAMES.DBC_GENERAL_MODEL;
 
@@ -11,7 +10,7 @@ async function getModelByPrompt({
   parameters,
   say,
 }: GenerateRequest): Promise<{ generate: Function }> {
-  const systemPrompt = `
+  const systemPromptOLD = `
     Ud fra samtalen, skal du finde ud af om hvilken model der skal bruges. 
     
     Du returnerer KUN dette json format, aldrig andet:
@@ -26,8 +25,28 @@ async function getModelByPrompt({
      {"modelName": navn på model}
 
      Du må aldrig skrive andet info end det der står i json formatet. Du må IKKE skriv noget før eller efter json formatet.
+     Hvis brugerens spørgsmål er uklar, må du godt stille uddybende spørgsmål til brugeren. Maks 1 uddybende spørgsmål. Hvis din sidste besked var en uddybende spørgsmål, må du ikke stille et nyt uddybende spørgsmål.
     
       `;
+
+  //TODO: remove VALGKRITERIER (kort)
+
+  const systemPrompt = `
+Du er en router. Vælg præcis én model.
+
+REGLER
+- Du returnerer KUN dette json format, aldrig andet: {"modelName": navn på model}
+- MODEL_NAME skal være én af: ${JSON.stringify(modelsDescriptions)}
+- Hvis du er i tvivl om hvilken model der skal bruges, skal du bruge ${MODEL_NAMES.DBC_BASE}. 
+- Må IKKE tilføje tekst før/efter JSON. Ingen markdown.
+
+VALGKRITERIER (kort)
+- Web/aktuelle fakta → DBC_WEB_SEARCH
+- Bøger/værker/anbefalinger → DBC_MULTI_SEARCH
+- Småsnak/system-/app-hjælp → DBC_BASE
+- Alt andet → DBC_BASE
+
+    `;
 
   const copy = [
     ...messages.filter((entry) => entry.role !== "system"),
@@ -46,8 +65,7 @@ async function getModelByPrompt({
         parameters,
         say: (chunk: any) => {
           accumulatedText += chunk?.token?.text || "";
-          console.log("Streaming text:", accumulatedText);
-
+          console.log("\n\n\n\nBIGBRAIN: accumulatedText", accumulatedText);
           // Regular expression to find JSON object in the accumulated text
           const jsonRegex = /{[^]*}/;
           const jsonString = accumulatedText.match(jsonRegex);
@@ -60,10 +78,14 @@ async function getModelByPrompt({
               // Abort the controller to stop further streaming
               controller.abort();
 
+              if (!Object.values(MODEL_NAMES).includes(jsonObject?.modelName)) {
+                jsonObject.modelName = MODEL_NAMES.DBC_BASE;
+              }
               // Resolve the promise with the extracted JSON object
               resolve(jsonObject);
             } catch (error) {
-              console.error("Failed to parse JSON:", error);
+              console.error("\n\n\n\nBIGBRAIN: Failed to parse JSON:", error);
+              resolve({ modelName: MODEL_NAMES.DBC_BASE });
               reject(error);
             }
           }
@@ -86,7 +108,6 @@ async function getModelByPrompt({
   // });
 
   //const json = extractJsonFromText(res);
-  console.log("json", modelJSON);
   const modelName = Object.values(MODEL_NAMES).includes(modelJSON?.modelName)
     ? modelJSON?.modelName
     : MODEL_NAMES.DBC_BASE;

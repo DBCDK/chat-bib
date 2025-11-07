@@ -51,6 +51,49 @@ export const PERSONAS = [
     },
   },
   {
+    name: "BigBrain",
+    description:
+      "Bruger flere kilder til at svare på spørgsmål, herunder websøgning, Faktalink og bibliotek.dk.",
+    multiAgentEligible: true,
+    showInNewChat: true,
+    image: "avatar4.svg",
+    mask: {
+      id: "100031",
+      createdAt: 1688899480410,
+      avatar: "1f47e",
+      name: "Chatbib",
+      context: [
+        {
+          id: "Copilot-0",
+          role: MessageRole.System,
+          content: defaultSystemPrompt,
+          date: "",
+        },
+        {
+          id: "Copilot-1",
+          role: MessageRole.Assistant,
+          content: "Hej! Hvordan kan jeg hjælpe dig i dag?",
+          date: "",
+        },
+      ],
+      modelConfig: {
+        model: MODEL_NAMES.DBC_GENERAL_MODEL,
+        temperature: 0.3,
+        top_p: 1,
+        max_tokens: 2000,
+        presence_penalty: 0,
+        frequency_penalty: 0,
+        sendMemory: true,
+        historyMessageCount: 4,
+        compressMessageLengthThreshold: 1000,
+        enableInjectSystemPrompts: true,
+        template: "{{input}}",
+      },
+      lang: "da" as Lang,
+      builtin: true,
+    },
+  },
+  {
     name: "Bibliotek.dk",
     description:
       "Chatbot, der omsætter brugerens input til søgninger i FBI-Databrønd. Prototypen anvender FBI´s nye søgeplatform, FBI-API, Simple Search og Complex Search og inkluderer prototypen på et nyt visningsmodul, der blander billeder og tekst i en chatgrænseflade.",
