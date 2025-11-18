@@ -26,7 +26,8 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
 
 export const modelDescription: ModelDescription = {
   name: MODEL_NAMES.DBC_FAKTA_CHAT,
-  description: "Denne model benytter Faktalink chat",
+  description:
+    "En model der bruger indhold fra Faktalink til at give elever letforståelige forklaringer, baggrundsviden og kilder til skoleopgaver. Bruges til emner som samfund, kultur, historie og aktuelle temaer, hvor der ønskes dybde, overblik og troværdige ressourcer.",
 };
 
 export default {

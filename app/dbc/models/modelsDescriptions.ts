@@ -2,6 +2,7 @@ import { modelDescription as multisearchDescription } from "./multiSearch";
 
 import { modelDescription as websearchDescription } from "./websearch";
 import { modelDescription as dbcBaseDescription } from "./base";
+import { modelDescription as faktachatDescription } from "./faktachat";
 
 export interface ModelDescription {
   name: string;
@@ -11,4 +12,5 @@ export const modelsDescriptions: ModelDescription[] = [
   multisearchDescription,
   websearchDescription,
   dbcBaseDescription,
+  faktachatDescription,
 ];

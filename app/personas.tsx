@@ -54,7 +54,7 @@ export const PERSONAS = [
     name: "BigBrain",
     description:
       "Bruger flere kilder til at svare på spørgsmål, herunder websøgning, Faktalink og bibliotek.dk.",
-    multiAgentEligible: true,
+    multiAgentEligible: false,
     showInNewChat: true,
     image: "avatar4.svg",
     mask: {
@@ -145,7 +145,7 @@ export const PERSONAS = [
     name: "FaktaChat",
     description:
       "Chatbot der anvender en såkaldt RAG-model, hvor svarene baserer sig på fakta, som bibliotekerne kan stå inde for. Prototypen anvender foreløbig udelukkende artikler fra Faktalink, men kan henad vejen udbygges til at inkludere andre troværdige bibliotekskilder.",
-    multiAgentEligible: false,
+    multiAgentEligible: true,
     showInNewChat: true,
     image: "avatar3.svg",
     mask: {
