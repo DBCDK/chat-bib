@@ -385,7 +385,9 @@ function mergeLists(lists: SearchResult[][]): SearchResult[] {
 export const modelDescription: ModelDescription = {
   name: MODEL_NAMES.DBC_WEB_SEARCH,
   description:
-    "En model til at udføre websøgninger og generere svar baseret på søgeresultaterne. Brug denne model når der bliver spurgt om generelle spørgsmål så som 'Hvad er forskellen på en kat og en hund?' eller 'Hvad er hovedstaden i Frankrig?'",
+    "En model der slår ting op på nettet og henter de nyeste fakta (datoer, begivenheder, nyheder, priser osv.). " +
+    "VÆLG ALTID DENNE MODEL når brugeren spørger om noget aktuelt eller tidsafhængigt. Vejret, aktulle begivenheder, hvornår noget finderssted osv. ",
+  // "En model der automatisk udfører websøgninger, når et spørgsmål kræver aktuelle eller verificerbare oplysninger. Bruges til forespørgsler som fx 'Hvordan er vejret i København?', 'Hvad sker der i verden lige nu?' eller andre spørgsmål, hvor svaret afhænger af nyeste data.",
 };
 
 export default {

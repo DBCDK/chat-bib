@@ -1,59 +1,78 @@
 import { log } from "dbc-node-logger";
 
 import { getServerSideConfig } from "@/app/config/server";
-import { LLMRequest, Message } from ".";
+import { LLMRequest } from ".";
+import { DBC_LLM_ENDPOINT_MODELS } from "@/app/constant";
 
 const serverConfig = getServerSideConfig();
-
-const llmFormat = (msgs: Message[]): string => {
-  let result = "<s>[INST] <<SYS>>\n";
-  if (msgs[0]?.role === "system") {
-    result += msgs.shift()?.content || "";
-  }
-  result += "\n<</SYS>>\n\n";
-
-  msgs.forEach((msg) => {
-    result += msg.content;
-    result += msg.role === "assistant" ? "</s><s>[INST]" : "[/INST]";
-  });
-
-  return result;
-};
 
 export async function llmGenerate(input: LLMRequest) {
   const decoder = new TextDecoder("utf-8");
 
+  const fetchUrl = `${serverConfig.dbcLlmEndpoint}/v1/chat/completions`;
+
+  if (!fetchUrl) {
+    throw new Error("DBC_LLM_ENDPOINT is not configured");
+  }
+
   const fetchOptions: RequestInit = {
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${serverConfig.dbcLlmToken}`,
       "Cache-Control": "no-store",
     },
     method: "POST",
-    // to fix #2485: https://stackoverflow.com/questions/55920957/cloudflare-worker-typeerror-one-time-use-body
     redirect: "manual",
     // @ts-ignore
     duplex: "half",
   };
-  const parameters = { temperature: 0.001, ...input.parameters };
 
-  delete parameters.model;
-  delete parameters.cutOff;
-  const fetchUrl = serverConfig.generateStreamUrl;
+  console.log("GOT FETCHOPTIONS", fetchOptions);
+  const parameters = { ...input.parameters };
+  console.log("GOT PARAMETERS", parameters);
+
+  // MODEL_NAMES are frontend "agents", not actual LLM model names
+  // The endpoint only accepts models from DBC_LLM_ENDPOINT_MODELS
+  // Use parameters.llmModel when valid; default to "chatbib"
+  const requestedEndpointModel = (parameters as any)?.llmModel as
+    | string
+    | undefined;
+  const modelName = DBC_LLM_ENDPOINT_MODELS.includes(
+    requestedEndpointModel || "",
+  )
+    ? requestedEndpointModel!
+    : "chatbib";
+
+  const temperature = parameters.temperature ?? 0.001;
+  const topP = parameters.top_p ?? 1;
+  const maxTokens = parameters.max_new_tokens || 500;
+
   const requestBodyStr = JSON.stringify({
-    inputs: llmFormat(input.messages),
-    parameters,
+    messages: input.messages,
+    model: modelName,
+    temperature: temperature,
+    top_p: topP,
+    max_tokens: maxTokens,
+    presence_penalty: parameters.presence_penalty || 0,
+    frequency_penalty: parameters.frequency_penalty || 0,
+    stream: true,
   });
+
+  console.log("\n\n\n INPUT MESSAGES", input.messages, "\n\n");
+  console.log("GOT REQUEST BODY", requestBodyStr);
+
   let generatedText = "";
   const now = performance.now();
   let firstToken: number = -1;
   const controller = input?.controller || new AbortController();
+  console.log("GOT FETCHURL", fetchUrl);
   try {
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
       body: requestBodyStr,
       signal: controller?.signal,
     });
-
+    console.log("GOT RESPONSE", res);
     const reader = res.body?.getReader();
     async function processChunk() {
       const { value, done } = (await reader?.read()) || { done: true };
@@ -69,11 +88,20 @@ export async function llmGenerate(input: LLMRequest) {
       rawValues.forEach((rawValue) => {
         const decodedValue = rawValue.replace(/data:\s*/, "").trim();
         try {
-          // console.log("decodedValue", decodedValue);
           const obj = JSON.parse(decodedValue);
-          generatedText += obj?.token?.text;
 
-          input.say?.(obj);
+          // OpenAI-compatible streaming format
+          const delta = obj?.choices?.[0]?.delta?.content;
+          if (delta) {
+            generatedText += delta;
+            input.say?.({ token: { text: delta } });
+          }
+
+          // Handle stop or finish reason
+          if (obj?.choices?.[0]?.finish_reason) {
+            return;
+          }
+
           if (
             input?.parameters?.cutOff &&
             generatedText?.length > input?.parameters?.cutOff
@@ -87,6 +115,7 @@ export async function llmGenerate(input: LLMRequest) {
     }
     await processChunk();
   } catch (e: any) {
+    console.log("GOT ERROR", e);
     if (e.name !== "AbortError") {
       generatedText += "--ABORTED--";
     }

@@ -3,6 +3,7 @@ import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { gql } from "@apollo/client";
 import { selectWorks } from "@/app/utils/selectWorks";
+import Carousel from "../components/Carousel/Index";
 const workDefinition =
   "Et værk er en bog, en film, en artikel, musik, spil eller andet material som kan lånes på biblioteket.";
 const allowedIndexes = [
@@ -72,11 +73,20 @@ async function finalAnswer({
   });
 
   // We just pass it through to the LLM backend
-  await llmGenerate({
+  const finalAnswer = await llmGenerate({
     messages: copy,
     parameters,
     say, // Remove this, if you don't want it to stream directly to client
   });
+
+  // Build and display a carousel of recommended works mentioned in the answer
+  const carousel: string[] = [];
+  works.forEach((work) => {
+    if (finalAnswer.includes(work.workId)) {
+      carousel.push(work.workId);
+    }
+  });
+  Carousel.serialize({ say, workIds: carousel });
 }
 
 export async function searchByCQL(

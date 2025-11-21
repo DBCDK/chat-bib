@@ -31,7 +31,7 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
-
+import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
 import AutoIcon from "../icons/auto.svg";
@@ -111,6 +111,11 @@ const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
 
+const llModelLabels: Record<string, string> = {
+  //keys are the DBC_LLM_ENDPOINT_MODELS
+  chatbib: "Mixtral",
+  "gemma3-12b": "Gemma 3-12B",
+};
 export function SessionConfigModel(props: { onClose: () => void }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -742,6 +747,9 @@ function _Chat() {
   const navigate = useNavigate();
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [childInputs, setChildInputs] = useState<Record<string, string>>({});
+  const [multiViewMode, setMultiViewMode] = useState<"grid" | "tabs">("grid");
+  const [selectedChildId, setSelectedChildId] = useState<string | undefined>();
 
   // prompt hints
   const promptStore = usePromptStore();
@@ -786,6 +794,29 @@ function _Chat() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
 
+  // Initialize selected child when multi children appear
+  useEffect(() => {
+    if (
+      session.multiLlmChildren &&
+      session.multiLlmChildren.length > 0 &&
+      !selectedChildId
+    ) {
+      setSelectedChildId(session.multiLlmChildren[0].id);
+    }
+  }, [session.multiLlmChildren, selectedChildId]);
+
+  // In multi-LLM mode, start at top and do not auto-scroll
+  useEffect(() => {
+    const multi =
+      session.multiLlmChildren && session.multiLlmChildren.length > 0;
+    if (multi) {
+      setAutoScroll(false);
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo(0, 0);
+      });
+    }
+  }, [session.multiLlmChildren, setAutoScroll]);
+
   // chat commands shortcuts
   const chatCommands = useChatCommand({
     new: () => chatStore.newSession(),
@@ -829,17 +860,38 @@ function _Chat() {
       return;
     }
     setIsLoading(true);
-    chatStore
-      .onUserInput(userInput, attachImages)
-      .then(() => setIsLoading(false));
+    const isMulti =
+      session.multiLlmChildren && session.multiLlmChildren.length > 0;
+    let p: any;
+    if (isMulti) {
+      if (multiViewMode === "tabs" && selectedChildId) {
+        p = chatStore.onUserInputToChild?.(
+          selectedChildId,
+          userInput,
+          attachImages,
+        );
+      } else {
+        p = chatStore.onUserInputSmart(userInput, attachImages);
+      }
+    } else {
+      p = chatStore.onUserInput(userInput, attachImages);
+    }
+    Promise.resolve(p).then(() => setIsLoading(false));
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
-    setAutoScroll(true);
-    const modelName = session?.mask?.name;
-    trackMatomoEvent("Chat", "Send message", modelName);
+    if (!isMulti) {
+      setAutoScroll(true);
+    } else {
+      setAutoScroll(false);
+    }
+    // Skip Matomo tracking in multi-llm mode
+    if (!isMulti) {
+      const modelName = session?.mask?.name;
+      trackMatomoEvent("Chat", "Send message", modelName);
+    }
   };
 
   const onPromptSelect = (prompt: RenderPompt) => {
@@ -858,6 +910,20 @@ function _Chat() {
       inputRef.current?.focus();
     }, 30);
   };
+
+  const setChildInput = useCallback((childId: string, value: string) => {
+    setChildInputs((prev) => ({ ...prev, [childId]: value }));
+  }, []);
+
+  const doChildSubmit = useCallback(
+    (childId: string) => {
+      const text = (childInputs[childId] || "").trim();
+      if (text.length === 0) return;
+      chatStore.onUserInputToChild?.(childId, text);
+      setChildInput(childId, "");
+    },
+    [chatStore, childInputs, scrollDomToBottom, setAutoScroll, setChildInput],
+  );
 
   // stop response
   const onUserStop = (messageId: string) => {
@@ -1294,6 +1360,31 @@ function _Chat() {
               </>
             }
           />
+          <IconButton
+            icon={<PluginIcon />}
+            bordered
+            title={"Multi-llm"}
+            onClick={() => {
+              const ok = chatStore.startMultiLlm?.();
+              if (!ok) {
+                showToast("Start a new empty chat to use Multi-llm");
+              }
+            }}
+          />
+          {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
+            <IconButton
+              icon={multiViewMode === "grid" ? <MinIcon /> : <MaxIcon />}
+              bordered
+              title={
+                multiViewMode === "grid"
+                  ? "View: Grid (click to Tabs)"
+                  : "View: Tabs (click to Grid)"
+              }
+              onClick={() =>
+                setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
+              }
+            />
+          )}
           {true && (
             <IconButton
               icon={<ExportIcon />}
@@ -1428,175 +1519,336 @@ function _Chat() {
           setAutoScroll(false);
         }}
       >
-        <div className={styles["chat-messages-container"]}>
-          {messages.map((message, i) => {
-            if (message.role === "system") {
-              return;
-            }
-            const isUser = message.role === "user";
-            const isContext = i < context.length;
-            const showActions =
-              i > 0 &&
-              !(message.preview || message.content.length === 0) &&
-              !isContext;
-            const showTyping = message.preview || message.streaming;
+        {/* Multi grid (LLM or Agents) if present */}
+        {session.multiLlmChildren && session.multiLlmChildren.length > 0 ? (
+          <div className={styles["multi-llm-container"]}>
+            {multiViewMode === "tabs" && (
+              <div className={styles["multi-llm-tabs"]}>
+                {session.multiLlmChildren.map((child) => (
+                  <div
+                    key={child.id}
+                    className={`${styles["multi-llm-tab"]} ${
+                      selectedChildId === child.id ? styles["active"] : ""
+                    }`}
+                    onClick={() => setSelectedChildId(child.id)}
+                  >
+                    {session.multiMode === "agents"
+                      ? child?.mask?.name || ""
+                      : child.llmModel}
+                  </div>
+                ))}
+              </div>
+            )}
 
-            const shouldShowClearContextDivider = i === clearContextIndex - 1;
-
-            return (
-              <Fragment key={message.id}>
-                <div
-                  className={
-                    isUser
-                      ? styles["chat-message-user"]
-                      : styles["chat-message"]
-                  }
-                >
-                  <div className={styles["chat-message-container"]}>
-                    <div className={styles["chat-message-header"]}>
-                      <div className={styles["chat-message-avatar"]}>
-                        <div className={styles["chat-message-edit"]}>
-                          <IconButton
-                            icon={<EditIcon />}
-                            onClick={async () => {
-                              const newMessage = await showPrompt(
-                                Locale.Chat.Actions.Edit,
-                                getMessageTextContent(message),
-                                10,
-                              );
-                              let newContent: string | MultimodalContent[] =
-                                newMessage;
-                              const images = getMessageImages(message);
-                              if (images.length > 0) {
-                                newContent = [
-                                  { type: "text", text: newMessage },
-                                ];
-                                for (let i = 0; i < images.length; i++) {
-                                  newContent.push({
-                                    type: "image_url",
-                                    image_url: {
-                                      url: images[i],
-                                    },
-                                  });
-                                }
-                              }
-                              chatStore.updateCurrentSession((session) => {
-                                const m = session.mask.context
-                                  .concat(session.messages)
-                                  .find((m) => m.id === message.id);
-                                if (m) {
-                                  m.content = newContent;
-                                }
-                              });
-                            }}
-                          ></IconButton>
-                        </div>
-                      </div>
-
-                      {false && (
-                        <div className={styles["chat-message-actions"]}>
-                          <div className={styles["chat-input-actions"]}>
-                            {message.streaming ? (
-                              <ChatAction
-                                text={Locale.Chat.Actions.Stop}
-                                icon={<StopIcon />}
-                                onClick={() => onUserStop(message.id ?? i)}
-                              />
-                            ) : (
-                              <>
-                                <ChatAction
-                                  text={Locale.Chat.Actions.Retry}
-                                  icon={<ResetIcon />}
-                                  onClick={() => onResend(message)}
-                                />
-
-                                <ChatAction
-                                  text={Locale.Chat.Actions.Delete}
-                                  icon={<DeleteIcon />}
-                                  onClick={() => onDelete(message.id ?? i)}
-                                />
-
-                                <ChatAction
-                                  text={Locale.Chat.Actions.Pin}
-                                  icon={<PinIcon />}
-                                  onClick={() => onPinMessage(message)}
-                                />
-                                <ChatAction
-                                  text={Locale.Chat.Actions.Copy}
-                                  icon={<CopyIcon />}
-                                  onClick={() =>
-                                    copyToClipboard(
-                                      getMessageTextContent(message),
-                                    )
-                                  }
-                                />
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
+            {multiViewMode === "grid" ? (
+              <div className={styles["multi-llm-grid"]}>
+                {session.multiLlmChildren.map((child) => (
+                  <div key={child.id} className={styles["multi-llm-pane"]}>
+                    <div className={styles["multi-llm-pane-header"]}>
+                      {session.multiMode === "agents"
+                        ? child?.mask?.name || ""
+                        : llModelLabels[child.llmModel || ""] || ""}
                     </div>
-                    <div className={styles["chat-message-item"]}>
-                      <Markdown
-                        content={getMessageTextContent(message)}
-                        loading={
-                          (message.preview || message.streaming) &&
-                          message.content.length === 0 &&
-                          !isUser
-                        }
-                        // onContextMenu={(e) => onRightClick(e, message)}
-                        onDoubleClickCapture={() => {
-                          if (!isMobileScreen) return;
-                          setUserInput(getMessageTextContent(message));
-                        }}
-                        fontSize={fontSize}
-                        parentRef={scrollRef}
-                        defaultShow={i >= messages.length - 6}
-                      />
-                      {getMessageImages(message).length == 1 && (
-                        <img
-                          className={styles["chat-message-item-image"]}
-                          src={getMessageImages(message)[0]}
-                          alt=""
-                        />
-                      )}
-                      {getMessageImages(message).length > 1 && (
+                    <div className={styles["multi-llm-messages"]}>
+                      {child.messages.map((message) => (
                         <div
-                          className={styles["chat-message-item-images"]}
-                          style={
-                            {
-                              "--image-count": getMessageImages(message).length,
-                            } as React.CSSProperties
+                          key={message.id}
+                          className={
+                            message.role === "user"
+                              ? styles["chat-message-user"]
+                              : styles["chat-message"]
                           }
                         >
-                          {getMessageImages(message).map((image, index) => {
-                            return (
-                              <img
-                                className={
-                                  styles["chat-message-item-image-multi"]
+                          <div className={styles["chat-message-container"]}>
+                            <div className={styles["chat-message-item"]}>
+                              <Markdown
+                                content={getMessageTextContent(message)}
+                                loading={
+                                  message.streaming &&
+                                  message.content.length === 0 &&
+                                  message.role !== "user"
                                 }
-                                key={index}
-                                src={image}
-                                alt=""
+                                fontSize={fontSize}
+                                parentRef={scrollRef}
                               />
-                            );
-                          })}
+                            </div>
+                          </div>
                         </div>
-                      )}
+                      ))}
                     </div>
+                    <div className={styles["multi-llm-input"]}>
+                      <textarea
+                        rows={1}
+                        placeholder={
+                          session.multiMode === "agents"
+                            ? `Send to ${child?.mask?.name || "this pane"}`
+                            : `Send to ${child.llmModel}`
+                        }
+                        value={childInputs[child.id] || ""}
+                        onInput={(e) =>
+                          setChildInput(child.id, e.currentTarget.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (shouldSubmit(e)) {
+                            doChildSubmit(child.id);
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      <IconButton
+                        icon={<SendWhiteIcon />}
+                        text={Locale.Chat.Send}
+                        onClick={() => doChildSubmit(child.id)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              (() => {
+                const child =
+                  session.multiLlmChildren.find(
+                    (c) => c.id === selectedChildId,
+                  ) || session.multiLlmChildren[0];
+                if (!child) return null;
+                return (
+                  <div className={styles["multi-llm-single"]}>
+                    <div className={styles["multi-llm-pane"]}>
+                      <div className={styles["multi-llm-pane-header"]}>
+                        {session.multiMode === "agents"
+                          ? child?.mask?.name || ""
+                          : child.llmModel}
+                      </div>
+                      <div className={styles["multi-llm-messages"]}>
+                        {child.messages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={
+                              message.role === "user"
+                                ? styles["chat-message-user"]
+                                : styles["chat-message"]
+                            }
+                          >
+                            <div className={styles["chat-message-container"]}>
+                              <div className={styles["chat-message-item"]}>
+                                <Markdown
+                                  content={getMessageTextContent(message)}
+                                  loading={
+                                    message.streaming &&
+                                    message.content.length === 0 &&
+                                    message.role !== "user"
+                                  }
+                                  fontSize={fontSize}
+                                  parentRef={scrollRef}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className={styles["multi-llm-input"]}>
+                        <textarea
+                          rows={1}
+                          placeholder={
+                            session.multiMode === "agents"
+                              ? `Send to ${child?.mask?.name || "this pane"}`
+                              : `Send to ${child.llmModel}`
+                          }
+                          value={childInputs[child.id] || ""}
+                          onInput={(e) =>
+                            setChildInput(child.id, e.currentTarget.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (shouldSubmit(e)) {
+                              doChildSubmit(child.id);
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                        <IconButton
+                          icon={<SendWhiteIcon />}
+                          text={Locale.Chat.Send}
+                          onClick={() => doChildSubmit(child.id)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+          </div>
+        ) : (
+          <div className={styles["chat-messages-container"]}>
+            {messages.map((message, i) => {
+              if (message.role === "system") {
+                return;
+              }
+              const isUser = message.role === "user";
+              const isContext = i < context.length;
+              const showActions =
+                i > 0 &&
+                !(message.preview || message.content.length === 0) &&
+                !isContext;
+              const showTyping = message.preview || message.streaming;
 
-                    {/* <div className={styles["chat-message-action-date"]}>
+              const shouldShowClearContextDivider = i === clearContextIndex - 1;
+
+              return (
+                <Fragment key={message.id}>
+                  <div
+                    className={
+                      isUser
+                        ? styles["chat-message-user"]
+                        : styles["chat-message"]
+                    }
+                  >
+                    <div className={styles["chat-message-container"]}>
+                      <div className={styles["chat-message-header"]}>
+                        <div className={styles["chat-message-avatar"]}>
+                          <div className={styles["chat-message-edit"]}>
+                            <IconButton
+                              icon={<EditIcon />}
+                              onClick={async () => {
+                                const newMessage = await showPrompt(
+                                  Locale.Chat.Actions.Edit,
+                                  getMessageTextContent(message),
+                                  10,
+                                );
+                                let newContent: string | MultimodalContent[] =
+                                  newMessage;
+                                const images = getMessageImages(message);
+                                if (images.length > 0) {
+                                  newContent = [
+                                    { type: "text", text: newMessage },
+                                  ];
+                                  for (let i = 0; i < images.length; i++) {
+                                    newContent.push({
+                                      type: "image_url",
+                                      image_url: {
+                                        url: images[i],
+                                      },
+                                    });
+                                  }
+                                }
+                                chatStore.updateCurrentSession((session) => {
+                                  const m = session.mask.context
+                                    .concat(session.messages)
+                                    .find((m) => m.id === message.id);
+                                  if (m) {
+                                    m.content = newContent;
+                                  }
+                                });
+                              }}
+                            ></IconButton>
+                          </div>
+                        </div>
+
+                        {false && (
+                          <div className={styles["chat-message-actions"]}>
+                            <div className={styles["chat-input-actions"]}>
+                              {message.streaming ? (
+                                <ChatAction
+                                  text={Locale.Chat.Actions.Stop}
+                                  icon={<StopIcon />}
+                                  onClick={() => onUserStop(message.id ?? i)}
+                                />
+                              ) : (
+                                <>
+                                  <ChatAction
+                                    text={Locale.Chat.Actions.Retry}
+                                    icon={<ResetIcon />}
+                                    onClick={() => onResend(message)}
+                                  />
+
+                                  <ChatAction
+                                    text={Locale.Chat.Actions.Delete}
+                                    icon={<DeleteIcon />}
+                                    onClick={() => onDelete(message.id ?? i)}
+                                  />
+
+                                  <ChatAction
+                                    text={Locale.Chat.Actions.Pin}
+                                    icon={<PinIcon />}
+                                    onClick={() => onPinMessage(message)}
+                                  />
+                                  <ChatAction
+                                    text={Locale.Chat.Actions.Copy}
+                                    icon={<CopyIcon />}
+                                    onClick={() =>
+                                      copyToClipboard(
+                                        getMessageTextContent(message),
+                                      )
+                                    }
+                                  />
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className={styles["chat-message-item"]}>
+                        <Markdown
+                          content={getMessageTextContent(message)}
+                          loading={
+                            (message.preview || message.streaming) &&
+                            message.content.length === 0 &&
+                            !isUser
+                          }
+                          // onContextMenu={(e) => onRightClick(e, message)}
+                          onDoubleClickCapture={() => {
+                            if (!isMobileScreen) return;
+                            setUserInput(getMessageTextContent(message));
+                          }}
+                          fontSize={fontSize}
+                          parentRef={scrollRef}
+                          defaultShow={i >= messages.length - 6}
+                        />
+                        {getMessageImages(message).length == 1 && (
+                          <img
+                            className={styles["chat-message-item-image"]}
+                            src={getMessageImages(message)[0]}
+                            alt=""
+                          />
+                        )}
+                        {getMessageImages(message).length > 1 && (
+                          <div
+                            className={styles["chat-message-item-images"]}
+                            style={
+                              {
+                                "--image-count":
+                                  getMessageImages(message).length,
+                              } as React.CSSProperties
+                            }
+                          >
+                            {getMessageImages(message).map((image, index) => {
+                              return (
+                                <img
+                                  className={
+                                    styles["chat-message-item-image-multi"]
+                                  }
+                                  key={index}
+                                  src={image}
+                                  alt=""
+                                />
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* <div className={styles["chat-message-action-date"]}>
                       {isContext
                         ? Locale.Chat.IsContext
                         : message.date.toLocaleString()}
                     </div> */}
+                    </div>
                   </div>
-                </div>
-                {shouldShowClearContextDivider && <ClearContextDivider />}
-              </Fragment>
-            );
-          })}
-        </div>
+                  {shouldShowClearContextDivider && <ClearContextDivider />}
+                </Fragment>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {!hasMalicious && (
@@ -1645,8 +1897,26 @@ function _Chat() {
                 onInput={(e) => onInput(e.currentTarget.value)}
                 value={userInput}
                 onKeyDown={onInputKeyDown}
-                onFocus={scrollToBottom}
-                onClick={scrollToBottom}
+                onFocus={() => {
+                  if (
+                    !(
+                      session.multiLlmChildren &&
+                      session.multiLlmChildren.length > 0
+                    )
+                  ) {
+                    scrollToBottom();
+                  }
+                }}
+                onClick={() => {
+                  if (
+                    !(
+                      session.multiLlmChildren &&
+                      session.multiLlmChildren.length > 0
+                    )
+                  ) {
+                    scrollToBottom();
+                  }
+                }}
                 onPaste={handlePaste}
                 rows={inputRows}
                 autoFocus={autoFocus}
@@ -1682,7 +1952,9 @@ function _Chat() {
                 text={Locale.Chat.Send}
                 className={styles["chat-input-send"]}
                 type="primary"
-                onClick={() => doSubmit(userInput)}
+                onClick={() => {
+                  doSubmit(userInput);
+                }}
               />
             </label>
           </div>

@@ -38,6 +38,8 @@ export interface LLMConfig {
   stream?: boolean;
   presence_penalty?: number;
   frequency_penalty?: number;
+  // Optional endpoint-level model override for DBC LLM endpoint
+  llmModel?: string;
 }
 
 export interface ChatOptions {
@@ -48,6 +50,8 @@ export interface ChatOptions {
   onFinish: (message: string) => void;
   onError?: (err: Error) => void;
   onController?: (controller: AbortController) => void;
+  // Optional conversation id override (used for multi-llm children)
+  conversationIdOverride?: string;
 }
 
 export interface LLMUsage {

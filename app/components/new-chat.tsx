@@ -159,7 +159,7 @@ export function NewChat() {
 
       {
         <div className={styles["personaContainer"]}>
-          {PERSONAS.map((persona) => {
+          {PERSONAS.filter((p) => p.showInNewChat !== false).map((persona) => {
             return (
               <div
                 key={persona.name}
@@ -178,20 +178,25 @@ export function NewChat() {
           })}
         </div>
       }
-      {/* 
+
       <div className={styles["actions"]}>
-
-
         <IconButton
           size={5}
-          text={Locale.NewChat.EmptyChat}
-          onClick={() => startChat()}
+          text={Locale.NewChat.MultiLlm}
           //  icon={<ChatIcon />}
           type="primary"
           shadow
           className={styles["new-default-chat"]}
+          onClick={() => {
+            // start a new empty session, then enable multi-agent and navigate
+            chatStore.newSession();
+            const ok = chatStore.startMultiAgents?.();
+            if (ok) {
+              navigate(Path.Chat);
+            }
+          }}
         />
-      </div> */}
+      </div>
 
       {/* <div className={styles["masks"]} ref={maskRef}>
         {groups.map((masks, i) => (
