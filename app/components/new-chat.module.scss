@@ -8,6 +8,7 @@
   // justify-content: center;
   // flex-direction: column;
   padding-top: 30px;
+  overflow-y: auto;
 
   .mask-header {
     display: flex;
@@ -71,8 +72,21 @@
     font-size: 12px;
 
     .new-default-chat {
-      margin-top: 100px;
+      margin-top: 30px;
+      margin-bottom: 30px;
     }
+  }
+
+  .button-container {
+    animation: slide-in ease 0.45s;
+    display: flex;
+    justify-content: center;
+    font-size: 12px;
+
+    .new-default-chat {
+      margin-top: 20px;
+    }
+
   }
 
   .masks {
