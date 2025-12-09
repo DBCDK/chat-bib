@@ -126,7 +126,10 @@ async function finalAnswer({
  
    For hver bog, SKAL du kun skrive titel og workId.
    Du må kun svare på dansk.
+    ${workDefinition}
    `;
+  ////   Svar så kort og præcist som muligt. Giv maksimum 5 anbefalinger. Du må KUN finde anbefalinger fra de værker som jeg har givet dig.
+
   //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
   //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
 
