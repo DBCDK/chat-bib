@@ -38,6 +38,7 @@ import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import EyeIcon from "../icons/eye.svg";
 
 import {
   ChatMessage,
@@ -1324,6 +1325,11 @@ function _Chat() {
     setAttachImages(images);
   }
 
+  const multiLlmStarted =
+    session.multiLlmChildren && session.multiLlmChildren.length > 0;
+
+  const isMultiLlm = !!multiLlmStarted && session.multiMode === "llm";
+  const isMultiAgents = !!multiLlmStarted && session.multiMode === "agents";
   return (
     <div className={styles.chat} key={session.id}>
       <div
@@ -1360,31 +1366,35 @@ function _Chat() {
               </>
             }
           />
-          <IconButton
-            icon={<PluginIcon />}
-            bordered
-            title={"Multi-llm"}
-            onClick={() => {
-              const ok = chatStore.startMultiLlm?.();
-              if (!ok) {
-                showToast("Start a new empty chat to use Multi-llm");
-              }
-            }}
-          />
-          {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
+          {!multiLlmStarted && (
             <IconButton
-              icon={multiViewMode === "grid" ? <MinIcon /> : <MaxIcon />}
-              bordered
-              title={
-                multiViewMode === "grid"
-                  ? "View: Grid (click to Tabs)"
-                  : "View: Tabs (click to Grid)"
-              }
-              onClick={() =>
-                setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
-              }
+              icon={<PluginIcon />}
+              //  bordered
+              title={"Multi-llm"}
+              onClick={() => {
+                const ok = chatStore.startMultiLlm?.();
+                if (!ok) {
+                  showToast("Start a new empty chat to use Multi-llm");
+                }
+              }}
             />
           )}
+          {session.multiLlmChildren &&
+            session.multiLlmChildren.length > 0 &&
+            multiLlmStarted && (
+              <IconButton
+                icon={multiViewMode === "grid" ? <EyeIcon /> : <EyeIcon />}
+                size={3}
+                title={
+                  multiViewMode === "grid"
+                    ? "View: Grid (click to Tabs)"
+                    : "View: Tabs (click to Grid)"
+                }
+                onClick={() =>
+                  setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
+                }
+              />
+            )}
           {true && (
             <IconButton
               icon={<ExportIcon />}
@@ -1524,19 +1534,24 @@ function _Chat() {
           <div className={styles["multi-llm-container"]}>
             {multiViewMode === "tabs" && (
               <div className={styles["multi-llm-tabs"]}>
-                {session.multiLlmChildren.map((child) => (
-                  <div
-                    key={child.id}
-                    className={`${styles["multi-llm-tab"]} ${
-                      selectedChildId === child.id ? styles["active"] : ""
-                    }`}
-                    onClick={() => setSelectedChildId(child.id)}
-                  >
-                    {session.multiMode === "agents"
-                      ? child?.mask?.name || ""
-                      : child.llmModel}
-                  </div>
-                ))}
+                {session.multiLlmChildren.map((child) => {
+                  console.log("child", child);
+                  return (
+                    <div
+                      key={child.id}
+                      className={`${styles["multi-llm-tab"]} ${
+                        selectedChildId === child.id ? styles["active"] : ""
+                      }`}
+                      onClick={() => setSelectedChildId(child.id)}
+                    >
+                      {session.multiMode === "agents"
+                        ? child?.mask?.name || ""
+                        : llModelLabels[
+                            child?.llmModel as keyof typeof llModelLabels
+                          ] || ""}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -1603,6 +1618,7 @@ function _Chat() {
                     </div>
                   </div>
                 ))}
+                <div className={styles["multi-llm-spacer"]} />
               </div>
             ) : (
               (() => {
@@ -1672,6 +1688,7 @@ function _Chat() {
                         />
                       </div>
                     </div>
+                    <div className={styles["multi-llm-spacer"]} />
                   </div>
                 );
               })()

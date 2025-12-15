@@ -112,6 +112,12 @@ VALGKRITERIER (kort)
     ? modelJSON?.modelName
     : MODEL_NAMES.DBC_BASE;
 
+  PluginStatus.serialize({
+    say,
+    pluginName: id,
+    description: `Valgte agent: ${modelName}`,
+  });
+
   //Hack to typescript error. Return models[modelName];
   return models[modelName as keyof typeof models];
 }

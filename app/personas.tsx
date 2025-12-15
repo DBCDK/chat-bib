@@ -51,9 +51,9 @@ export const PERSONAS = [
     },
   },
   {
-    name: "BigBrain",
+    name: "Generel",
     description:
-      "Bruger flere kilder til at svare på spørgsmål, herunder websøgning, Faktalink og bibliotek.dk.",
+      "Chatbot, der bruger flere agenter til at svare på spørgsmål, herunder websøgning, Faktalink og bibliotek.dk.",
     multiAgentEligible: false,
     showInNewChat: true,
     image: "avatar4.svg",
