@@ -1539,10 +1539,11 @@ function _Chat() {
                       }`}
                       onClick={() => setSelectedChildId(child.id)}
                     >
-                      hej
                       {session.multiMode === "agents"
                         ? child?.mask?.name || ""
-                        : child.llmModel}
+                        : llModelLabels[
+                            child?.llmModel as keyof typeof llModelLabels
+                          ] || ""}
                     </div>
                   );
                 })}
