@@ -1369,7 +1369,7 @@ function _Chat() {
           {!multiLlmStarted && (
             <IconButton
               icon={<PluginIcon />}
-              bordered
+              //  bordered
               title={"Multi-llm"}
               onClick={() => {
                 const ok = chatStore.startMultiLlm?.();
