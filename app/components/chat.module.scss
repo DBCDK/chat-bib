@@ -727,6 +727,8 @@
   height: 100%;
   max-width: 100%;
   padding-right: 20px;
+  // overflow-y: scroll;
+  // margin-bottom: 70px;
 }
 
 .multi-llm-pane {
@@ -773,6 +775,11 @@
 }
 
 .multi-llm-single {
+  width: 100%;
+}
+
+.multi-llm-spacer {
+  height: 150px;
   width: 100%;
 }
 

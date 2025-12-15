@@ -1324,6 +1324,9 @@ function _Chat() {
     setAttachImages(images);
   }
 
+  const multiLlmStarted =
+    session.multiLlmChildren && session.multiLlmChildren.length > 0;
+  console.log("session.multiLlmChildren", session.multiLlmChildren);
   return (
     <div className={styles.chat} key={session.id}>
       <div
@@ -1360,17 +1363,19 @@ function _Chat() {
               </>
             }
           />
-          <IconButton
-            icon={<PluginIcon />}
-            bordered
-            title={"Multi-llm"}
-            onClick={() => {
-              const ok = chatStore.startMultiLlm?.();
-              if (!ok) {
-                showToast("Start a new empty chat to use Multi-llm");
-              }
-            }}
-          />
+          {!multiLlmStarted && (
+            <IconButton
+              icon={<PluginIcon />}
+              bordered
+              title={"Multi-llm"}
+              onClick={() => {
+                const ok = chatStore.startMultiLlm?.();
+                if (!ok) {
+                  showToast("Start a new empty chat to use Multi-llm");
+                }
+              }}
+            />
+          )}
           {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
             <IconButton
               icon={multiViewMode === "grid" ? <MinIcon /> : <MaxIcon />}
@@ -1524,19 +1529,23 @@ function _Chat() {
           <div className={styles["multi-llm-container"]}>
             {multiViewMode === "tabs" && (
               <div className={styles["multi-llm-tabs"]}>
-                {session.multiLlmChildren.map((child) => (
-                  <div
-                    key={child.id}
-                    className={`${styles["multi-llm-tab"]} ${
-                      selectedChildId === child.id ? styles["active"] : ""
-                    }`}
-                    onClick={() => setSelectedChildId(child.id)}
-                  >
-                    {session.multiMode === "agents"
-                      ? child?.mask?.name || ""
-                      : child.llmModel}
-                  </div>
-                ))}
+                {session.multiLlmChildren.map((child) => {
+                  console.log("child", child);
+                  return (
+                    <div
+                      key={child.id}
+                      className={`${styles["multi-llm-tab"]} ${
+                        selectedChildId === child.id ? styles["active"] : ""
+                      }`}
+                      onClick={() => setSelectedChildId(child.id)}
+                    >
+                      hej
+                      {session.multiMode === "agents"
+                        ? child?.mask?.name || ""
+                        : child.llmModel}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -1603,6 +1612,7 @@ function _Chat() {
                     </div>
                   </div>
                 ))}
+                <div className={styles["multi-llm-spacer"]} />
               </div>
             ) : (
               (() => {
@@ -1672,6 +1682,7 @@ function _Chat() {
                         />
                       </div>
                     </div>
+                    <div className={styles["multi-llm-spacer"]} />
                   </div>
                 );
               })()
