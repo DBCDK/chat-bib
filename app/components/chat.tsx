@@ -38,6 +38,7 @@ import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
+import EyeIcon from "../icons/eye.svg";
 
 import {
   ChatMessage,
@@ -1326,7 +1327,9 @@ function _Chat() {
 
   const multiLlmStarted =
     session.multiLlmChildren && session.multiLlmChildren.length > 0;
-  console.log("session.multiLlmChildren", session.multiLlmChildren);
+
+  const isMultiLlm = !!multiLlmStarted && session.multiMode === "llm";
+  const isMultiAgents = !!multiLlmStarted && session.multiMode === "agents";
   return (
     <div className={styles.chat} key={session.id}>
       <div
@@ -1376,20 +1379,22 @@ function _Chat() {
               }}
             />
           )}
-          {session.multiLlmChildren && session.multiLlmChildren.length > 0 && (
-            <IconButton
-              icon={multiViewMode === "grid" ? <MinIcon /> : <MaxIcon />}
-              bordered
-              title={
-                multiViewMode === "grid"
-                  ? "View: Grid (click to Tabs)"
-                  : "View: Tabs (click to Grid)"
-              }
-              onClick={() =>
-                setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
-              }
-            />
-          )}
+          {session.multiLlmChildren &&
+            session.multiLlmChildren.length > 0 &&
+            multiLlmStarted && (
+              <IconButton
+                icon={multiViewMode === "grid" ? <EyeIcon /> : <EyeIcon />}
+                size={3}
+                title={
+                  multiViewMode === "grid"
+                    ? "View: Grid (click to Tabs)"
+                    : "View: Tabs (click to Grid)"
+                }
+                onClick={() =>
+                  setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
+                }
+              />
+            )}
           {true && (
             <IconButton
               icon={<ExportIcon />}
