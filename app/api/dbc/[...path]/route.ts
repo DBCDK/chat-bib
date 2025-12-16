@@ -80,7 +80,7 @@ async function handle(
   const requestBody = JSON.parse(clonedRequestBody) as LLMRequest;
 
   const model = requestBody.parameters.model || MODEL_NAMES.DBC_BASE;
-
+  console.log("\n\n\n\n\n MODEL: from route:model", model);
   const generate = models[model]?.generate;
 
   const newHeaders = new Headers();

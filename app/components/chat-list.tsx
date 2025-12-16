@@ -25,6 +25,7 @@ export function ChatItem(props: {
   onDelete?: () => void;
   title: string;
   count: number;
+  hideCount?: boolean;
   time: string;
   selected: boolean;
   id: string;
@@ -42,6 +43,9 @@ export function ChatItem(props: {
   }, [props.selected]);
 
   const { pathname: currentPath } = useLocation();
+  const titleAttr = props.hideCount
+    ? props.title
+    : `${props.title}\n${Locale.ChatItem.ChatItemCount(props.count)}`;
   return (
     <Draggable draggableId={`${props.id}`} index={props.index}>
       {(provided) => (
@@ -58,9 +62,7 @@ export function ChatItem(props: {
           }}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          title={`${props.title}\n${Locale.ChatItem.ChatItemCount(
-            props.count,
-          )}`}
+          title={titleAttr}
         >
           {props.narrow ? (
             <div className={styles["chat-item-narrow"]}>
@@ -70,17 +72,21 @@ export function ChatItem(props: {
                   model={props.mask.modelConfig.model}
                 />
               </div>
-              <div className={styles["chat-item-narrow-count"]}>
-                {props.count}
-              </div>
+              {!props.hideCount && (
+                <div className={styles["chat-item-narrow-count"]}>
+                  {props.count}
+                </div>
+              )}
             </div>
           ) : (
             <>
               <div className={styles["chat-item-title"]}>{props.title}</div>
               <div className={styles["chat-item-info"]}>
-                <div className={styles["chat-item-count"]}>
-                  {Locale.ChatItem.ChatItemCount(props.count)}
-                </div>
+                {!props.hideCount && (
+                  <div className={styles["chat-item-count"]}>
+                    {Locale.ChatItem.ChatItemCount(props.count)}
+                  </div>
+                )}
                 <div className={styles["chat-item-date"]}>{props.time}</div>
               </div>
             </>
@@ -145,6 +151,9 @@ export function ChatList(props: { narrow?: boolean }) {
                 title={item.topic}
                 time={new Date(item.lastUpdate).toLocaleString()}
                 count={item.messages.length}
+                hideCount={
+                  !!(item.multiLlmChildren && item.multiLlmChildren.length > 0)
+                }
                 key={item.id}
                 id={item.id}
                 index={i}
