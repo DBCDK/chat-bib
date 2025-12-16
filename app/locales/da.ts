@@ -472,7 +472,7 @@ const da = {
     NotShow: "Vis aldrig igen",
     Close: "Luk",
     EmptyChat: "Start en ny chat",
-    MultiLlm: "Start multi agent chat",
+    MultiLlm: "Start multi-agent chat",
 
     ConfirmNoShow:
       "Bekræft deaktivering? Du kan aktivere det i indstillinger senere.",
