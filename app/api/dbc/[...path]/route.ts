@@ -92,8 +92,17 @@ async function handle(
   }));
   const { stream, say, close } = createOutputStream();
 
-  const malicious = await isMalicious(messages);
-
+  const malicious =
+    model === MODEL_NAMES.DBC_GENERAL_MODEL
+      ? false
+      : await isMalicious(messages);
+  console.log(
+    "MALICIOUS: from route:malicious",
+    malicious,
+    "model:",
+    model,
+    "\n\n\n",
+  );
   if (malicious) {
     say(MALICIOUS_ANSWER);
     close();

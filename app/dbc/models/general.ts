@@ -65,7 +65,6 @@ VALGKRITERIER (kort)
         parameters,
         say: (chunk: any) => {
           accumulatedText += chunk?.token?.text || "";
-          console.log("\n\n\n\nBIGBRAIN: accumulatedText", accumulatedText);
           // Regular expression to find JSON object in the accumulated text
           const jsonRegex = /{[^]*}/;
           const jsonString = accumulatedText.match(jsonRegex);
