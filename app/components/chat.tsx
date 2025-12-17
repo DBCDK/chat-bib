@@ -1123,12 +1123,16 @@ function _Chat() {
   }, [msgRenderIndex, renderMessages]);
 
   const hasMalicious = useMemo(() => {
-    return messages.some(
-      (m) =>
-        typeof m.content === "string" &&
-        m?.content?.trim() === MALICIOUS_ANSWER,
-    );
-  }, [messages]);
+    const isMalicious = (m: any) =>
+      typeof m?.content === "string" && m.content.trim() === MALICIOUS_ANSWER;
+
+    // Check visible main messages (same behavior as before).
+    if (messages.some(isMalicious)) return true;
+
+    // In multi-LLM / multi-agent mode, also check child panes.
+    const children = session.multiLlmChildren ?? [];
+    return children.some((child) => (child.messages ?? []).some(isMalicious));
+  }, [messages, session.multiLlmChildren]);
 
   const onChatBodyScroll = (e: HTMLElement) => {
     const bottomHeight = e.scrollTop + e.clientHeight;
@@ -1591,31 +1595,33 @@ function _Chat() {
                         </div>
                       ))}
                     </div>
-                    <div className={styles["multi-llm-input"]}>
-                      <textarea
-                        rows={1}
-                        placeholder={
-                          session.multiMode === "agents"
-                            ? `Send to ${child?.mask?.name || "this pane"}`
-                            : `Send to ${child.llmModel}`
-                        }
-                        value={childInputs[child.id] || ""}
-                        onInput={(e) =>
-                          setChildInput(child.id, e.currentTarget.value)
-                        }
-                        onKeyDown={(e) => {
-                          if (shouldSubmit(e)) {
-                            doChildSubmit(child.id);
-                            e.preventDefault();
+                    {!hasMalicious && (
+                      <div className={styles["multi-llm-input"]}>
+                        <textarea
+                          rows={1}
+                          placeholder={
+                            session.multiMode === "agents"
+                              ? `Send to ${child?.mask?.name || "this pane"}`
+                              : `Send to ${child.llmModel}`
                           }
-                        }}
-                      />
-                      <IconButton
-                        icon={<SendWhiteIcon />}
-                        text={Locale.Chat.Send}
-                        onClick={() => doChildSubmit(child.id)}
-                      />
-                    </div>
+                          value={childInputs[child.id] || ""}
+                          onInput={(e) =>
+                            setChildInput(child.id, e.currentTarget.value)
+                          }
+                          onKeyDown={(e) => {
+                            if (shouldSubmit(e)) {
+                              doChildSubmit(child.id);
+                              e.preventDefault();
+                            }
+                          }}
+                        />
+                        <IconButton
+                          icon={<SendWhiteIcon />}
+                          text={Locale.Chat.Send}
+                          onClick={() => doChildSubmit(child.id)}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div className={styles["multi-llm-spacer"]} />
@@ -1662,31 +1668,33 @@ function _Chat() {
                           </div>
                         ))}
                       </div>
-                      <div className={styles["multi-llm-input"]}>
-                        <textarea
-                          rows={1}
-                          placeholder={
-                            session.multiMode === "agents"
-                              ? `Send to ${child?.mask?.name || "this pane"}`
-                              : `Send to ${child.llmModel}`
-                          }
-                          value={childInputs[child.id] || ""}
-                          onInput={(e) =>
-                            setChildInput(child.id, e.currentTarget.value)
-                          }
-                          onKeyDown={(e) => {
-                            if (shouldSubmit(e)) {
-                              doChildSubmit(child.id);
-                              e.preventDefault();
+                      {!hasMalicious && (
+                        <div className={styles["multi-llm-input"]}>
+                          <textarea
+                            rows={1}
+                            placeholder={
+                              session.multiMode === "agents"
+                                ? `Send to ${child?.mask?.name || "this pane"}`
+                                : `Send to ${child.llmModel}`
                             }
-                          }}
-                        />
-                        <IconButton
-                          icon={<SendWhiteIcon />}
-                          text={Locale.Chat.Send}
-                          onClick={() => doChildSubmit(child.id)}
-                        />
-                      </div>
+                            value={childInputs[child.id] || ""}
+                            onInput={(e) =>
+                              setChildInput(child.id, e.currentTarget.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (shouldSubmit(e)) {
+                                doChildSubmit(child.id);
+                                e.preventDefault();
+                              }
+                            }}
+                          />
+                          <IconButton
+                            icon={<SendWhiteIcon />}
+                            text={Locale.Chat.Send}
+                            onClick={() => doChildSubmit(child.id)}
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className={styles["multi-llm-spacer"]} />
                   </div>
