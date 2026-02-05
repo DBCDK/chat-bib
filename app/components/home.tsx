@@ -138,7 +138,9 @@ const loadAsyncGoogleFont = () => {
 function Screen() {
   const config = useAppConfig();
   const location = useLocation();
-  const isHome = location.pathname === Path.Home;
+  const isHome =
+    !process.env.NEXT_PUBLIC_HOMEPAGE_IS_MASKLIST &&
+    location.pathname === Path.Home;
 
   const isAuth = location.pathname === Path.Auth;
   const isMobileScreen = useMobileScreen();
@@ -147,7 +149,9 @@ function Screen() {
   const showSideBar = searchParams.get("showSideBar") === "true"; //  getClientConfig()?.isApp || (config.tightBorder && !isMobileScreen);
 
   useEffect(() => {
-    loadAsyncGoogleFont();
+    if (!process.env.NEXT_PUBLIC_DISABLE_GOOGLE_FONTS) {
+      loadAsyncGoogleFont();
+    }
   }, []);
 
   return (
@@ -157,7 +161,7 @@ function Screen() {
       //   ` ${shouldTightBorder ? styles["tight-container"] : styles.container}`
       // }
 
-      className={`${isHome ? "" : styles.container} ${shouldTightBorder ? styles["tight-container"] : ""}`}
+      className={`${isHome ? "" : styles.container} ${shouldTightBorder ? styles["tight-container"] : ""} ${process.env.NEXT_PUBLIC_CONTAINER_CSS_CLASS ?? "chatbib"}`}
     >
       {isAuth ? (
         <>
@@ -174,9 +178,27 @@ function Screen() {
             id={SlotID.AppBody}
           >
             <Routes>
-              <Route path={Path.Home} element={<ChatbibInfo />} />
-              <Route path={Path.NewChat} element={<NewChat />} />
-              {/* <Route path={Path.Masks} element={<MaskPage />} /> */}
+              <Route
+                path={Path.Home}
+                element={
+                  process.env.NEXT_PUBLIC_HOMEPAGE_IS_MASKLIST ? (
+                    <MaskPage />
+                  ) : (
+                    <ChatbibInfo />
+                  )
+                }
+              />
+              <Route
+                path={Path.NewChat}
+                element={
+                  process.env.NEXT_PUBLIC_MASKS_ONLY ? (
+                    <MaskPage />
+                  ) : (
+                    <NewChat />
+                  )
+                }
+              />
+              <Route path={Path.Masks} element={<MaskPage />} />
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
             </Routes>

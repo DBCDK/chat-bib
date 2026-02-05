@@ -671,12 +671,12 @@
   background-color: var(--dark-gray);
   color: var(--black);
   font-family: inherit;
-  padding: 18px 90px 18px 14px;
+  padding: var(--chat-input-padding);
   resize: none;
   outline: none;
   box-sizing: border-box;
   // padding: 14px;
-  // min-height: 68px;
+  min-height: var(--chat-input-min-height);
 }
 
 .chat-input:focus {

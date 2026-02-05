@@ -115,7 +115,7 @@ export function ChatbibIntro() {
     <div className={styles.container}>
       <div className={styles.content}>
         {/* <div className={styles.logoContainer}>
-          <img src="/dbclogo.png" style={{ width: "100px" }} />
+          <img src="/chatbib/dbclogo.png" style={{ width: "100px" }} />
         </div> */}
         <h1>Velkommen til ChatBib</h1>
         <p>{introText}</p>
@@ -172,7 +172,7 @@ export function ChatbibIntro() {
           </div>
 
           <div className={styles.logoContainer}>
-            <img src="/dbclogo.png" style={{ width: "100px" }} />
+            <img src="/chatbib/dbclogo.png" style={{ width: "100px" }} />
           </div>
         </footer>
       </div>

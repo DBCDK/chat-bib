@@ -62,6 +62,23 @@
     }
   }
 
+  .system-prompt-preview {
+    margin-bottom: 10px;
+    textarea {
+      width: 95%;
+      min-width: 95%;
+      max-width: 95%;
+      height: 6em;
+      font-family: var(--font-family);
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      padding: 5px;
+      color: var(--black);
+      background-color: var(--white);
+    }
+  }
+
   &:hover,
   &:active {
     .sidebar-drag {
@@ -342,7 +359,7 @@
   direction: rtl;
 }
 
-.newChatButton {
+.sidebar .newChatButton {
   background-color: var(--primary);
   width: 300px;
   color: white;

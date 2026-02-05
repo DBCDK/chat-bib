@@ -143,6 +143,17 @@ export function SideBar(props: { className?: string }) {
 
   useHotKey();
 
+  const currentChat = chatStore.currentSession();
+  const currentSystemPrompt = process.env.NEXT_PUBLIC_SYSTEM_PROMPT_IN_SIDEBAR
+    ? currentChat?.mask?.context?.[0]?.content
+    : undefined;
+  const editableSystemPrompt = !currentChat?.mask?.builtin;
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    chatStore.updateCurrentSession((session) => {
+      session.mask.context[0].content = e.target.value;
+    });
+  };
+
   return (
     <div
       className={`${styles.sidebar} ${props.className} ${
@@ -157,43 +168,76 @@ export function SideBar(props: { className?: string }) {
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <Link to={Path.Home}>
             <img
-              src="/dbclogo.png"
+              src={process.env.NEXT_PUBLIC_APP_LOGO ?? "/chatbib/dbclogo.png"}
               style={{ width: "100px", cursor: "pointer" }}
             />
           </Link>
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
-            ChatBib
+            {process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib"}
           </div>
           <div className={styles["sidebar-sub-title"]}>
-            Bibliotekernes AI-chat
+            {process.env.NEXT_PUBLIC_APP_TAGLINE ?? "Bibliotekernes AI-chat"}
           </div>
         </div>
       </div>
-      <div className={styles["sidebar-disclaimer"]}>
-        <h2>Disclaimer</h2>
-        <p>
-          ChatBib er en prototype designet til at udforske ny teknologi. Som
-          bruger skal du vide at de svar du får er genereret af AI og kan være
-          forkerte. <Link to={Path.Home}>Læs mere her</Link>.
-        </p>
-      </div>
-      {/* 
-      <div className={styles["sidebar-header-bar"]}>
-        <IconButton
-          icon={<MaskIcon />}
-          text={shouldNarrow ? undefined : Locale.Mask.Name}
-          className={styles["sidebar-bar-button"]}
-          onClick={() => {
-            if (config.dontShowMaskSplashScreen !== true) {
-              navigate(Path.NewChat, { state: { fromHome: true } });
-            } else {
-              navigate(Path.Masks, { state: { fromHome: true } });
-            }
-          }}
-          shadow
-        />
+      {process.env.NEXT_PUBLIC_SYSTEM_PROMPT_IN_SIDEBAR ? (
+        currentSystemPrompt !== undefined &&
+        !shouldNarrow && (
+          <div className={styles["system-prompt-preview"]}>
+            <div className={styles["system-prompt-label"]}>
+              Systemprompt
+              {!editableSystemPrompt && (
+                <div
+                  style={{
+                    color: "gray",
+                    fontSize: "80%",
+                    fontWeight: "normal",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Indbygget assistent kan ikke ændres. Opret ny assistent for at
+                  redigere.
+                </div>
+              )}
+            </div>
+
+            <textarea
+              style={{ opacity: editableSystemPrompt ? 1 : 0.7 }}
+              disabled={!editableSystemPrompt}
+              value={currentSystemPrompt as string}
+              onChange={handlePromptChange}
+              className={styles["system-prompt-textarea"]}
+            />
+          </div>
+        )
+      ) : (
+        <div className={styles["sidebar-disclaimer"]}>
+          <h2>Disclaimer</h2>
+          <p>
+            ChatBib er en prototype designet til at udforske ny teknologi. Som
+            bruger skal du vide at de svar du får er genereret af AI og kan være
+            forkerte. <Link to={Path.Home}>Læs mere her</Link>.
+          </p>
+        </div>
+      )}
+      {process.env.NEXT_PUBLIC_MASK_BUTTON && (
+        <div className={styles["sidebar-header-bar"]}>
+          <IconButton
+            icon={<MaskIcon />}
+            text={shouldNarrow ? undefined : Locale.Mask.Name}
+            className={styles["sidebar-bar-button"]}
+            onClick={() => {
+              if (config.dontShowMaskSplashScreen !== true) {
+                navigate(Path.NewChat, { state: { fromHome: true } });
+              } else {
+                navigate(Path.Masks, { state: { fromHome: true } });
+              }
+            }}
+            shadow
+          />
+          {/*
         <IconButton
           icon={<PluginIcon />}
           text={shouldNarrow ? undefined : Locale.Plugin.Name}
@@ -201,7 +245,9 @@ export function SideBar(props: { className?: string }) {
           onClick={() => showToast(Locale.WIP)}
           shadow
         />
-      </div> */}
+        */}
+        </div>
+      )}
 
       <div
         className={styles["sidebar-body"]}
@@ -243,8 +289,13 @@ export function SideBar(props: { className?: string }) {
           //    icon={<AddIcon  />}
           text={shouldNarrow ? undefined : Locale.Home.NewChat}
           onClick={() => {
+            if (process.env.NEXT_PUBLIC_DEFAULT_NEW_CHAT) {
+              chatStore.newSession();
+              navigate(Path.Chat);
+            } else {
+              navigate(Path.NewChat);
+            }
             //chatStore.newSession();
-            navigate(Path.NewChat);
 
             // if (config.dontShowMaskSplashScreen) {
             //   chatStore.newSession();

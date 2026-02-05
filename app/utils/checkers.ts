@@ -8,7 +8,7 @@ export function identifyDefaultClaudeModel(modelName: string) {
 
   const allModals = collectModels(
     configStore.models,
-    [configStore.customModels, accessStore.customModels].join(","),
+    [configStore.customModels, accessStore.getCustomModels()].join(","),
   );
 
   const modelMeta = allModals.find((m) => m.name === modelName);

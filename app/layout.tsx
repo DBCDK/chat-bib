@@ -4,14 +4,12 @@ import "./styles/markdown.scss";
 import "./styles/highlight.scss";
 import { getClientConfig } from "./config/client";
 import { type Metadata } from "next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getServerSideConfig } from "./config/server";
-import { GoogleTagManager } from "@next/third-parties/google";
 import Script from "next/script";
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
-  title: "ChatBib",
+  title: process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib",
   description: "Bibliotekets AI-chat",
   viewport: {
     width: "device-width",
@@ -23,7 +21,7 @@ export const metadata: Metadata = {
     { media: "(prefers-color-scheme: dark)", color: "#151515" },
   ],
   appleWebApp: {
-    title: "NextChat",
+    title: process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib",
     statusBarStyle: "default",
   },
 };
@@ -36,9 +34,12 @@ export default function RootLayout({
   return (
     <html lang="da">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `   var _paq = window._paq = window._paq || [];
+        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+          ""
+        ) : (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `   var _paq = window._paq = window._paq || [];
         //  _paq.push(['trackPageView']);
             _paq.push(["requireCookieConsent"]);     // <--- Add this line to the script
           _paq.push(['enableLinkTracking']);
@@ -49,26 +50,42 @@ export default function RootLayout({
             var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
             g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
             })();`,
-          }}
-        />
-        <Script
-          id="Cookiebot"
-          src="https://consent.cookiebot.eu/uc.js"
-          data-cbid={process.env.NEXT_PUBLIC_COOKIEBOT_ID}
-          data-blockingmode="auto"
-          type="text/javascript"
-        ></Script>
+            }}
+          />
+        )}
+
+        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+          ""
+        ) : (
+          <Script
+            id="Cookiebot"
+            src="https://consent.cookiebot.eu/uc.js"
+            data-cbid={process.env.NEXT_PUBLIC_COOKIEBOT_ID}
+            data-blockingmode="auto"
+            type="text/javascript"
+          ></Script>
+        )}
         <meta name="config" content={JSON.stringify(getClientConfig())} />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
-        <link rel="manifest" href="/site.webmanifest"></link>
+        <link
+          rel="icon"
+          href={`/${process.env.NEXT_PUBLIC_STYLE ?? "chatbib"}/favicon.ico`}
+        ></link>
+        <link
+          rel="manifest"
+          href={`/${process.env.NEXT_PUBLIC_STYLE ?? "chatbib"}/site.webmanifest`}
+        ></link>
         <script src="/serviceWorkerRegister.js" defer></script>
 
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
+        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+          ""
+        ) : (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
 // Cookiebot consent and Matomo connector
   var waitForTrackerCount = 0;
   function matomoWaitForTracker() {
@@ -95,20 +112,18 @@ export default function RootLayout({
     }
   }
   document.addEventListener("DOMContentLoaded", matomoWaitForTracker());`,
-          }}
-        ></script>
+            }}
+          ></script>
+        )}
       </head>
       <body>
         {children}
-        {serverConfig?.isVercel && (
-          <>
-            <SpeedInsights />
-          </>
-        )}
-        {serverConfig?.gtmId && (
-          <>
-            <GoogleTagManager gtmId={serverConfig.gtmId} />
-          </>
+        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS && (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: process.env.NEXT_PUBLIC_INJECT_ANALYTICS,
+            }}
+          ></div>
         )}
       </body>
     </html>
