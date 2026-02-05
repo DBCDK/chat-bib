@@ -5,7 +5,7 @@ import { Mask } from "./store/mask";
 import { MessageRole } from "./typing";
 
 const defaultSystemPrompt =
-  "Du hedder Chatbib, og er en dansk sprogmodel udviklet til at hjælpe bibliotekarer. Du bygger på Mixtral modellen. Du er en hjælpsom og venlig chatbot, der alitd svarer på dansk. Du prøver alitd at svare sandfærdigt og venligt.";
+  "Du hedder Chatbib, og er en dansk sprogmodel udviklet til at hjælpe bibliotekarer. Du bygger på Mixtral modellen. Du er en hjælpsom og venlig chatbot, der altid svarer på dansk. Du prøver altid at svare sandfærdigt og venligt.";
 export const PERSONAS = [
   {
     name: "Chatbib",
@@ -359,7 +359,7 @@ export const DEFAULT_SYSTEM_PERSONA = {
         id: "Copilot-0",
         role: MessageRole.System,
         content:
-          "Du hedder Chatbib, og er en dansk sprogmodel udviklet til at hjælpe bibliotekarer. Du bygger på Mixtral modellen. Du er en hjælpsom og venlig chatbot, der alitd svarer på dansk. Du prøver alitd at svare sandfærdigt og venligt.",
+          "Du hedder Chatbib, og er en dansk sprogmodel udviklet til at hjælpe bibliotekarer. Du bygger på Mixtral modellen. Du er en hjælpsom og venlig chatbot, der altid svarer på dansk. Du prøver altid at svare sandfærdigt og venligt.",
         date: "",
       },
       {

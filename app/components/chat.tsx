@@ -532,16 +532,20 @@ export function ChatActions(props: {
   return (
     <div className={styles["chat-input-actions"]}>
       <DbcSettings />
-      <IconButton
-        className={styles.feedback}
-        text={Locale.Chat.InputActions.Feedback}
-        // icon={<EmailIcon />}
-        key="feedback"
-        onClick={() => {
-          //   props.onClose();
-          props.setShowFeedback(true);
-        }}
-      />
+      {process.env.NEXT_PUBLIC_DISABLE_FEEDBACK ? (
+        ""
+      ) : (
+        <IconButton
+          className={styles.feedback}
+          text={Locale.Chat.InputActions.Feedback}
+          // icon={<EmailIcon />}
+          key="feedback"
+          onClick={() => {
+            //   props.onClose();
+            props.setShowFeedback(true);
+          }}
+        />
+      )}
       {couldStop && (
         <ChatAction
           onClick={stopAll}
@@ -1073,6 +1077,7 @@ function _Chat() {
   const accessStore = useAccessStore();
 
   if (
+    !process.env.NEXT_PUBLIC_DISABLE_BOT_HELLO &&
     context.length === 0 &&
     session.messages.at(0)?.content !== BOT_HELLO.content
   ) {
@@ -1370,7 +1375,7 @@ function _Chat() {
               </>
             }
           />
-          {!multiLlmStarted && (
+          {!process.env.NEXT_PUBLIC_DISABLE_MULTI_LLM && !multiLlmStarted && (
             <IconButton
               icon={<PluginIcon />}
               //  bordered
@@ -1383,7 +1388,8 @@ function _Chat() {
               }}
             />
           )}
-          {session.multiLlmChildren &&
+          {!process.env.NEXT_PUBLIC_DISABLE_MULTI_LLM &&
+            session.multiLlmChildren &&
             session.multiLlmChildren.length > 0 &&
             multiLlmStarted && (
               <IconButton
@@ -1985,7 +1991,19 @@ function _Chat() {
           </div>
         </div>
       )}
-
+      {process.env.NEXT_PUBLIC_CHAT_DISCLAIMER && (
+        <div
+          style={{
+            marginTop: -15,
+            marginBottom: 5,
+            textAlign: "center",
+            fontSize: 10,
+            color: "#666",
+          }}
+        >
+          {process.env.NEXT_PUBLIC_CHAT_DISCLAIMER}
+        </div>
+      )}
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
       )}

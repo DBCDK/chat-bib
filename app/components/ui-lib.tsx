@@ -172,7 +172,7 @@ export function Modal(props: ModalProps) {
 
       <div className={styles["modal-content"]}>{props.children}</div>
 
-      {props.footer && (
+      {(props.footer || (props.actions?.length ?? 0 > 0)) && (
         <div className={styles["modal-footer"]}>
           {props.footer}
           <div className={styles["modal-actions"]}>

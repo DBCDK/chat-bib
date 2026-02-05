@@ -608,8 +608,12 @@ export function ImagePreviewer(props: {
           </div> */}
 
           <div className={styles.chatBasicInfo}>
-            <div className={styles["main-title"]}>ChatBib</div>
-            <div className={styles["sub-title"]}>DBC Digital A/S</div>
+            <div className={styles["main-title"]}>
+              {process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib"}
+            </div>
+            <div className={styles["sub-title"]}>
+              {process.env.NEXT_PUBLIC_APP_TAGLINE ?? "DBC Digital A/S"}
+            </div>
             {/* <div className={styles["icons"]}>
               <ExportAvatar avatar={config.avatar} />
               <span className={styles["icon-space"]}>&</span>

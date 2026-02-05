@@ -62,7 +62,10 @@ export class ChatGPTApi implements LLMApi {
 
     let baseUrl = "";
 
-    if (accessStore.useCustomConfig) {
+    const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (envBaseUrl) {
+      baseUrl = envBaseUrl;
+    } else if (accessStore.useCustomConfig) {
       const isAzure = accessStore.provider === ServiceProvider.Azure;
 
       if (isAzure && !accessStore.isValidAzure()) {

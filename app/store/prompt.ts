@@ -147,7 +147,8 @@ export const usePromptStore = createPersistStore(
     },
 
     onRehydrateStorage(state) {
-      const PROMPT_URL = "./prompts.json";
+      const style = process.env.NEXT_PUBLIC_STYLE ?? "chatbib";
+      const PROMPT_URL = `/${style}/prompts.json`;
       type PromptList = Array<[string, string]>;
 
       fetch(PROMPT_URL)

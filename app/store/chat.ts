@@ -3,7 +3,8 @@ import { trimTopic, getMessageTextContent } from "../utils";
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
 import { ModelConfig, ModelType, useAppConfig } from "./config";
-import { createEmptyMask, Mask } from "./mask";
+import { createEmptyMask, Mask, useMaskStore } from "./mask";
+import { BUILTIN_MASKS } from "../masks";
 import {
   DEFAULT_INPUT_TEMPLATE,
   DEFAULT_MODELS,
@@ -106,7 +107,7 @@ function getSummarizeModel(currentModel: string) {
     const accessStore = useAccessStore.getState();
     const allModel = collectModelsWithDefaultModel(
       configStore.models,
-      [configStore.customModels, accessStore.customModels].join(","),
+      [configStore.customModels, accessStore.getCustomModels()].join(","),
       accessStore.defaultModel,
     );
     const summarizeModel = allModel.find(
@@ -183,6 +184,31 @@ export const useChatStore = createPersistStore(
       return {
         ..._get(),
         ...methods,
+      };
+    }
+    function cleanupEmptySessions(
+      state: Partial<typeof DEFAULT_CHAT_STATE> & {
+        sessions: ChatSession[];
+        currentSessionIndex: number;
+      },
+    ) {
+      if (!process.env.NEXT_PUBLIC_CLEANUP_EMPTY_SESSIONS) {
+        return state;
+      }
+      const { sessions, currentSessionIndex } = state;
+      let newCurrentIndex = currentSessionIndex;
+      const filteredSessions: ChatSession[] = sessions.filter(
+        (session, index) => {
+          let keep =
+            session.messages.length > 0 || index === currentSessionIndex;
+          if (!keep && index < currentSessionIndex) newCurrentIndex -= 1;
+          return keep;
+        },
+      );
+      return {
+        ...state,
+        sessions: filteredSessions,
+        currentSessionIndex: newCurrentIndex,
       };
     }
 
@@ -496,9 +522,12 @@ export const useChatStore = createPersistStore(
       },
 
       selectSession(index: number) {
-        set({
-          currentSessionIndex: index,
-        });
+        set((state) =>
+          cleanupEmptySessions({
+            ...state,
+            currentSessionIndex: index,
+          }),
+        );
       },
 
       moveSession(from: number, to: number) {
@@ -529,9 +558,18 @@ export const useChatStore = createPersistStore(
       newSession(mask?: Mask) {
         const session = createEmptySession();
 
-        const sessionMask = mask ? mask : DEFAULT_SYSTEM_PERSONA.mask;
+        let sessionMask = mask ? mask : DEFAULT_SYSTEM_PERSONA.mask;
         const config = useAppConfig.getState();
         const globalModelConfig = config.modelConfig;
+
+        if (!mask && process.env.NEXT_PUBLIC_DEFAULT_MASK) {
+          let masks = useMaskStore.getState().getAll();
+          sessionMask =
+            masks.find(
+              (m) =>
+                m.name === process.env.NEXT_PUBLIC_DEFAULT_MASK && m.builtin,
+            ) || masks[0];
+        }
 
         session.mask = {
           ...sessionMask,
@@ -541,11 +579,17 @@ export const useChatStore = createPersistStore(
           },
         };
         session.topic = DEFAULT_TOPIC;
+        if (process.env.NEXT_PUBLIC_USE_MASK_AS_SESSION_NAME) {
+          session.topic = sessionMask.name;
+        }
 
-        set((state) => ({
-          currentSessionIndex: 0,
-          sessions: [session].concat(state.sessions),
-        }));
+        set((state) =>
+          cleanupEmptySessions({
+            ...state,
+            currentSessionIndex: 0,
+            sessions: [session].concat(state.sessions),
+          }),
+        );
       },
 
       nextSession(delta: number) {
@@ -570,11 +614,6 @@ export const useChatStore = createPersistStore(
           sessions.length - 1,
         );
 
-        if (deletingLastSession) {
-          nextIndex = 0;
-          sessions.push(createEmptySession());
-        }
-
         // for undo delete action
         const restoreState = {
           currentSessionIndex: get().currentSessionIndex,
@@ -585,6 +624,9 @@ export const useChatStore = createPersistStore(
           currentSessionIndex: nextIndex,
           sessions,
         }));
+        if (deletingLastSession) {
+          get().newSession();
+        }
 
         showToast(
           Locale.Home.DeleteToast,
@@ -991,6 +1033,27 @@ export const useChatStore = createPersistStore(
       },
     };
 
+    function fixEmptyConversation() {
+      // The masks-store are not loaded at initialisation time,
+      // so the default empty session has an empty mask in skolegpt.
+      // This function is called after a delay to ensure that
+      // the correct mask is used for the initial empty session.
+      const chatStore = get();
+      if (
+        chatStore.sessions.length == 1 &&
+        chatStore.sessions[0].messages.length == 0
+      ) {
+        let mask = chatStore.sessions[0].mask;
+        if (mask.avatar == "gpt-bot" && mask.context.length == 0) {
+          chatStore.newSession();
+          chatStore.deleteSession(1);
+        }
+      }
+    }
+    if (typeof window != "undefined")
+      for (const i of [20, 100, 200, 500, 1000, 2000, 5000, 10000])
+        setTimeout(fixEmptyConversation, i);
+
     return methods;
   },
   {
@@ -1011,7 +1074,10 @@ export const useChatStore = createPersistStore(
           newSession.topic = oldSession.topic;
           newSession.messages = [...oldSession.messages];
           newSession.mask.modelConfig.sendMemory = true;
-          newSession.mask.modelConfig.historyMessageCount = 4;
+          newSession.mask.modelConfig.historyMessageCount = process.env
+            .NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
+            ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+            : 4;
           newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
           newState.sessions.push(newSession);
         }

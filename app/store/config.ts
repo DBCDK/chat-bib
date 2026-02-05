@@ -47,14 +47,18 @@ export const DEFAULT_CONFIG = {
   models: DEFAULT_MODELS as any as LLMModel[],
 
   modelConfig: {
-    model: "gpt-3.5-turbo" as ModelType,
+    model: (process.env.NEXT_PUBLIC_DEFAULT_MODEL
+      ? process.env.NEXT_PUBLIC_DEFAULT_MODEL
+      : "gpt-3.5-turbo") as ModelType,
     temperature: 0.5,
     top_p: 1,
     max_tokens: 4000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
-    historyMessageCount: 4,
+    historyMessageCount: process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
+      ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+      : 4,
     compressMessageLengthThreshold: 1000,
     enableInjectSystemPrompts: true,
     template: config?.template ?? DEFAULT_INPUT_TEMPLATE,
@@ -139,7 +143,10 @@ export const useAppConfig = createPersistStore(
 
       if (version < 3.4) {
         state.modelConfig.sendMemory = true;
-        state.modelConfig.historyMessageCount = 4;
+        state.modelConfig.historyMessageCount = process.env
+          .NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
+          ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+          : 4;
         state.modelConfig.compressMessageLengthThreshold = 1000;
         state.modelConfig.frequency_penalty = 0;
         state.modelConfig.top_p = 1;

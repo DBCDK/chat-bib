@@ -144,7 +144,7 @@ export const KnowledgeCutOffDate: Record<string, string> = {
   tgi: "2023-12",
 };
 
-export const DEFAULT_MODELS = [
+export let DEFAULT_MODELS = [
   ...modelNames.map((name) => ({
     name,
     available: true,
@@ -154,7 +154,10 @@ export const DEFAULT_MODELS = [
       providerType: "openai",
     },
   })),
-] as const;
+];
+if (process.env.NEXT_PUBLIC_DISABLE_MODELS) {
+  DEFAULT_MODELS = [];
+}
 
 // DBC simple search speed configuration
 export enum SearchSpeed {

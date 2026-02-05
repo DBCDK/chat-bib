@@ -1,6 +1,6 @@
 import { Mask } from "../store/mask";
 
-import { EN_MASKS } from "./en";
+import { SKOLEGPT_MASKS } from "./skolegpt";
 
 import { type BuiltinMask } from "./typing";
 export { type BuiltinMask } from "./typing";
@@ -21,6 +21,6 @@ export const BUILTIN_MASK_STORE = {
   },
 };
 
-export const BUILTIN_MASKS: BuiltinMask[] = [...EN_MASKS].map((m) =>
+export const BUILTIN_MASKS: BuiltinMask[] = [...SKOLEGPT_MASKS].map((m) =>
   BUILTIN_MASK_STORE.add(m),
 );
