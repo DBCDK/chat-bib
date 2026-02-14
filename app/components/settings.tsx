@@ -678,6 +678,7 @@ export function Settings() {
         </div>
       </div>
       <div className={styles["settings"]}>
+        {/* 
         <List>
           <ListItem title={Locale.Settings.Avatar}>
             <Popover
@@ -867,6 +868,7 @@ export function Settings() {
           </ListItem>
         </List>
 
+        */ }
         <List>
           <ListItem
             title={Locale.Settings.Prompt.Disable.Title}
@@ -898,6 +900,7 @@ export function Settings() {
             />
           </ListItem>
         </List>
+        {/*
 
         <List id={SlotID.CustomModel}>
           {showAccessCode && (
@@ -1235,6 +1238,7 @@ export function Settings() {
           </ListItem>
         </List>
 
+        */}
         <List>
           <ModelConfigList
             modelConfig={config.modelConfig}

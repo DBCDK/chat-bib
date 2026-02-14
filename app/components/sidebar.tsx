@@ -272,11 +272,15 @@ export function SideBar(props: { className?: string }) {
               }}
             />
           </div>
+          */}
+          {process.env.NEXT_PUBLIC_SHOW_SETTINGS && (
           <div className={styles["sidebar-action"]}>
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
-          </div> 
+          </div> )}
+          {/*
+
            <div className={styles["sidebar-action"]}>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
               <IconButton icon={<GithubIcon />} shadow />

@@ -34,4 +34,5 @@ Deployments can be customised with different `NEXT_PUBLIC_`-environment-variable
 - `NEXT_PUBLIC_DISABLE_BOT_HELLO` removes the default hardcoded message in the chat.
 - `NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT` sets the default message count for masks
 - `NEXT_PUBLIC_DEFAULT_MODEL` sets the default model
+- `NEXT_PUBLIC_SHOW_SETTINGS` enables settings menu
 - `NEXT_PUBLIC_DISABLE_MULTI_LLM` disable the ChatBib-specific multi-llm UI
