@@ -8,6 +8,7 @@ import React, {
   Fragment,
   RefObject,
 } from "react";
+import { Recorder } from "../utils/recorder";
 
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
@@ -210,6 +211,8 @@ function PromptToast(props: {
     </div>
   );
 }
+
+let recorder: Recorder | null = null;
 
 function useSubmitHandler() {
   const config = useAppConfig();
@@ -1334,6 +1337,22 @@ function _Chat() {
     setAttachImages(images);
   }
 
+  async function startVoice() {
+    if(!recorder) {
+      recorder = await Recorder.create({ asrEndpoint: process.env.NEXT_PUBLIC_ASR_ENDPOINT });
+    }
+    recorder.start();
+  }
+  async function stopVoice() {
+    if(recorder) {
+      const text = await recorder.stop();
+      console.log('text', text);
+      if(text) {
+        onInput(text);
+      }
+    }
+  }
+
   const multiLlmStarted =
     session.multiLlmChildren && session.multiLlmChildren.length > 0;
 
@@ -1912,6 +1931,12 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
+            {process.env.NEXT_PUBLIC_ASR_ENDPOINT && (
+              <div style={{float: 'left', fontSize: '30px', cursor: 'pointer', margin: 8}}
+                onPointerDown={startVoice}
+                onPointerUp={stopVoice}
+              >🎤</div>
+            )}
             <label
               className={`${styles["chat-input-panel-inner"]} ${
                 attachImages.length != 0
