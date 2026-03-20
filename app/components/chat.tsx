@@ -1346,10 +1346,7 @@ function _Chat() {
   async function stopVoice() {
     if(recorder) {
       const text = await recorder.stop();
-      console.log('text', text);
-      if(text) {
-        onInput(text);
-      }
+      if(text) onInput(text); 
     }
   }
 
