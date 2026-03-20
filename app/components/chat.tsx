@@ -108,6 +108,7 @@ import { MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
 import exp from "constants";
 import { DbcSettings } from "./dbcsettings";
+import { TTSButton } from "./TTSButton";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -1255,7 +1256,10 @@ function _Chat() {
       if (!isVisionModel(currentModel)) {
         return;
       }
-      const items = (event.clipboardData || window.clipboardData).items;
+      const items =
+        event.clipboardData?.items ??
+        (window as any).clipboardData?.items;
+      if (!items) return;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
           event.preventDefault();
@@ -1338,10 +1342,12 @@ function _Chat() {
   }
 
   async function startVoice() {
-    if(!recorder) {
-      recorder = await Recorder.create({ asrEndpoint: process.env.NEXT_PUBLIC_ASR_ENDPOINT });
+    if (!recorder) {
+      recorder = await Recorder.create({
+        asrEndpoint: process.env.NEXT_PUBLIC_ASR_ENDPOINT as string,
+      });
     }
-    recorder.start();
+    recorder!.start();
   }
   async function stopVoice() {
     if(recorder) {
@@ -1834,6 +1840,9 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
+                        {process.env.NEXT_PUBLIC_TTS_SERVICE && !isUser &&
+                        <TTSButton message={getMessageTextContent(message)} />
+}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
