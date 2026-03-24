@@ -122,7 +122,7 @@ export function MaskConfig(props: {
                   mask.context = [
                     {
                       ...(mask.context[0] || {}),
-                      role: "system",
+                      role: MessageRole.System,
                       content: e.currentTarget.value,
                     },
                   ];
@@ -200,7 +200,6 @@ export function MaskConfig(props: {
             subTitle={Locale.Settings.HistoryCount.SubTitle}
           >
             <InputRange
-              aria={Locale.Settings.HistoryCount.Title}
               title={props.mask.modelConfig.historyMessageCount.toString()}
               value={props.mask.modelConfig.historyMessageCount}
               min="0"
