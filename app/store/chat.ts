@@ -651,6 +651,17 @@ export const useChatStore = createPersistStore(
 
         const session = sessions[index];
 
+        if(
+          process.env.NEXT_PUBLIC_CLEANUP_EMPTY_SESSIONS &&
+          sessions.length === 1 &&
+          session?.topic === "Nyoprettet Assistent" &&
+          session?.mask?.name === DEFAULT_TOPIC &&
+          session?.mask?.context?.[0]?.content === "" && 
+          session.messages.length == 0 
+        ) {
+          get().deleteSession(index);
+        }
+
         return session;
       },
 

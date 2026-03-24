@@ -8,6 +8,7 @@ import React, {
   Fragment,
   RefObject,
 } from "react";
+import { Recorder } from "../utils/recorder";
 
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
@@ -107,6 +108,7 @@ import { MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
 import exp from "constants";
 import { DbcSettings } from "./dbcsettings";
+import { TTSButton } from "./TTSButton";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -210,6 +212,8 @@ function PromptToast(props: {
     </div>
   );
 }
+
+let recorder: Recorder | null = null;
 
 function useSubmitHandler() {
   const config = useAppConfig();
@@ -1252,7 +1256,10 @@ function _Chat() {
       if (!isVisionModel(currentModel)) {
         return;
       }
-      const items = (event.clipboardData || window.clipboardData).items;
+      const items =
+        event.clipboardData?.items ??
+        (window as any).clipboardData?.items;
+      if (!items) return;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
           event.preventDefault();
@@ -1332,6 +1339,21 @@ function _Chat() {
       images.splice(3, imagesLength - 3);
     }
     setAttachImages(images);
+  }
+
+  async function startVoice() {
+    if (!recorder) {
+      recorder = await Recorder.create({
+        asrEndpoint: process.env.NEXT_PUBLIC_ASR_ENDPOINT as string,
+      });
+    }
+    recorder!.start();
+  }
+  async function stopVoice() {
+    if(recorder) {
+      const text = await recorder.stop();
+      if(text) onInput(text); 
+    }
   }
 
   const multiLlmStarted =
@@ -1818,6 +1840,9 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
+                        {process.env.NEXT_PUBLIC_TTS_SERVICE && !isUser &&
+                        <TTSButton message={getMessageTextContent(message)} />
+}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
@@ -1912,6 +1937,12 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
+            {process.env.NEXT_PUBLIC_ASR_ENDPOINT && (
+              <div style={{float: 'left', fontSize: '30px', cursor: 'pointer', margin: 8}}
+                onPointerDown={startVoice}
+                onPointerUp={stopVoice}
+              >🎤</div>
+            )}
             <label
               className={`${styles["chat-input-panel-inner"]} ${
                 attachImages.length != 0

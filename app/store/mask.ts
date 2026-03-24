@@ -19,6 +19,7 @@ export type Mask = {
   lang: Lang;
   builtin: boolean;
   availableModels?: MODEL_NAMES[];
+  plugin?: unknown[];
 };
 
 export const DEFAULT_MASK_STATE = {

@@ -15,10 +15,10 @@
   --dark-text: rgb(120 120 120);
   --gray: rgb(245, 245, 245);
   --dark-gray: rgb(235 235 235);
-  --primary: #000;
+  --primary: #666;
   --second: var(--gray);
   --hover-color: #f3f3f3;
-  --bar-color: rgba(0, 0, 0, 0.1);
+  --bar-color: #f00;
   --theme-color: var(--gray);
 // --card-color: var(--second);
 --card-color:#f2f1e9;
@@ -39,10 +39,10 @@
   --white: rgb(30, 30, 30);
   --black: rgb(187, 187, 187);
   --dark-text: rgb(161, 161, 161);
-  --gray: rgb(21, 21, 21);
-  --dark-gray: rgb(0, 0, 0);
-  --primary: #3333ff;
-  --second: #1b212a; // rgb(27 38 42);
+  --gray: rgb(30,30,30);
+  --dark-gray: rgb(18, 18, 18);
+  --primary: rgb(30, 30, 30);
+  --second: #282828;
   --hover-color: #323232;
 
   --bar-color: rgba(255, 255, 255, 0.1);

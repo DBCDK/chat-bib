@@ -11,6 +11,7 @@ declare module "*.scss" {
 declare module "*.svg";
 
 declare interface Window {
+  _paq?: unknown[];
   __TAURI__?: {
     writeText(text: string): Promise<void>;
     invoke(command: string, payload?: Record<string, unknown>): Promise<any>;
