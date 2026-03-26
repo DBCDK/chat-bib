@@ -28,6 +28,7 @@ import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
 import { DEFAULT_SYSTEM_PERSONA } from "../personas";
+import { env } from "../utils/appsettings";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -192,7 +193,7 @@ export const useChatStore = createPersistStore(
         currentSessionIndex: number;
       },
     ) {
-      if (!process.env.NEXT_PUBLIC_CLEANUP_EMPTY_SESSIONS) {
+      if (!env.CLEANUP_EMPTY_SESSIONS) {
         return state;
       }
       const { sessions, currentSessionIndex } = state;
@@ -562,12 +563,12 @@ export const useChatStore = createPersistStore(
         const config = useAppConfig.getState();
         const globalModelConfig = config.modelConfig;
 
-        if (!mask && process.env.NEXT_PUBLIC_DEFAULT_MASK) {
+        if (!mask && env.DEFAULT_MASK) {
           let masks = useMaskStore.getState().getAll();
           sessionMask =
             masks.find(
               (m) =>
-                m.name === process.env.NEXT_PUBLIC_DEFAULT_MASK && m.builtin,
+                m.name === env.DEFAULT_MASK && m.builtin,
             ) || masks[0];
         }
 
@@ -579,7 +580,7 @@ export const useChatStore = createPersistStore(
           },
         };
         session.topic = DEFAULT_TOPIC;
-        if (process.env.NEXT_PUBLIC_USE_MASK_AS_SESSION_NAME) {
+        if (env.USE_MASK_AS_SESSION_NAME) {
           session.topic = sessionMask.name;
         }
 
@@ -652,7 +653,7 @@ export const useChatStore = createPersistStore(
         const session = sessions[index];
 
         if(
-          process.env.NEXT_PUBLIC_CLEANUP_EMPTY_SESSIONS &&
+          env.CLEANUP_EMPTY_SESSIONS &&
           sessions.length === 1 &&
           session?.topic === "Nyoprettet Assistent" &&
           session?.mask?.name === DEFAULT_TOPIC &&
@@ -1085,9 +1086,8 @@ export const useChatStore = createPersistStore(
           newSession.topic = oldSession.topic;
           newSession.messages = [...oldSession.messages];
           newSession.mask.modelConfig.sendMemory = true;
-          newSession.mask.modelConfig.historyMessageCount = process.env
-            .NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
-            ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+          newSession.mask.modelConfig.historyMessageCount = env.DEFAULT_MESSAGE_COUNT
+            ? parseInt(env.DEFAULT_MESSAGE_COUNT)
             : 4;
           newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
           newState.sessions.push(newSession);

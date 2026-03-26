@@ -2,9 +2,9 @@ import daChatbib, { LocaleType } from "./da.chatbib";
 import daSkolegpt from "./da.skolegpt";
 
 import { merge } from "../utils/merge";
+import { env } from "../utils/appsettings";
 
-const da =
-  process.env.NEXT_PUBLIC_LOCALE === "skolegpt" ? daSkolegpt : daChatbib;
+const da = env.LOCALE === "skolegpt" ? daSkolegpt : daChatbib;
 
 // Re-export LocaleType from chatbib (both should have compatible types)
 export type { LocaleType };

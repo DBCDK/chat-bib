@@ -2,6 +2,7 @@ import Fuse from "fuse.js";
 import { getLang } from "../locales";
 import { StoreKey } from "../constant";
 import { nanoid } from "nanoid";
+import { env } from "../utils/appsettings";
 import { createPersistStore } from "../utils/store";
 
 export interface Prompt {
@@ -147,7 +148,7 @@ export const usePromptStore = createPersistStore(
     },
 
     onRehydrateStorage(state) {
-      const style = process.env.NEXT_PUBLIC_STYLE ?? "chatbib";
+      const style = env.STYLE ?? "chatbib";
       const PROMPT_URL = `/${style}/prompts.json`;
       type PromptList = Array<[string, string]>;
 

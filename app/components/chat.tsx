@@ -109,6 +109,7 @@ import { MessageRole } from "../typing";
 import exp from "constants";
 import { DbcSettings } from "./dbcsettings";
 import { TTSButton } from "./TTSButton";
+import { env } from "../utils/appsettings";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
@@ -536,7 +537,7 @@ export function ChatActions(props: {
   return (
     <div className={styles["chat-input-actions"]}>
       <DbcSettings />
-      {process.env.NEXT_PUBLIC_DISABLE_FEEDBACK ? (
+      {env.DISABLE_FEEDBACK ? (
         ""
       ) : (
         <IconButton
@@ -1081,7 +1082,7 @@ function _Chat() {
   const accessStore = useAccessStore();
 
   if (
-    !process.env.NEXT_PUBLIC_DISABLE_BOT_HELLO &&
+    !env.DISABLE_BOT_HELLO &&
     context.length === 0 &&
     session.messages.at(0)?.content !== BOT_HELLO.content
   ) {
@@ -1344,7 +1345,7 @@ function _Chat() {
   async function startVoice() {
     if (!recorder) {
       recorder = await Recorder.create({
-        asrEndpoint: process.env.NEXT_PUBLIC_ASR_ENDPOINT as string,
+        asrEndpoint: env.ASR_ENDPOINT as string,
       });
     }
     recorder!.start();
@@ -1397,7 +1398,7 @@ function _Chat() {
               </>
             }
           />
-          {!process.env.NEXT_PUBLIC_DISABLE_MULTI_LLM && !multiLlmStarted && (
+          {!env.DISABLE_MULTI_LLM && !multiLlmStarted && (
             <IconButton
               icon={<PluginIcon />}
               //  bordered
@@ -1410,7 +1411,7 @@ function _Chat() {
               }}
             />
           )}
-          {!process.env.NEXT_PUBLIC_DISABLE_MULTI_LLM &&
+          {!env.DISABLE_MULTI_LLM &&
             session.multiLlmChildren &&
             session.multiLlmChildren.length > 0 &&
             multiLlmStarted && (
@@ -1840,7 +1841,7 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
-                        {process.env.NEXT_PUBLIC_TTS_SERVICE && !isUser &&
+                        {env.TTS_SERVICE && !isUser &&
                         <TTSButton message={getMessageTextContent(message)} />
 }
                         <Markdown
@@ -1937,7 +1938,7 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
-            {process.env.NEXT_PUBLIC_ASR_ENDPOINT && (
+            {env.ASR_ENDPOINT && (
               <div style={{float: 'left', fontSize: '30px', cursor: 'pointer', margin: 8}}
                 onPointerDown={startVoice}
                 onPointerUp={stopVoice}
@@ -2022,7 +2023,7 @@ function _Chat() {
           </div>
         </div>
       )}
-      {process.env.NEXT_PUBLIC_CHAT_DISCLAIMER && (
+      {env.CHAT_DISCLAIMER && (
         <div
           style={{
             marginTop: -15,
@@ -2032,7 +2033,7 @@ function _Chat() {
             color: "#666",
           }}
         >
-          {process.env.NEXT_PUBLIC_CHAT_DISCLAIMER}
+          {env.CHAT_DISCLAIMER}
         </div>
       )}
       {showExport && (

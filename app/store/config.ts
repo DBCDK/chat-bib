@@ -6,6 +6,7 @@ import {
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
 } from "../constant";
+import { env } from "../utils/appsettings";
 import { createPersistStore } from "../utils/store";
 
 export type ModelType = (typeof DEFAULT_MODELS)[number]["name"];
@@ -47,17 +48,15 @@ export const DEFAULT_CONFIG = {
   models: DEFAULT_MODELS as any as LLMModel[],
 
   modelConfig: {
-    model: (process.env.NEXT_PUBLIC_DEFAULT_MODEL
-      ? process.env.NEXT_PUBLIC_DEFAULT_MODEL
-      : "gpt-3.5-turbo") as ModelType,
+    model: (env.DEFAULT_MODEL ? env.DEFAULT_MODEL : "gpt-3.5-turbo") as ModelType,
     temperature: 0.5,
     top_p: 1,
     max_tokens: 4000,
     presence_penalty: 0,
     frequency_penalty: 0,
     sendMemory: true,
-    historyMessageCount: process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
-      ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+    historyMessageCount: env.DEFAULT_MESSAGE_COUNT
+      ? parseInt(env.DEFAULT_MESSAGE_COUNT)
       : 4,
     compressMessageLengthThreshold: 1000,
     enableInjectSystemPrompts: true,
@@ -143,9 +142,8 @@ export const useAppConfig = createPersistStore(
 
       if (version < 3.4) {
         state.modelConfig.sendMemory = true;
-        state.modelConfig.historyMessageCount = process.env
-          .NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT
-          ? parseInt(process.env.NEXT_PUBLIC_DEFAULT_MESSAGE_COUNT)
+        state.modelConfig.historyMessageCount = env.DEFAULT_MESSAGE_COUNT
+          ? parseInt(env.DEFAULT_MESSAGE_COUNT)
           : 4;
         state.modelConfig.compressMessageLengthThreshold = 1000;
         state.modelConfig.frequency_penalty = 0;

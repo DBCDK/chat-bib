@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import LoadingButtonIcon from "../icons/loading.svg";
+import { env } from "../utils/appsettings";
 
 export function TTSButton(props: { message: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -126,7 +127,7 @@ export function TTSButton(props: { message: string }) {
   );
 
   const onClick = async () => {
-    const service = process.env.NEXT_PUBLIC_TTS_SERVICE as
+    const service = env.TTS_SERVICE as
       | string
       | undefined
       | null;

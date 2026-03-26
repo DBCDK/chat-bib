@@ -12,6 +12,7 @@ import { ChatGPTApi } from "./platforms/openai";
 import { GeminiProApi } from "./platforms/google";
 import { ClaudeApi } from "./platforms/anthropic";
 import { MessageRole } from "../typing";
+import { env } from "../utils/appsettings";
 export const ROLES = ["system", "user", "assistant"] as const;
 //export type MessageRole = (typeof ROLES)[number];
 
@@ -173,7 +174,7 @@ export function getHeaders() {
   const isGoogle = modelConfig.model.startsWith("gemini");
   const isAzure = accessStore.provider === ServiceProvider.Azure;
   const authHeader = isAzure ? "api-key" : "Authorization";
-  const envApiKey = process.env.NEXT_PUBLIC_API_KEY;
+  const envApiKey = env.API_KEY;
   const apiKey = envApiKey
     ? envApiKey
     : isGoogle

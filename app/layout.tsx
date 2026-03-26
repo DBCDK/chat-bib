@@ -1,15 +1,21 @@
 /* eslint-disable @next/next/no-page-custom-font */
-import "./styles/globals.scss";
 import "./styles/markdown.scss";
 import "./styles/highlight.scss";
 import { getClientConfig } from "./config/client";
 import { type Metadata } from "next";
 import { getServerSideConfig } from "./config/server";
+import { env } from "./utils/appsettings";
 import Script from "next/script";
 const serverConfig = getServerSideConfig();
+const runtimeAppSettings = Buffer.from(
+  JSON.stringify({
+    APP: process.env.APP ?? "chatbib",
+    LLMTOKEN: process.env.LLMTOKEN ?? "",
+  }),
+).toString("base64");
 
 export const metadata: Metadata = {
-  title: process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib",
+  title: env.APP_TITLE ?? "ChatBib",
   description: "Bibliotekets AI-chat",
   viewport: {
     width: "device-width",
@@ -21,7 +27,7 @@ export const metadata: Metadata = {
     { media: "(prefers-color-scheme: dark)", color: "#151515" },
   ],
   appleWebApp: {
-    title: process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib",
+    title: env.APP_TITLE ?? "ChatBib",
     statusBarStyle: "default",
   },
 };
@@ -31,10 +37,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const styleName = env.STYLE ?? "chatbib";
+  const stylesheetHref = `/styles/globals-${styleName}.css`;
+
   return (
     <html lang="da">
       <head>
-        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+        <link rel="stylesheet" href={stylesheetHref} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `appsettings = "${runtimeAppSettings}"; window.appsettings = appsettings;`,
+          }}
+        />
+        {env.INJECT_ANALYTICS ? (
           ""
         ) : (
           <script
@@ -54,7 +69,7 @@ export default function RootLayout({
           />
         )}
 
-        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+        {env.INJECT_ANALYTICS ? (
           ""
         ) : (
           <Script
@@ -72,15 +87,15 @@ export default function RootLayout({
         />
         <link
           rel="icon"
-          href={`/${process.env.NEXT_PUBLIC_STYLE ?? "chatbib"}/favicon.ico`}
+          href={`/${styleName}/favicon.ico`}
         ></link>
         <link
           rel="manifest"
-          href={`/${process.env.NEXT_PUBLIC_STYLE ?? "chatbib"}/site.webmanifest`}
+          href={`/${styleName}/site.webmanifest`}
         ></link>
         <script src="/serviceWorkerRegister.js" defer></script>
 
-        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS ? (
+        {env.INJECT_ANALYTICS ? (
           ""
         ) : (
           <script
@@ -118,10 +133,10 @@ export default function RootLayout({
       </head>
       <body>
         {children}
-        {process.env.NEXT_PUBLIC_INJECT_ANALYTICS && (
+        {env.INJECT_ANALYTICS && (
           <div
             dangerouslySetInnerHTML={{
-              __html: process.env.NEXT_PUBLIC_INJECT_ANALYTICS,
+              __html: env.INJECT_ANALYTICS,
             }}
           ></div>
         )}

@@ -6,6 +6,7 @@ import {
 } from "../constant";
 import { getHeaders } from "../client/api";
 import { getClientConfig } from "../config/client";
+import { env } from "../utils/appsettings";
 import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
@@ -49,7 +50,7 @@ const DEFAULT_ACCESS_STATE = {
   disableGPT4: false,
   disableFastLink: false,
   customModels: "",
-  defaultModel: process.env.NEXT_PUBLIC_DEFAULT_MODEL ?? "",
+  defaultModel: env.DEFAULT_MODEL ?? "",
 };
 
 export const useAccessStore = createPersistStore(
@@ -93,7 +94,7 @@ export const useAccessStore = createPersistStore(
     },
 
     getCustomModels() {
-      return [, process.env.NEXT_PUBLIC_CUSTOM_MODELS, get().customModels]
+      return [, env.CUSTOM_MODELS, get().customModels]
         .filter((m) => m && m.length > 0)
         .join(",");
     },
@@ -114,7 +115,7 @@ export const useAccessStore = createPersistStore(
           DEFAULT_CONFIG.modelConfig.model =
             defaultModel !== ""
               ? defaultModel
-              : process.env.NEXT_PUBLIC_DEFAULT_MODEL ?? "gpt-3.5-turbo";
+              : env.DEFAULT_MODEL ?? "gpt-3.5-turbo";
           return res;
         })
         .then((res: DangerConfig) => {
