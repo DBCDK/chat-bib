@@ -1,5 +1,4 @@
 import webpack from "webpack";
-import path from "path";
 
 const mode = process.env.BUILD_MODE ?? "standalone";
 console.log("[Next] build mode", mode);
@@ -14,21 +13,6 @@ const nextConfig = {
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
-
-    const style = process.env.NEXT_PUBLIC_STYLE ?? "chatbib";
-    if (style !== "chatbib") {
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(
-          /styles\/globals\.scss$/,
-          (resource) => {
-            resource.request = path.resolve(
-              process.cwd(),
-              `app/styles/globals-${style}.scss`,
-            );
-          },
-        ),
-      );
-    }
 
     if (disableChunk) {
       config.plugins.push(

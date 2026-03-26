@@ -28,6 +28,7 @@ import {
 
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
+import { env } from "../utils/appsettings";
 import dynamic from "next/dynamic";
 import { showConfirm, showToast } from "./ui-lib";
 
@@ -144,7 +145,7 @@ export function SideBar(props: { className?: string }) {
   useHotKey();
 
   const currentChat = chatStore.currentSession();
-  const currentSystemPrompt = process.env.NEXT_PUBLIC_SYSTEM_PROMPT_IN_SIDEBAR
+  const currentSystemPrompt = env.SYSTEM_PROMPT_IN_SIDEBAR
     ? currentChat?.mask?.context?.[0]?.content
     : undefined;
   const editableSystemPrompt = !currentChat?.mask?.builtin;
@@ -168,21 +169,21 @@ export function SideBar(props: { className?: string }) {
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <Link to={Path.Home}>
             <img
-              src={process.env.NEXT_PUBLIC_APP_LOGO ?? "/chatbib/dbclogo.png"}
+              src={env.APP_LOGO ?? "/chatbib/dbclogo.png"}
               style={{ width: "100px", cursor: "pointer" }}
             />
           </Link>
         </div>
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
-            {process.env.NEXT_PUBLIC_APP_TITLE ?? "ChatBib"}
+            {env.APP_TITLE ?? "ChatBib"}
           </div>
           <div className={styles["sidebar-sub-title"]}>
-            {process.env.NEXT_PUBLIC_APP_TAGLINE ?? "Bibliotekernes AI-chat"}
+            {env.APP_TAGLINE ?? "Bibliotekernes AI-chat"}
           </div>
         </div>
       </div>
-      {process.env.NEXT_PUBLIC_SYSTEM_PROMPT_IN_SIDEBAR ? (
+      {env.SYSTEM_PROMPT_IN_SIDEBAR ? (
         currentSystemPrompt !== undefined &&
         !shouldNarrow && (
           <div className={styles["system-prompt-preview"]}>
@@ -222,7 +223,7 @@ export function SideBar(props: { className?: string }) {
           </p>
         </div>
       )}
-      {process.env.NEXT_PUBLIC_MASK_BUTTON && (
+      {env.MASK_BUTTON && (
         <div className={styles["sidebar-header-bar"]}>
           <IconButton
             icon={<MaskIcon />}
@@ -273,7 +274,7 @@ export function SideBar(props: { className?: string }) {
             />
           </div>
           */}
-          {process.env.NEXT_PUBLIC_SHOW_SETTINGS && (
+          {env.SHOW_SETTINGS && (
           <div className={styles["sidebar-action"]}>
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
@@ -293,7 +294,7 @@ export function SideBar(props: { className?: string }) {
           //    icon={<AddIcon  />}
           text={shouldNarrow ? undefined : Locale.Home.NewChat}
           onClick={() => {
-            if (process.env.NEXT_PUBLIC_DEFAULT_NEW_CHAT) {
+            if (env.DEFAULT_NEW_CHAT) {
               chatStore.newSession();
               navigate(Path.Chat);
             } else {

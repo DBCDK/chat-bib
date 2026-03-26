@@ -4,6 +4,8 @@ import { DEFAULT_MODELS } from "../constant";
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      APP?: string;
+      LLMTOKEN?: string;
       PROXY_URL?: string; // docker only
 
       OPENAI_API_KEY?: string;

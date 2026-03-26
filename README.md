@@ -23,7 +23,7 @@ Deployments can be customised with different `NEXT_PUBLIC_`-environment-variable
 - `NEXT_PUBLIC_CONTAINER_CSS_CLASS` sets the root-css-class.
 - `NEXT_PUBLIC_DISABLE_GOOGLE_FONTS` disables google fonts, as SkoleGPT is more strict about tracking.
 - `NEXT_PUBLIC_HOMEPAGE_IS_MASKLIST` makes shows mask-list by default
-- `NEXT_PUBLIC_STYLE=some_app` (default: `chatbib`) use `app/styles/globals-some_app.scss` when set, and assets from `public/some_app/` (e.g. `site.webmanifest`, `favicon.ico`, `prompts.json`). Unset style uses `public/chatbib/*`.
+- Styles are selected at runtime via `env.STYLE` (from app settings). Build auto-generates runtime stylesheets from all `app/styles/globals-*.scss` files into matching `public/styles/globals-*.css` files, and the active app loads `/styles/globals-<style>.css` plus assets from `public/<style>/` (e.g. `site.webmanifest`, `favicon.ico`, `prompts.json`).
 - `NEXT_PUBLIC_APP_SYSTEM_PROMPT_IN_SIDEBAR` shows the first systemprompt of the current mask in the sidebar
 - `NEXT_PUBLIC_DISABLE_MODELS` disable default models
 - `NEXT_PUBLIC_INJECT_ANALYTICS="<script> ..."` overrides hardcoded matomo+cookie-prompt

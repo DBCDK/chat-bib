@@ -30,6 +30,7 @@ import {
   getMessageImages,
   isVisionModel,
 } from "@/app/utils";
+import { env } from "@/app/utils/appsettings";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -62,7 +63,7 @@ export class ChatGPTApi implements LLMApi {
 
     let baseUrl = "";
 
-    const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const envBaseUrl = env.BASE_URL;
     if (envBaseUrl) {
       baseUrl = envBaseUrl;
     } else if (accessStore.useCustomConfig) {

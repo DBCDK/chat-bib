@@ -1,4 +1,5 @@
 import { modelNames } from "@/app/dbc";
+import { env } from "@/app/utils/appsettings";
 export const OWNER = "";
 export const REPO = "";
 export const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
@@ -155,7 +156,7 @@ export let DEFAULT_MODELS = [
     },
   })),
 ];
-if (process.env.NEXT_PUBLIC_DISABLE_MODELS) {
+if (env.DISABLE_MODELS) {
   DEFAULT_MODELS = [];
 }
 
