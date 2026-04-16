@@ -14,7 +14,8 @@ RUN npm set progress=false && npm config set depth 0 && \
     npm ci
 
 # build for production (f is formatted)
-RUN npm run build && \
+RUN npm run build:styles && \
+    npm run build && \
     npm prune --production
 
 # ---- Release ----
