@@ -61,6 +61,8 @@ pipeline {
 			}
 			steps {
 				sh "set-new-version configuration.yml ${env.GITLAB_PRIVATE_TOKEN} ai/chat-bib-secrets ${env.DOCKER_TAG} -b staging"
+                sh "set-new-version configuration.yml ${env.GITLAB_PRIVATE_TOKEN} ai/chat-bib-secrets ${env.DOCKER_TAG} -b skolegpt-staging"
+
 			}
 		}
     }
