@@ -1,4 +1,4 @@
-import { SearchResult } from "./browser";
+import { SearchResult } from "./brave";
 import { getServerSideConfig } from "@/app/config/server";
 import { fetch, ProxyAgent } from "undici";
 import { log } from "dbc-node-logger";

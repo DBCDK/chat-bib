@@ -1,5 +1,4 @@
-import { search } from "../clients/brave";
-import { SearchResult } from "../clients/browser";
+import { search, SearchResult } from "../clients/brave";
 import { CustomModel, GenerateRequest, Message } from "../index";
 import { llmGenerate } from "../llmClient";
 import { initializeApollo } from "@/app/client/apolloClient";

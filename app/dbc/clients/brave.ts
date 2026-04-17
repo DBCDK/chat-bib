@@ -1,7 +1,11 @@
-import { SearchResult } from "./browser";
 import { getServerSideConfig } from "@/app/config/server";
 import { fetch, ProxyAgent } from "undici";
 import { log } from "dbc-node-logger";
+
+export type SearchResult = {
+  content?: string;
+  href?: string;
+};
 
 const serverConfig = getServerSideConfig();
 

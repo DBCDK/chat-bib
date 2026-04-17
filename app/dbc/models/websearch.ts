@@ -1,5 +1,4 @@
-import { search } from "../clients/brave";
-import { SearchResult } from "../clients/browser";
+import { search, SearchResult } from "../clients/brave";
 import { CustomModel, GenerateRequest, Message, MODEL_NAMES } from "../index";
 import PluginStatus from "../components/PluginStatus/PluginStatus";
 
