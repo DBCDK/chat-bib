@@ -1,5 +1,7 @@
 import { Mask } from "../store/mask";
 
+import { env } from "../utils/appsettings";
+import { CHATDBC_MASKS } from "./chatdbc";
 import { SKOLEGPT_MASKS } from "./skolegpt";
 
 import { type BuiltinMask } from "./typing";
@@ -21,6 +23,9 @@ export const BUILTIN_MASK_STORE = {
   },
 };
 
-export const BUILTIN_MASKS: BuiltinMask[] = [...SKOLEGPT_MASKS].map((m) =>
+const SOURCE_BUILTIN_MASKS =
+  env.BUILTIN_MASK_PROFILE === "chatdbc" ? CHATDBC_MASKS : SKOLEGPT_MASKS;
+
+export const BUILTIN_MASKS: BuiltinMask[] = [...SOURCE_BUILTIN_MASKS].map((m) =>
   BUILTIN_MASK_STORE.add(m),
 );
