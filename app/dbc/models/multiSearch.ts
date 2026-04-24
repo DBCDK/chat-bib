@@ -56,6 +56,7 @@ async function simpleSearchResults({
   say,
   close,
 }: GenerateRequest) {
+  return new Promise((resolve) => resolve([])) as Promise<FormatedWork[]>; //TODO: remove again
   //say("🎢 🚨Laver en simple search søgning..\n\n");
   //make sure that gramma errors are corrected.
   const searchObject = await promptToSearchObjectViaEndpoint({
