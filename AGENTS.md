@@ -1,0 +1,3 @@
+- Use npm run running the project
+- README.md contains project details
+- Update AGENTS.md when you get new general instructions that should apply to the project.
