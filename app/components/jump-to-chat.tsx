@@ -19,7 +19,6 @@ export function JumpToChat() {
     const params = Object.fromEntries(
       new URLSearchParams(location.search).entries(),
     );
-    console.log(params);
 
     const name = params.name?.trim();
     const prompt = params.prompt?.trim();
@@ -35,7 +34,8 @@ export function JumpToChat() {
               (msg) => msg?.role === MessageRole.System,
             );
             return (
-              systemPrompts.length === 1 && systemPrompts[0].content === prompt
+              systemPrompts.length === 1 &&
+              systemPrompts[0].content?.trim() === prompt
             );
           })
         : name
