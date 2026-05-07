@@ -1,3 +1,12 @@
-- Use npm run running the project
+
+- Make the smallest correct change.
+- Read relevant code before editing.
+- Preserve existing behavior unless asked to change it.
+- Do not overwrite or discard user changes.
+- Do not edit generated files directly.
+- Do not add dependencies, secrets, migrations, or network calls without approval.
+- Update existing tests or docs when behavior changes.
+- use npm fo running the project
+- `npm run build` runs type-checks/lint which must pass
 - README.md contains project details
 - Update AGENTS.md when you get new general instructions that should apply to the project.

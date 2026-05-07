@@ -16,35 +16,31 @@ export function JumpToChat() {
   useEffect(() => {
     setShouldNavigate(false);
 
-    const params = Object.fromEntries(
-      new URLSearchParams(location.search).entries(),
-    );
+    const params = new URLSearchParams(location.search);
+    const name = params.get("name")?.trim() || undefined;
+    const prompt = params.get("prompt")?.trim() || undefined;
 
-    const name = params.name?.trim();
-    const prompt = params.prompt?.trim();
-    const allMasks: Mask[] = [
-      ...maskStore.getAll(),
-      ...(Object.values(BUILTIN_MASK_STORE.masks) as unknown as Mask[]),
-    ];
-    const matchedMask: Mask | undefined =
-      name && prompt
-        ? allMasks.find((m) => {
-            if (!m || m.name !== name) return false;
-            const systemPrompts = (m.context ?? []).filter(
-              (msg) => msg?.role === MessageRole.System,
-            );
-            const systemPromptContent = systemPrompts[0]?.content;
-            const systemPromptText =
-              typeof systemPromptContent === "string"
-                ? systemPromptContent.trim()
-                : undefined;
-            return systemPrompts.length === 1 && systemPromptText === prompt;
-          })
-        : name
-          ? allMasks.find((m) => m?.name === name)
-          : undefined;
+    const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
+    const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
 
-    const maskToUse: Mask | undefined =
+    const findMatchedMask = (): Mask | undefined => {
+      if (!name) return undefined;
+      if (!prompt) return allMasks.find((m) => m?.name === name);
+
+      return allMasks.find(
+        (mask) =>
+          !!mask &&
+          mask.name === name &&
+          (prompt === undefined ||
+            (mask.context?.length === 1 &&
+              mask.context[0]?.role === MessageRole.System &&
+              (mask.context[0]?.content as string | undefined)?.trim() ===
+                prompt.trim())),
+      );
+    };
+
+    const matchedMask = findMatchedMask();
+    const maskToUse =
       name && prompt && !matchedMask
         ? maskStore.create({
             name,

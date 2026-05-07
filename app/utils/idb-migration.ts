@@ -40,7 +40,10 @@ async function openKeyvalDb(): Promise<IDBDatabase | null> {
   });
 }
 
-async function getFromIdb(db: IDBDatabase, key: string): Promise<string | null> {
+async function getFromIdb(
+  db: IDBDatabase,
+  key: string,
+): Promise<string | null> {
   return new Promise((resolve) => {
     try {
       const tx = db.transaction(IDB_STORE_NAME, "readonly");
@@ -51,14 +54,14 @@ async function getFromIdb(db: IDBDatabase, key: string): Promise<string | null> 
 
       request.onsuccess = () => {
         const result = request.result;
-        if (typeof result === "string")  {
+        if (typeof result === "string") {
           resolve(result);
-
-        } else try {
-          resolve(JSON.stringify(result));
-        } catch {
-          resolve(null);
-        }
+        } else
+          try {
+            resolve(JSON.stringify(result));
+          } catch {
+            resolve(null);
+          }
       };
     } catch {
       resolve(null);
@@ -73,11 +76,11 @@ async function runMigration(): Promise<void> {
       for (const key of STORE_KEYS_TO_MIGRATE) {
         const value = await getFromIdb(db, key);
         if (value != null) {
-      window.localStorage.setItem(key, value);
+          window.localStorage.setItem(key, value);
         }
       }
     }
-  } catch(e) {
+  } catch (e) {
     console.error("Failed to migrate IDB to localStorage", e);
   }
   window.localStorage.setItem(MIGRATION_FLAG_KEY, "1");
@@ -94,9 +97,9 @@ export const migrationAwareStorage: StateStorage = {
   },
 
   async setItem(name: string, value: string): Promise<void> {
-      window.localStorage.setItem(name, value);
+    window.localStorage.setItem(name, value);
   },
   async removeItem(name: string): Promise<void> {
-      window.localStorage.removeItem(name);
+    window.localStorage.removeItem(name);
   },
 };

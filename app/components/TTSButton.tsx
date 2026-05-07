@@ -80,9 +80,7 @@ export function TTSButton(props: { message: string }) {
         // Try to surface a more useful error than "blob not playable".
         const detail = await res.text().catch(() => "");
         throw new Error(
-          `TTS request failed (${res.status})${
-            detail ? `: ${detail}` : ""
-          }`,
+          `TTS request failed (${res.status})${detail ? `: ${detail}` : ""}`,
         );
       }
 
@@ -108,8 +106,7 @@ export function TTSButton(props: { message: string }) {
       try {
         await new Promise<void>((resolve, reject) => {
           const onEnded = () => resolve();
-          const onError = () =>
-            reject(new Error("Failed to play TTS audio"));
+          const onError = () => reject(new Error("Failed to play TTS audio"));
 
           audio.addEventListener("ended", onEnded, { once: true });
           audio.addEventListener("error", onError, { once: true });
@@ -127,10 +124,7 @@ export function TTSButton(props: { message: string }) {
   );
 
   const onClick = async () => {
-    const service = env.TTS_SERVICE as
-      | string
-      | undefined
-      | null;
+    const service = env.TTS_SERVICE as string | undefined | null;
     const text = props.message?.trim();
 
     if (!service || !text) return;
@@ -166,11 +160,7 @@ export function TTSButton(props: { message: string }) {
         const isLast = i === sentences.length - 1;
         if (!isLast) {
           // Kick off the next request immediately, while current audio plays.
-          nextFetch = fetchWavFromService(
-            service,
-            sentences[i + 1],
-            token,
-          );
+          nextFetch = fetchWavFromService(service, sentences[i + 1], token);
         }
 
         const stillValid = await playAudioUrl(currentAudioUrl, token);
@@ -183,7 +173,11 @@ export function TTSButton(props: { message: string }) {
       }
     } catch (e: unknown) {
       const message =
-        e instanceof Error ? e.message : typeof e === "string" ? e : "TTS failed";
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+            ? e
+            : "TTS failed";
       setError(message);
       console.error("TTS error:", e);
     } finally {
@@ -217,4 +211,3 @@ export function TTSButton(props: { message: string }) {
     </button>
   );
 }
-
