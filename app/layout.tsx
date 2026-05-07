@@ -85,14 +85,8 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
-        <link
-          rel="icon"
-          href={`/${styleName}/favicon.ico`}
-        ></link>
-        <link
-          rel="manifest"
-          href={`/${styleName}/site.webmanifest`}
-        ></link>
+        <link rel="icon" href={`/${styleName}/favicon.ico`}></link>
+        <link rel="manifest" href={`/${styleName}/site.webmanifest`}></link>
         <script src="/serviceWorkerRegister.js" defer></script>
 
         {env.INJECT_ANALYTICS ? (

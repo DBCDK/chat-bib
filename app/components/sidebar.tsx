@@ -230,11 +230,7 @@ export function SideBar(props: { className?: string }) {
             text={shouldNarrow ? undefined : Locale.Mask.Name}
             className={styles["sidebar-bar-button"]}
             onClick={() => {
-              if (config.dontShowMaskSplashScreen !== true) {
-                navigate(Path.NewChat, { state: { fromHome: true } });
-              } else {
-                navigate(Path.Masks, { state: { fromHome: true } });
-              }
+              navigate(Path.Masks, { state: { fromHome: true } });
             }}
             shadow
           />
@@ -274,13 +270,14 @@ export function SideBar(props: { className?: string }) {
             />
           </div>
           */}
-          {env.SHOW_SETTINGS && (
+        {env.SHOW_SETTINGS && (
           <div className={styles["sidebar-action"]}>
             <Link to={Path.Settings}>
               <IconButton icon={<SettingsIcon />} shadow />
             </Link>
-          </div> )}
-          {/*
+          </div>
+        )}
+        {/*
 
            <div className={styles["sidebar-action"]}>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer">

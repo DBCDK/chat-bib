@@ -566,10 +566,8 @@ export const useChatStore = createPersistStore(
         if (!mask && env.DEFAULT_MASK) {
           let masks = useMaskStore.getState().getAll();
           sessionMask =
-            masks.find(
-              (m) =>
-                m.name === env.DEFAULT_MASK && m.builtin,
-            ) || masks[0];
+            masks.find((m) => m.name === env.DEFAULT_MASK && m.builtin) ||
+            masks[0];
         }
 
         session.mask = {
@@ -652,13 +650,13 @@ export const useChatStore = createPersistStore(
 
         const session = sessions[index];
 
-        if(
+        if (
           env.CLEANUP_EMPTY_SESSIONS &&
           sessions.length === 1 &&
           session?.topic === "Nyoprettet Assistent" &&
           session?.mask?.name === DEFAULT_TOPIC &&
-          session?.mask?.context?.[0]?.content === "" && 
-          session.messages.length == 0 
+          session?.mask?.context?.[0]?.content === "" &&
+          session.messages.length == 0
         ) {
           get().deleteSession(index);
         }
@@ -1086,9 +1084,8 @@ export const useChatStore = createPersistStore(
           newSession.topic = oldSession.topic;
           newSession.messages = [...oldSession.messages];
           newSession.mask.modelConfig.sendMemory = true;
-          newSession.mask.modelConfig.historyMessageCount = env.DEFAULT_MESSAGE_COUNT
-            ? parseInt(env.DEFAULT_MESSAGE_COUNT)
-            : 4;
+          newSession.mask.modelConfig.historyMessageCount =
+            env.DEFAULT_MESSAGE_COUNT ? parseInt(env.DEFAULT_MESSAGE_COUNT) : 4;
           newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
           newState.sessions.push(newSession);
         }
