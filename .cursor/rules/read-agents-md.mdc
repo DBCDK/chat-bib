@@ -5,10 +5,4 @@ alwaysApply: true
 
 # Read AGENTS.md first
 
-This repository’s agent-oriented conventions and layout live in **`AGENTS.md`** in working/parent directories
-
-## Requirement
-
-1. **Before** planning non-trivial changes, or answering architecture questions about this project, **read `AGENTS.md`** with the editor/read_file tool if it is not already in your context.
-
-Skipping `AGENTS.md` risks wrong assumptions about the app.
+This repository uses AGENTS.md for instructions.

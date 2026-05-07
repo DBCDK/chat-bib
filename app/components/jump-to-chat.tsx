@@ -33,10 +33,12 @@ export function JumpToChat() {
             const systemPrompts = (m.context ?? []).filter(
               (msg) => msg?.role === MessageRole.System,
             );
-            return (
-              systemPrompts.length === 1 &&
-              systemPrompts[0].content?.trim() === prompt
-            );
+            const systemPromptContent = systemPrompts[0]?.content;
+            const systemPromptText =
+              typeof systemPromptContent === "string"
+                ? systemPromptContent.trim()
+                : undefined;
+            return systemPrompts.length === 1 && systemPromptText === prompt;
           })
         : name
           ? allMasks.find((m) => m?.name === name)
@@ -54,7 +56,6 @@ export function JumpToChat() {
 
     chatStore.newSession(maskToUse);
     setShouldNavigate(true);
-    // maskStore/chatStore are stable (zustand), but included to satisfy hooks lint
   }, [location.search, chatStore, maskStore]);
 
   if (!shouldNavigate) return null;
