@@ -4,6 +4,8 @@ import { Path } from "../constant";
 import { useChatStore } from "../store";
 import { Mask, useMaskStore } from "../store/mask";
 import { BUILTIN_MASK_STORE } from "../masks";
+import { MessageRole } from "../typing";
+import { createMessage } from "../store/chat";
 
 export function JumpToChat() {
   const location = useLocation();
@@ -20,15 +22,37 @@ export function JumpToChat() {
     console.log(params);
 
     const name = params.name?.trim();
+    const prompt = params.prompt?.trim();
     const allMasks: Mask[] = [
       ...maskStore.getAll(),
       ...(Object.values(BUILTIN_MASK_STORE.masks) as unknown as Mask[]),
     ];
-    const matchedMask: Mask | undefined = name
-      ? allMasks.find((m) => m?.name === name)
-      : undefined;
+    const matchedMask: Mask | undefined =
+      name && prompt
+        ? allMasks.find((m) => {
+            if (!m || m.name !== name) return false;
+            const systemPrompts = (m.context ?? []).filter(
+              (msg) => msg?.role === MessageRole.System,
+            );
+            return (
+              systemPrompts.length === 1 && systemPrompts[0].content === prompt
+            );
+          })
+        : name
+          ? allMasks.find((m) => m?.name === name)
+          : undefined;
 
-    chatStore.newSession(matchedMask);
+    const maskToUse: Mask | undefined =
+      name && prompt && !matchedMask
+        ? maskStore.create({
+            name,
+            context: [
+              createMessage({ role: MessageRole.System, content: prompt }),
+            ],
+          })
+        : matchedMask;
+
+    chatStore.newSession(maskToUse);
     setShouldNavigate(true);
     // maskStore/chatStore are stable (zustand), but included to satisfy hooks lint
   }, [location.search, chatStore, maskStore]);
