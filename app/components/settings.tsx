@@ -868,7 +868,7 @@ export function Settings() {
           </ListItem>
         </List>
 
-        */ }
+        */}
         <List>
           <ListItem
             title={Locale.Settings.Prompt.Disable.Title}

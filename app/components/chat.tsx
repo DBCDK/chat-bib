@@ -1258,8 +1258,7 @@ function _Chat() {
         return;
       }
       const items =
-        event.clipboardData?.items ??
-        (window as any).clipboardData?.items;
+        event.clipboardData?.items ?? (window as any).clipboardData?.items;
       if (!items) return;
       for (const item of items) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
@@ -1351,9 +1350,9 @@ function _Chat() {
     recorder!.start();
   }
   async function stopVoice() {
-    if(recorder) {
+    if (recorder) {
       const text = await recorder.stop();
-      if(text) onInput(text); 
+      if (text) onInput(text);
     }
   }
 
@@ -1841,9 +1840,9 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
-                        {env.TTS_SERVICE && !isUser &&
-                        <TTSButton message={getMessageTextContent(message)} />
-}
+                        {env.TTS_SERVICE && !isUser && (
+                          <TTSButton message={getMessageTextContent(message)} />
+                        )}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
@@ -1939,10 +1938,18 @@ function _Chat() {
               />
             }
             {env.ASR_ENDPOINT && (
-              <div style={{float: 'left', fontSize: '30px', cursor: 'pointer', margin: 8}}
+              <div
+                style={{
+                  float: "left",
+                  fontSize: "30px",
+                  cursor: "pointer",
+                  margin: 8,
+                }}
                 onPointerDown={startVoice}
                 onPointerUp={stopVoice}
-              >🎤</div>
+              >
+                🎤
+              </div>
             )}
             <label
               className={`${styles["chat-input-panel-inner"]} ${

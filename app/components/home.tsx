@@ -58,6 +58,13 @@ const NewChat = dynamic(async () => (await import("./new-chat")).NewChat, {
   loading: () => <Loading noLogo />,
 });
 
+const JumpToChat = dynamic(
+  async () => (await import("./jump-to-chat")).JumpToChat,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
+
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
   loading: () => <Loading noLogo />,
 });
@@ -180,22 +187,12 @@ function Screen() {
               <Route
                 path={Path.Home}
                 element={
-                  env.HOMEPAGE_IS_MASKLIST ? (
-                    <MaskPage />
-                  ) : (
-                    <ChatbibInfo />
-                  )
+                  env.HOMEPAGE_IS_MASKLIST ? <MaskPage /> : <ChatbibInfo />
                 }
               />
               <Route
                 path={Path.NewChat}
-                element={
-                  env.MASKS_ONLY ? (
-                    <MaskPage />
-                  ) : (
-                    <NewChat />
-                  )
-                }
+                element={env.MASKS_ONLY ? <JumpToChat /> : <NewChat />}
               />
               <Route path={Path.Masks} element={<MaskPage />} />
               <Route path={Path.Chat} element={<Chat />} />
