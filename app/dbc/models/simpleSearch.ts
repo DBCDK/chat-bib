@@ -64,7 +64,7 @@ type SimpleSearchQuery = {
     title?: string;
     creator?: string;
     subject?: string;
-    [key: string]: any; // Add this line
+    [key: string]: any; 
   };
   filters?: Filters;
 };
