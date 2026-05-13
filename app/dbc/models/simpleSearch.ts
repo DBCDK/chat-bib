@@ -110,15 +110,6 @@ export async function searchWorks(
   `;
 
   try {
-    console.log(
-      "\n\n\n\n\n\n 🚧 searchWorks QUERY: ",
-      JSON.stringify({
-        q: filteredSearchQuery,
-        filters: filteredFilters,
-        offset,
-        limit,
-      }) + "\n\n\n",
-    );
     const { data, errors } = await client.query({
       query: SEARCH_WORKS_QUERY,
       variables: {
@@ -132,7 +123,7 @@ export async function searchWorks(
     if (errors) {
       console.log("\n\n\n\n\n\n\n SIMPLESEARCH.errors", JSON.stringify(errors));
     }
-    console.log("\n\n\n\n\n\n\n data", JSON.stringify(data));
+
     const allWorks = data?.search?.works ?? [];
     const works = allWorks; //selectWorks(allWorks, 12, 6);
 
