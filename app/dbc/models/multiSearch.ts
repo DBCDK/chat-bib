@@ -26,8 +26,6 @@ async function complexSearchResults({
   say,
   close,
 }: GenerateRequest) {
-  // say("\n\n⏳Laver en cql søgning..\n\n");
-
   try {
     const cql = await promptToCQL({
       messages,
@@ -138,11 +136,7 @@ async function finalAnswer({
     role: "system",
     content: systemPrompt2,
   });
-  // PluginStatus.serialize({
-  //   say,
-  //   pluginName: id,
-  //   description: `Færdig.`,
-  // });
+
   // We just pass it through to the LLM backend
   const finalAnswer = await llmGenerate({
     messages: copy,
