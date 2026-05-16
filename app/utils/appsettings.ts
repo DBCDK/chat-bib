@@ -21,7 +21,7 @@ const { app, token } =
 
 const chatbib: RuntimeEnv = {};
 const skolegpt: RuntimeEnv = {
-  BASE_URL: "https://llm.dbc.dk/",
+  BASE_URL: "https://glyph-gate.dbc.dk/",
   API_KEY: token,
   // ASR_ENDPOINT: "http://ai-p301:7755/asr",
   // TTS_SERVICE: "http://ai-p301:7755/tts",
@@ -77,8 +77,6 @@ const chatdbc: RuntimeEnv = {
   DISABLE_MODELS: false,
   DISABLE_FEEDBACK: "true",
   LOCALE: "skolegpt",
-  INJECT_ANALYTICS:
-    "<script> var _paq = window._paq = window._paq || []; _paq.push(['disableCookies']); _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']); (function() { var u='https://stats.dbc.dk/'; _paq.push(['setTrackerUrl', u+'matomo.php']); _paq.push(['setSiteId', '43']); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s); })(); </script>",
   DEFAULT_MASK: "DBC",
   USE_MASK_AS_SESSION_NAME: "true",
   DISABLE_BOT_HELLO: false,
