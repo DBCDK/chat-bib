@@ -5,6 +5,7 @@ import { env } from "../utils/appsettings";
 
 export function TTSButton(props: { message: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isPlaying, setIsPlaying] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const objectUrlsRef = React.useRef<Set<string>>(new Set());
@@ -55,6 +56,8 @@ export function TTSButton(props: { message: string }) {
       }
     }
     objectUrlsRef.current.clear();
+    setIsLoading(false);
+    setIsPlaying(false);
   }, []);
 
   const revokeUrl = React.useCallback((url: string) => {
@@ -112,9 +115,13 @@ export function TTSButton(props: { message: string }) {
 
       try {
         await new Promise<void>((resolve, reject) => {
+          const onPlaying = () => {
+            if (token === playTokenRef.current) setIsPlaying(true);
+          };
           const onEnded = () => resolve();
           const onError = () => reject(new Error("Failed to play TTS audio"));
 
+          audio.addEventListener("playing", onPlaying, { once: true });
           audio.addEventListener("ended", onEnded, { once: true });
           audio.addEventListener("error", onError, { once: true });
 
@@ -137,12 +144,15 @@ export function TTSButton(props: { message: string }) {
     const text = props.message?.trim();
 
     if (!service || !text) return;
-    if (isLoading) return;
 
-    // If user clicks again, stop current playback + cancel in-flight loop.
-    stopPlayback();
+    // If user clicks again while loading or playing, stop everything.
+    if (isLoading || isPlaying) {
+      stopPlayback();
+      return;
+    }
 
     setIsLoading(true);
+    setIsPlaying(false);
     setError(null);
 
     const token = playTokenRef.current;
@@ -191,14 +201,21 @@ export function TTSButton(props: { message: string }) {
       console.error("TTS error:", e);
     } finally {
       setIsLoading(false);
+      setIsPlaying(false);
     }
   };
 
   return (
     <button
       type="button"
-      title={error ? `TTS failed: ${error}` : "Play"}
-      aria-label="Play"
+      title={
+        error
+          ? `TTS failed: ${error}`
+          : isPlaying || isLoading
+            ? "Stop"
+            : "Play"
+      }
+      aria-label={isPlaying || isLoading ? "Stop" : "Play"}
       style={{
         float: "right",
         fontSize: "30px",
@@ -210,9 +227,10 @@ export function TTSButton(props: { message: string }) {
         border: "none",
       }}
       onClick={onClick}
-      disabled={isLoading}
     >
-      {isLoading ? (
+      {isPlaying ? (
+        "⏹"
+      ) : isLoading ? (
         <LoadingButtonIcon style={{ width: 30, height: 30 }} />
       ) : (
         "🔈"
