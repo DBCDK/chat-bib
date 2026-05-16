@@ -16,7 +16,7 @@ const runtimeAppSettings = Buffer.from(
 
 export const metadata: Metadata = {
   title: env.APP_TITLE ?? "ChatBib",
-  description: "Bibliotekets AI-chat",
+  description: env.APP === "skolegpt" ? "" : "Bibliotekets AI-chat",
   viewport: {
     width: "device-width",
     initialScale: 1,

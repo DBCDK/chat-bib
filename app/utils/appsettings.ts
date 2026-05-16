@@ -19,8 +19,11 @@ function serverConfig() {
 const { app, token } =
   typeof window === "undefined" ? serverConfig() : clientConfig();
 
-const chatbib: RuntimeEnv = {};
+const chatbib: RuntimeEnv = {
+  APP: "chatbib",
+};
 const skolegpt: RuntimeEnv = {
+  APP: "skolegpt",
   BASE_URL: "https://glyph-gate.dbc.dk/",
   API_KEY: token,
   ENABLE_TTSASR: true,
@@ -54,6 +57,7 @@ const skolegpt: RuntimeEnv = {
   BUILTIN_MASK_PROFILE: "skolegpt",
 };
 const chatdbc: RuntimeEnv = {
+  APP: "chatdbc",
   BASE_URL: "https://llm.dbc.dk/",
   API_KEY: token,
   SHOW_SETTINGS: "true",
