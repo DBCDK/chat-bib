@@ -1343,9 +1343,7 @@ function _Chat() {
 
   async function startVoice() {
     if (!recorder) {
-      recorder = await Recorder.create({
-        asrEndpoint: env.ASR_ENDPOINT as string,
-      });
+      recorder = await Recorder.create();
     }
     recorder!.start();
   }
@@ -1840,7 +1838,7 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
-                        {env.TTS_SERVICE && !isUser && (
+                        {env.ENABLE_TTSASR && !isUser && (
                           <TTSButton message={getMessageTextContent(message)} />
                         )}
                         <Markdown
@@ -1937,7 +1935,7 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
-            {env.ASR_ENDPOINT && (
+            {env.ENABLE_TTSASR && (
               <div
                 style={{
                   float: "left",

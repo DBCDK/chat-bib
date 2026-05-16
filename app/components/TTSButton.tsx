@@ -72,8 +72,15 @@ export function TTSButton(props: { message: string }) {
 
       const res = await fetch(service, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sentence }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.API_KEY}`,
+        },
+        body: JSON.stringify({
+          input: sentence,
+          model: "CoRal-project/roest-v3-chatterbox-500m",
+          response_format: "wav",
+        }),
       });
 
       if (!res.ok) {
@@ -124,7 +131,9 @@ export function TTSButton(props: { message: string }) {
   );
 
   const onClick = async () => {
-    const service = env.TTS_SERVICE as string | undefined | null;
+    const service = env.ENABLE_TTSASR
+      ? `${env.BASE_URL}v1/audio/speech`
+      : null;
     const text = props.message?.trim();
 
     if (!service || !text) return;

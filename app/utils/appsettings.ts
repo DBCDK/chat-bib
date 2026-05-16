@@ -23,8 +23,7 @@ const chatbib: RuntimeEnv = {};
 const skolegpt: RuntimeEnv = {
   BASE_URL: "https://glyph-gate.dbc.dk/",
   API_KEY: token,
-  // ASR_ENDPOINT: "http://ai-p301:7755/asr",
-  // TTS_SERVICE: "http://ai-p301:7755/tts",
+  ENABLE_TTSASR: true,
   SHOW_SETTINGS: "true",
   CUSTOM_MODELS: "skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
   CHAT_DISCLAIMER:
@@ -57,8 +56,6 @@ const skolegpt: RuntimeEnv = {
 const chatdbc: RuntimeEnv = {
   BASE_URL: "https://llm.dbc.dk/",
   API_KEY: token,
-  // ASR_ENDPOINT: "http://ai-p301:7755/asr",
-  // TTS_SERVICE: "http://ai-p301:7755/tts",
   SHOW_SETTINGS: "true",
   CUSTOM_MODELS:
     "chatbib,gemma3-12b,hawkeye,mitcfu-rag,science-rag,skolegpt-gemma3,skolegpt-mixtral,skolegpt,skolegpt-v3",
