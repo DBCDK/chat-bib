@@ -50,7 +50,7 @@ export async function llmGenerate(input: LLMRequest) {
   const temperature = parameters.temperature ?? 0.001;
   const topP = parameters.top_p ?? 1;
   const maxTokens = parameters.max_new_tokens || 500;
-console.log("\n\n\n\nGOT MODEL NAME", modelName);
+
   const requestBodyStr = JSON.stringify({
     messages: input.messages,
     model: modelName,
