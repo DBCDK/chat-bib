@@ -116,9 +116,9 @@ const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
 });
 
 const llModelLabels: Record<string, string> = {
-  //keys are the DBC_LLM_ENDPOINT_MODELS
-  chatbib: "Mixtral",
-  "gemma3-12b": "Gemma 3-12B",
+  // Keys are the DBC_LLM_ENDPOINT_MODELS aliases shown in the UI.
+  chatbib: "chatbib",
+  "gemma3-12b": "gemma3-12b",
 };
 export function SessionConfigModel(props: { onClose: () => void }) {
   const chatStore = useChatStore();

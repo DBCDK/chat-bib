@@ -182,4 +182,14 @@ export const internalAllowedWebDavEndpoints = [
   "https://app.koofr.net/dav/Koofr",
 ];
 
-export const DBC_LLM_ENDPOINT_MODELS = ["chatbib", "gemma3-12b"];
+export type DbcLlmEndpointModel = "chatbib" | "gemma3-12b";
+
+export const DBC_LLM_ENDPOINT_MODELS: DbcLlmEndpointModel[] = [
+  "chatbib",
+  "gemma3-12b",
+];
+
+export const DBC_LLM_ENDPOINT_MODEL_MAP: Record<DbcLlmEndpointModel, string> = {
+  chatbib: "google/gemma-3-12b-it",
+  "gemma3-12b": "google/gemma-3-12b-it",
+};
