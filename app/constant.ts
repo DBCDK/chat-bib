@@ -182,14 +182,21 @@ export const internalAllowedWebDavEndpoints = [
   "https://app.koofr.net/dav/Koofr",
 ];
 
-export type DbcLlmEndpointModel = "chatbib" | "gemma3-12b";
+// Each key is the stable UI alias shown/selectable in ChatBib.
+// Add a new model by adding another key with its label and backend model id.
+export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
+  chatbib: {
+    label: "chatbib",
+    model: "google/gemma-3-12b-it",
+  },
+  "gemma3-12b": {
+    label: "Gemma 3 12B",
+    model: "google/gemma-3-12b-it",
+  },
+} as const;
 
-export const DBC_LLM_ENDPOINT_MODELS: DbcLlmEndpointModel[] = [
-  "chatbib",
-  "gemma3-12b",
-];
+export type DbcLlmEndpointModel = keyof typeof DBC_LLM_ENDPOINT_MODEL_CONFIG;
 
-export const DBC_LLM_ENDPOINT_MODEL_MAP: Record<DbcLlmEndpointModel, string> = {
-  chatbib: "google/gemma-3-12b-it",
-  "gemma3-12b": "google/gemma-3-12b-it",
-};
+export const DBC_LLM_ENDPOINT_MODELS = Object.keys(
+  DBC_LLM_ENDPOINT_MODEL_CONFIG,
+) as DbcLlmEndpointModel[];

@@ -3,7 +3,7 @@ import { log } from "dbc-node-logger";
 import { getServerSideConfig } from "@/app/config/server";
 import { LLMRequest } from ".";
 import {
-  DBC_LLM_ENDPOINT_MODEL_MAP,
+  DBC_LLM_ENDPOINT_MODEL_CONFIG,
   DBC_LLM_ENDPOINT_MODELS,
   DbcLlmEndpointModel,
 } from "@/app/constant";
@@ -45,7 +45,8 @@ export async function llmGenerate(input: LLMRequest) {
   )
     ? requestedEndpointModel!
     : "chatbib";
-  const modelName = DBC_LLM_ENDPOINT_MODEL_MAP[modelAlias as DbcLlmEndpointModel];
+  const modelName =
+    DBC_LLM_ENDPOINT_MODEL_CONFIG[modelAlias as DbcLlmEndpointModel].model;
 
   const temperature = parameters.temperature ?? 0.001;
   const topP = parameters.top_p ?? 1;

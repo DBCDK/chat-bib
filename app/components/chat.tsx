@@ -88,6 +88,8 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
+  DBC_LLM_ENDPOINT_MODEL_CONFIG,
+  type DbcLlmEndpointModel,
   LAST_INPUT_KEY,
   MALICIOUS_ANSWER,
   Path,
@@ -115,11 +117,10 @@ const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
 
-const llModelLabels: Record<string, string> = {
-  // Keys are the DBC_LLM_ENDPOINT_MODELS aliases shown in the UI.
-  chatbib: "chatbib",
-  "gemma3-12b": "gemma3-12b",
-};
+const getLlmModelLabel = (model?: string) =>
+  model && model in DBC_LLM_ENDPOINT_MODEL_CONFIG
+    ? DBC_LLM_ENDPOINT_MODEL_CONFIG[model as DbcLlmEndpointModel].label
+    : model || "";
 export function SessionConfigModel(props: { onClose: () => void }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -1561,9 +1562,7 @@ function _Chat() {
                     >
                       {session.multiMode === "agents"
                         ? child?.mask?.name || ""
-                        : llModelLabels[
-                            child?.llmModel as keyof typeof llModelLabels
-                          ] || ""}
+                        : getLlmModelLabel(child?.llmModel)}
                     </div>
                   );
                 })}
@@ -1577,7 +1576,7 @@ function _Chat() {
                     <div className={styles["multi-llm-pane-header"]}>
                       {session.multiMode === "agents"
                         ? child?.mask?.name || ""
-                        : llModelLabels[child.llmModel || ""] || ""}
+                        : getLlmModelLabel(child.llmModel)}
                     </div>
                     <div className={styles["multi-llm-messages"]}>
                       {child.messages.map((message) => (
@@ -1613,7 +1612,7 @@ function _Chat() {
                           placeholder={
                             session.multiMode === "agents"
                               ? `Send to ${child?.mask?.name || "this pane"}`
-                              : `Send to ${child.llmModel}`
+                              : `Send to ${getLlmModelLabel(child.llmModel)}`
                           }
                           value={childInputs[child.id] || ""}
                           onInput={(e) =>
@@ -1650,7 +1649,7 @@ function _Chat() {
                       <div className={styles["multi-llm-pane-header"]}>
                         {session.multiMode === "agents"
                           ? child?.mask?.name || ""
-                          : child.llmModel}
+                          : getLlmModelLabel(child.llmModel)}
                       </div>
                       <div className={styles["multi-llm-messages"]}>
                         {child.messages.map((message) => (
@@ -1686,7 +1685,7 @@ function _Chat() {
                             placeholder={
                               session.multiMode === "agents"
                                 ? `Send to ${child?.mask?.name || "this pane"}`
-                                : `Send to ${child.llmModel}`
+                                : `Send to ${getLlmModelLabel(child.llmModel)}`
                             }
                             value={childInputs[child.id] || ""}
                             onInput={(e) =>
