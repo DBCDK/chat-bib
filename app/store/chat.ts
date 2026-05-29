@@ -77,10 +77,19 @@ export interface ChatSession {
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
+const BOT_HELLO_CONTENT = Locale.Store.BotHello;
 export const BOT_HELLO: ChatMessage = createMessage({
   role: MessageRole.Assistant,
-  content: Locale.Store.BotHello,
+  content: BOT_HELLO_CONTENT,
 });
+
+function getRequestContextPrompts(session: ChatSession) {
+  return session.mask.context.filter(
+    (message) =>
+      message.role !== MessageRole.Assistant ||
+      getMessageTextContent(message).trim() !== BOT_HELLO_CONTENT,
+  );
+}
 
 function createEmptySession(): ChatSession {
   return {
@@ -312,7 +321,7 @@ export const useChatStore = createPersistStore(
         const messages = target.messages.slice();
         const totalMessageCount = target.messages.length;
 
-        const contextPrompts = target.mask.context.slice();
+        const contextPrompts = getRequestContextPrompts(target);
 
         const shouldInjectSystemPrompts =
           modelConfig.enableInjectSystemPrompts &&
@@ -813,7 +822,7 @@ export const useChatStore = createPersistStore(
         const totalMessageCount = session.messages.length;
 
         // in-context prompts
-        const contextPrompts = session.mask.context.slice();
+        const contextPrompts = getRequestContextPrompts(session);
 
         // system prompts, to get close to OpenAI Web ChatGPT
         const shouldInjectSystemPrompts =
