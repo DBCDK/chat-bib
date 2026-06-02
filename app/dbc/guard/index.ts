@@ -6,7 +6,6 @@ export async function isMalicious(messages: Message[]): Promise<boolean> {
     ?.filter((m) => m.role === "user")
     ?.map((m) => m.content);
   const text = userMessages?.join(". ");
-  //TODO: always run with chatbib llm
   const res = await llmGenerate({
     messages: [
       {
@@ -32,6 +31,7 @@ Her er brugerens input som du skal undersøge: ${text}
       },
     ],
     parameters: {
+      llmModel: "malicious-guard",
       temperature: 0.01,
       top_p: 0.9,
       max_new_tokens: 4,

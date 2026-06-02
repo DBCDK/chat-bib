@@ -1,6 +1,5 @@
 import { CustomModel, GenerateRequest, MODEL_NAMES } from "../index";
 import { llmGenerate } from "../llmClient";
-import { llmGenerate as faktaChatClient } from "../faktaChatClient";
 import { ModelDescription } from "./modelsDescriptions";
 
 async function generate({ messages, parameters, say, close }: GenerateRequest) {
@@ -16,9 +15,12 @@ async function generate({ messages, parameters, say, close }: GenerateRequest) {
     return;
   }
 
-  await faktaChatClient({
+  await llmGenerate({
     messages,
-    parameters,
+    parameters: {
+      ...parameters,
+      llmModel: "fakta-chat",
+    },
     say, // Remove this, if you don't want it to stream directly to client
   });
   close();

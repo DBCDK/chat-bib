@@ -14,8 +14,8 @@ import {
   StoreKey,
   SUMMARIZE_MODEL,
   GEMINI_SUMMARIZE_MODEL,
+  VISIBLE_DBC_LLM_ENDPOINT_MODELS,
 } from "../constant";
-import { DBC_LLM_ENDPOINT_MODELS } from "../constant";
 import { SearchSpeed } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
@@ -229,7 +229,7 @@ export const useChatStore = createPersistStore(
         if (session.messages.length > 0) {
           return false;
         }
-        const endpointModels = DBC_LLM_ENDPOINT_MODELS as string[];
+        const endpointModels = VISIBLE_DBC_LLM_ENDPOINT_MODELS as string[];
 
         // Create three child sessions cloning current mask/config
         const children = endpointModels.map((m) => {

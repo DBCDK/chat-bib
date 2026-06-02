@@ -182,8 +182,8 @@ export const internalAllowedWebDavEndpoints = [
   "https://app.koofr.net/dav/Koofr",
 ];
 
-// Each key is the stable UI alias shown/selectable in ChatBib.
-// Add a new model by adding another key with its label and backend model id.
+// Each key is a stable alias for the DBC LLM endpoint.
+// Set hiddenFromUi: true for aliases used internally but not shown in chat options.
 export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
   chatbib: {
     label: "chatbib",
@@ -193,6 +193,16 @@ export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
     label: "Gemma 3 12B",
     model: "google/gemma-3-12b-it",
   },
+  "fakta-chat": {
+    label: "fakta-chat",
+    model: "fakta-chat",
+    hiddenFromUi: true,
+  },
+  "malicious-guard": {
+    label: "malicious-guard",
+    model: "Qwen/Qwen3-VL-8B-Instruct",
+    hiddenFromUi: true,
+  },
 } as const;
 
 export type DbcLlmEndpointModel = keyof typeof DBC_LLM_ENDPOINT_MODEL_CONFIG;
@@ -200,3 +210,7 @@ export type DbcLlmEndpointModel = keyof typeof DBC_LLM_ENDPOINT_MODEL_CONFIG;
 export const DBC_LLM_ENDPOINT_MODELS = Object.keys(
   DBC_LLM_ENDPOINT_MODEL_CONFIG,
 ) as DbcLlmEndpointModel[];
+
+export const VISIBLE_DBC_LLM_ENDPOINT_MODELS = DBC_LLM_ENDPOINT_MODELS.filter(
+  (model) => !("hiddenFromUi" in DBC_LLM_ENDPOINT_MODEL_CONFIG[model]),
+);

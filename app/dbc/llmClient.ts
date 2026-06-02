@@ -31,20 +31,20 @@ export async function llmGenerate(input: LLMRequest) {
     duplex: "half",
   };
 
-  console.log("GOT FETCHOPTIONS", fetchOptions);
   const parameters = { ...input.parameters };
-  console.log("GOT PARAMETERS", parameters);
 
   // MODEL_NAMES are frontend "agents", not actual LLM model names.
   // llmModel is a stable UI alias; map it to the provider model sent to the endpoint.
   const requestedEndpointModel = (parameters as any)?.llmModel as
     | string
     | undefined;
+    // if requestedEndpointModel is not in DBC_LLM_ENDPOINT_MODELS, use chatbib
   const modelAlias = DBC_LLM_ENDPOINT_MODELS.includes(
     requestedEndpointModel as DbcLlmEndpointModel,
   )
     ? requestedEndpointModel!
     : "chatbib";
+    // get the model name from DBC_LLM_ENDPOINT_MODEL_CONFIG
   const modelName =
     DBC_LLM_ENDPOINT_MODEL_CONFIG[modelAlias as DbcLlmEndpointModel].model;
 
@@ -63,21 +63,18 @@ export async function llmGenerate(input: LLMRequest) {
     stream: true,
   });
 
-  console.log("\n\n\n INPUT MESSAGES", input.messages, "\n\n");
-  console.log("GOT REQUEST BODY", requestBodyStr);
-
   let generatedText = "";
   const now = performance.now();
   let firstToken: number = -1;
   const controller = input?.controller || new AbortController();
-  console.log("GOT FETCHURL", fetchUrl);
+
   try {
     const res = await fetch(fetchUrl, {
       ...fetchOptions,
       body: requestBodyStr,
       signal: controller?.signal,
     });
-    console.log("GOT RESPONSE", res);
+
     const reader = res.body?.getReader();
     async function processChunk() {
       const { value, done } = (await reader?.read()) || { done: true };
