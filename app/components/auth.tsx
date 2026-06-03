@@ -7,8 +7,6 @@ import { useAccessStore } from "../store";
 import Locale from "../locales";
 
 import BotIcon from "../icons/bot.svg";
-import { useEffect } from "react";
-import { getClientConfig } from "../config/client";
 
 export function AuthPage() {
   const navigate = useNavigate();
@@ -22,13 +20,6 @@ export function AuthPage() {
       access.accessCode = "";
     });
   }; // Reset access code to empty string
-
-  useEffect(() => {
-    if (getClientConfig()?.isApp) {
-      navigate(Path.Settings);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className={styles["auth-page"]}>
@@ -61,17 +52,6 @@ export function AuthPage() {
             onChange={(e) => {
               accessStore.update(
                 (access) => (access.openaiApiKey = e.currentTarget.value),
-              );
-            }}
-          />
-          <input
-            className={styles["auth-input"]}
-            type="password"
-            placeholder={Locale.Settings.Access.Google.ApiKey.Placeholder}
-            value={accessStore.googleApiKey}
-            onChange={(e) => {
-              accessStore.update(
-                (access) => (access.googleApiKey = e.currentTarget.value),
               );
             }}
           />

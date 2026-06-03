@@ -12,7 +12,7 @@ const da = {
   Auth: {
     Title: "Kræver adgangskode",
     Tips: "Indtast venligst adgangskode nedenfor",
-    SubTips: "Eller indtast din OpenAI eller Google API-nøgle",
+    SubTips: "Eller indtast din OpenAI API-nøgle",
     Input: "adgangskode",
     Confirm: "Bekræft",
     Later: "Senere",
@@ -63,7 +63,6 @@ const da = {
       Clear: "Ryd kontekst",
       Settings: "Indstillinger",
       UploadImage: "Upload billeder",
-      Feedback: "Send feedback",
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
@@ -82,19 +81,13 @@ const da = {
     },
     IsContext: "Kontekstuel prompt",
   },
-  Feedback: {
-    Title: "Feedback",
-    Placeholder: "Indtast din feedback her",
-    Submit: "Send",
-    CheckboxText: "Vedhæft samtalen i din feedback",
-  },
   Export: {
     Title: "Eksporter beskeder",
     Copy: "Kopier alle",
     Download: "Download",
     MessageFromYou: "Besked fra dig",
     MessageFromChatGPT: "Besked fra ChatGPT",
-    Share: "Del til ShareGPT",
+    Share: "Del",
     Format: {
       Title: "Eksportformat",
       SubTitle: "Markdown eller PNG-billede",
@@ -186,50 +179,6 @@ const da = {
     AutoGenerateTitle: {
       Title: "Generer titel automatisk",
       SubTitle: "Generer en passende titel baseret på samtaleindholdet",
-    },
-    Sync: {
-      CloudState: "Sidste opdatering",
-      NotSyncYet: "Ikke synkroniseret endnu",
-      Success: "Synkronisering lykkedes",
-      Fail: "Synkronisering mislykkedes",
-
-      Config: {
-        Modal: {
-          Title: "Konfigurer synkronisering",
-          Check: "Tjek forbindelse",
-        },
-        SyncType: {
-          Title: "Synkroniseringstype",
-          SubTitle: "Vælg din foretrukne synkroniseringstjeneste",
-        },
-        Proxy: {
-          Title: "Aktivér CORS Proxy",
-          SubTitle: "Aktivér en proxy for at undgå CORS-begrænsninger",
-        },
-        ProxyUrl: {
-          Title: "Proxy Endpoint",
-          SubTitle:
-            "Kun gældende for den indbyggede CORS-proxy til dette projekt",
-        },
-
-        WebDav: {
-          Endpoint: "WebDAV Endpoint",
-          UserName: "Brugernavn",
-          Password: "Adgangskode",
-        },
-
-        UpStash: {
-          Endpoint: "UpStash Redis REST URL",
-          UserName: "Backup navn",
-          Password: "UpStash Redis REST Token",
-        },
-      },
-
-      LocalState: "Lokale data",
-      Overview: (overview: any) => {
-        return `${overview.chat} chats, ${overview.message} beskeder, ${overview.prompt} prompts, ${overview.mask} masker`;
-      },
-      ImportFailed: "Import fra fil mislykkedes",
     },
     Mask: {
       Splash: {
@@ -477,7 +426,6 @@ const da = {
     ConfirmNoShow:
       "Bekræft deaktivering? Du kan aktivere det i indstillinger senere.",
   },
-
   UI: {
     Confirm: "Bekræft",
     Cancel: "Annuller",

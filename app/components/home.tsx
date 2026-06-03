@@ -30,7 +30,6 @@ import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
 import { useAccessStore } from "../store";
-import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { initializeApollo } from "../client/apolloClient";
 import { ApolloProvider } from "@apollo/client";
 import { env } from "../utils/appsettings";
@@ -208,14 +207,11 @@ function Screen() {
 export function useLoadData() {
   const config = useAppConfig();
 
-  var api: ClientApi;
-  if (config.modelConfig.model.startsWith("gemini")) {
-    api = new ClientApi(ModelProvider.GeminiPro);
-  } else if (identifyDefaultClaudeModel(config.modelConfig.model)) {
-    api = new ClientApi(ModelProvider.Claude);
-  } else {
-    api = new ClientApi(ModelProvider.GPT);
-  }
+  const api = new ClientApi(
+    config.modelConfig.model.startsWith("dbc")
+      ? ModelProvider.DBC
+      : ModelProvider.GPT,
+  );
   useEffect(() => {
     (async () => {
       const models = await api.llm.models();

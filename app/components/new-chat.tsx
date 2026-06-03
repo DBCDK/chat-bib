@@ -179,25 +179,6 @@ export function NewChat() {
         </div>
       }
 
-      <div className={styles["actions"]}>
-        <IconButton
-          size={5}
-          text={Locale.NewChat.MultiLlm}
-          //  icon={<ChatIcon />}
-          type="primary"
-          shadow
-          className={styles["new-default-chat"]}
-          onClick={() => {
-            // start a new empty session, then enable multi-agent and navigate
-            chatStore.newSession();
-            const ok = chatStore.startMultiAgents?.();
-            if (ok) {
-              navigate(Path.Chat);
-            }
-          }}
-        />
-      </div>
-
       {/* <div className={styles["masks"]} ref={maskRef}>
         {groups.map((masks, i) => (
           <div key={i} className={styles["mask-row"]}>

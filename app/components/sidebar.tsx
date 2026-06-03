@@ -4,7 +4,6 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
 import CloseIcon from "../icons/close.svg";
@@ -23,7 +22,6 @@ import {
   MIN_SIDEBAR_WIDTH,
   NARROW_SIDEBAR_WIDTH,
   Path,
-  REPO_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -165,7 +163,7 @@ export function SideBar(props: { className?: string }) {
         transition: isMobileScreen && isIOSMobile ? "none" : undefined,
       }}
     >
-      <div className={styles["sidebar-header"]} data-tauri-drag-region>
+      <div className={styles["sidebar-header"]}>
         <div className={styles["sidebar-logo"] + " no-dark"}>
           <Link to={Path.Home}>
             <img
@@ -175,7 +173,7 @@ export function SideBar(props: { className?: string }) {
           </Link>
         </div>
         <div>
-          <div className={styles["sidebar-title"]} data-tauri-drag-region>
+          <div className={styles["sidebar-title"]}>
             {env.APP_TITLE ?? "ChatBib"}
           </div>
           <div className={styles["sidebar-sub-title"]}>
@@ -277,14 +275,6 @@ export function SideBar(props: { className?: string }) {
             </Link>
           </div>
         )}
-        {/*
-
-           <div className={styles["sidebar-action"]}>
-            <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-              <IconButton icon={<GithubIcon />} shadow />
-            </a>
-          </div> 
-        </div> */}
         <IconButton
           className={styles.newChatButton}
           size={4}

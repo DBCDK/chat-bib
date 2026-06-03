@@ -1,0 +1,197 @@
+{
+    "object": "list",
+    "data": [
+        {
+            "id": "google/gemma-3-12b-it",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "google/gemma-3-12b-it",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "Gemma 3 12B is a large language model trained on a variety of data sources.",
+                "capabilities": ["chat_completions", "responses", "tools"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "gemma-3-12b for testing",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "google/gemma-3-27b-it",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "google/gemma-3-27b-it",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "Gemma 3 27B is a large language model trained on a variety of data sources.",
+                "capabilities": ["chat_completions", "responses", "tools"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "gemma-3-27b for testing",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "Qwen/Qwen3-VL-8B-Instruct",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "Qwen/Qwen3-VL-8B-Instruct",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "Qwen3-VL-8B-Instruct is a small multimodal model.",
+                "capabilities": ["chat_completions", "responses", "tools"],
+                "input_modalities": ["text", "image"],
+                "output_modalities": ["text"],
+                "model_description": "Qwen3-VL-8B-Instruct for testing",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "mistral/Mistral-Small-3.1-24B-Instruct",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "mistral/Mistral-Small-3.1-24B-Instruct",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions", "tools"],
+                "input_modalities": ["text", "image"],
+                "output_modalities": ["text"],
+                "model_description": "mistral-small-3.1-24b for testing",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "Qwen/Qwen3.6-35B-A3B",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "Qwen/Qwen3.6-35B-A3B",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions", "responses", "tools"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "qwen-3.6-35b-a3b for testing",
+                "reasoning_mode": "optional"
+            }
+        },
+        {
+            "id": "google/gemma-4-26B-A4B-it",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "google/gemma-4-26B-A4B-it",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions", "responses", "tools"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "Gemma 4 26B A4B for testing",
+                "reasoning_mode": "optional"
+            }
+        },
+        {
+            "id": "CoRal-project/roest-v3-chatterbox-500m",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "CoRal-project/roest-v3-chatterbox-500m",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["audio_speech"],
+                "input_modalities": ["text"],
+                "output_modalities": ["audio"],
+                "model_description": "This is a Danish open sourced state-of-the-art Text to Speech (TTS) model. It is trained as part of the CoRal project by the Alexandra Institute.",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "CoRal-project/roest-v3-whisper-1.5b",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "CoRal-project/roest-v3-whisper-1.5b",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "Automatic speech recognition",
+                "capabilities": ["audio_transcriptions"],
+                "input_modalities": ["audio"],
+                "output_modalities": ["text"],
+                "model_description": "Danish speech-to-text model served through vLLM.",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "intfloat/multilingual-e5-large-instruct",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "intfloat/multilingual-e5-large-instruct",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "Multilingual text embedding model producing dense vector representations of text.",
+                "capabilities": ["embeddings"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "intfloat/multilingual-e5-large-instruct fine-tuned for instruction-following embedding tasks.",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "mitcfu-rag",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "mitcfu-rag",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "RAG Model with access to mitcfu documents. Uses Gemma3-12b.",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "science-rag",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "science-rag",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "RAG Model with access to CFU science-rag documents. Uses Gemma3-12b.",
+                "reasoning_mode": null
+            }
+        },
+        {
+            "id": "fakta-chat",
+            "object": "model",
+            "created": 0,
+            "owned_by": "dbc-ai",
+            "root": "fakta-chat",
+            "parent": null,
+            "dbc_model_card": {
+                "purpose": "",
+                "capabilities": ["chat_completions"],
+                "input_modalities": ["text"],
+                "output_modalities": ["text"],
+                "model_description": "RAG Model with access to FaktaLink articles. Uses Gemma3-12b.",
+                "reasoning_mode": null
+            }
+        }
+    ]
+}

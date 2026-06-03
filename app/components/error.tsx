@@ -2,15 +2,40 @@ import React from "react";
 import { IconButton } from "./button";
 import GithubIcon from "../icons/github.svg";
 import ResetIcon from "../icons/reload.svg";
-import { ISSUE_URL } from "../constant";
+import { StoreKey } from "../constant";
 import Locale from "../locales";
 import { showConfirm } from "./ui-lib";
-import { useSyncStore } from "../store/sync";
+import {
+  useAccessStore,
+  useAppConfig,
+  useChatStore,
+} from "../store";
+import { useMaskStore } from "../store/mask";
+import { usePromptStore } from "../store/prompt";
+import { downloadAs } from "../utils";
 
 interface IErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   info: React.ErrorInfo | null;
+}
+
+function getStoreData<T extends object>(store: T) {
+  return Object.fromEntries(
+    Object.entries(store).filter(([, value]) => typeof value !== "function"),
+  );
+}
+
+function exportLocalBackup() {
+  const state = {
+    [StoreKey.Chat]: getStoreData(useChatStore.getState()),
+    [StoreKey.Access]: getStoreData(useAccessStore.getState()),
+    [StoreKey.Config]: getStoreData(useAppConfig.getState()),
+    [StoreKey.Mask]: getStoreData(useMaskStore.getState()),
+    [StoreKey.Prompt]: getStoreData(usePromptStore.getState()),
+  };
+  const fileName = `Backup-${new Date().toLocaleString()}.json`;
+  downloadAs(JSON.stringify(state), fileName);
 }
 
 export class ErrorBoundary extends React.Component<any, IErrorBoundaryState> {
@@ -26,7 +51,7 @@ export class ErrorBoundary extends React.Component<any, IErrorBoundaryState> {
 
   clearAndSaveData() {
     try {
-      useSyncStore.getState().export();
+      exportLocalBackup();
     } finally {
       localStorage.clear();
       location.reload();
@@ -45,13 +70,7 @@ export class ErrorBoundary extends React.Component<any, IErrorBoundaryState> {
           </pre>
 
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <a href={ISSUE_URL} className="report">
-              <IconButton
-                text="Report This Error"
-                icon={<GithubIcon />}
-                bordered
-              />
-            </a>
+            <IconButton text="Report This Error" icon={<GithubIcon />} bordered />
             <IconButton
               icon={<ResetIcon />}
               text="Clear All Data"

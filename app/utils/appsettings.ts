@@ -26,7 +26,6 @@ const skolegpt: RuntimeEnv = {
   APP: "skolegpt",
   BASE_URL: "https://glyph-gate.dbc.dk/",
   API_KEY: token,
-  ENABLE_TTSASR: true,
   SHOW_SETTINGS: "true",
   CUSTOM_MODELS: "skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
   CHAT_DISCLAIMER:
@@ -42,7 +41,6 @@ const skolegpt: RuntimeEnv = {
   DEFAULT_NEW_CHAT: "skolegptv3",
   SYSTEM_PROMPT_IN_SIDEBAR: "true",
   DISABLE_MODELS: "true",
-  DISABLE_FEEDBACK: "true",
   LOCALE: "skolegpt",
   INJECT_ANALYTICS:
     "<script> var _paq = window._paq = window._paq || []; _paq.push(['disableCookies']); _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']); (function() { var u='https://stats.dbc.dk/'; _paq.push(['setTrackerUrl', u+'matomo.php']); _paq.push(['setSiteId', '43']); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s); })(); </script>",
@@ -53,7 +51,6 @@ const skolegpt: RuntimeEnv = {
   MASKS_ONLY: "true",
   DEFAULT_MESSAGE_COUNT: "16",
   DEFAULT_MODEL: "skolegpt-v3",
-  DISABLE_MULTI_LLM: "true",
   BUILTIN_MASK_PROFILE: "skolegpt",
 };
 const chatdbc: RuntimeEnv = {
@@ -76,7 +73,6 @@ const chatdbc: RuntimeEnv = {
   DEFAULT_NEW_CHAT: "skolegptv3",
   SYSTEM_PROMPT_IN_SIDEBAR: true,
   DISABLE_MODELS: false,
-  DISABLE_FEEDBACK: "true",
   LOCALE: "skolegpt",
   DEFAULT_MASK: "DBC",
   USE_MASK_AS_SESSION_NAME: "true",
@@ -85,7 +81,6 @@ const chatdbc: RuntimeEnv = {
   MASKS_ONLY: true,
   DEFAULT_MESSAGE_COUNT: "32",
   DEFAULT_MODEL: "gemma3-12b",
-  DISABLE_MULTI_LLM: "true",
   BUILTIN_MASK_PROFILE: "chatdbc",
 };
 

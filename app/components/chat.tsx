@@ -8,7 +8,6 @@ import React, {
   Fragment,
   RefObject,
 } from "react";
-import { RecorderIcon } from "./recorder-icon";
 
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
@@ -32,14 +31,12 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
-import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
 import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
-import EyeIcon from "../icons/eye.svg";
 
 import {
   ChatMessage,
@@ -88,8 +85,6 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
-  DBC_LLM_ENDPOINT_MODEL_CONFIG,
-  type DbcLlmEndpointModel,
   LAST_INPUT_KEY,
   MALICIOUS_ANSWER,
   Path,
@@ -103,24 +98,18 @@ import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
 import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
 
-import { FeedbackModal } from "./feedback";
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
 import { MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
 import exp from "constants";
 import { DbcSettings } from "./dbcsettings";
-import { TTSButton } from "./TTSButton";
 import { env } from "../utils/appsettings";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
   loading: () => <LoadingIcon />,
 });
 
-const getLlmModelLabel = (model?: string) =>
-  model && model in DBC_LLM_ENDPOINT_MODEL_CONFIG
-    ? DBC_LLM_ENDPOINT_MODEL_CONFIG[model as DbcLlmEndpointModel].label
-    : model || "";
 export function SessionConfigModel(props: { onClose: () => void }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
@@ -454,7 +443,6 @@ export function ChatActions(props: {
   showPromptHints: () => void;
   hitBottom: boolean;
   uploading: boolean;
-  setShowFeedback: (_: boolean) => void;
 }) {
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -536,20 +524,6 @@ export function ChatActions(props: {
   return (
     <div className={styles["chat-input-actions"]}>
       <DbcSettings />
-      {env.DISABLE_FEEDBACK ? (
-        ""
-      ) : (
-        <IconButton
-          className={styles.feedback}
-          text={Locale.Chat.InputActions.Feedback}
-          // icon={<EmailIcon />}
-          key="feedback"
-          onClick={() => {
-            //   props.onClose();
-            props.setShowFeedback(true);
-          }}
-        />
-      )}
       {couldStop && (
         <ChatAction
           onClick={stopAll}
@@ -734,7 +708,6 @@ function _Chat() {
   const fontSize = config.fontSize;
 
   const [showExport, setShowExport] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState("");
@@ -756,9 +729,6 @@ function _Chat() {
   const navigate = useNavigate();
   const [attachImages, setAttachImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [childInputs, setChildInputs] = useState<Record<string, string>>({});
-  const [multiViewMode, setMultiViewMode] = useState<"grid" | "tabs">("grid");
-  const [selectedChildId, setSelectedChildId] = useState<string | undefined>();
 
   // prompt hints
   const promptStore = usePromptStore();
@@ -803,29 +773,6 @@ function _Chat() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(measure, [userInput]);
 
-  // Initialize selected child when multi children appear
-  useEffect(() => {
-    if (
-      session.multiLlmChildren &&
-      session.multiLlmChildren.length > 0 &&
-      !selectedChildId
-    ) {
-      setSelectedChildId(session.multiLlmChildren[0].id);
-    }
-  }, [session.multiLlmChildren, selectedChildId]);
-
-  // In multi-LLM mode, start at top and do not auto-scroll
-  useEffect(() => {
-    const multi =
-      session.multiLlmChildren && session.multiLlmChildren.length > 0;
-    if (multi) {
-      setAutoScroll(false);
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo(0, 0);
-      });
-    }
-  }, [session.multiLlmChildren, setAutoScroll]);
-
   // chat commands shortcuts
   const chatCommands = useChatCommand({
     new: () => chatStore.newSession(),
@@ -869,38 +816,16 @@ function _Chat() {
       return;
     }
     setIsLoading(true);
-    const isMulti =
-      session.multiLlmChildren && session.multiLlmChildren.length > 0;
-    let p: any;
-    if (isMulti) {
-      if (multiViewMode === "tabs" && selectedChildId) {
-        p = chatStore.onUserInputToChild?.(
-          selectedChildId,
-          userInput,
-          attachImages,
-        );
-      } else {
-        p = chatStore.onUserInputSmart(userInput, attachImages);
-      }
-    } else {
-      p = chatStore.onUserInput(userInput, attachImages);
-    }
+    const p = chatStore.onUserInput(userInput, attachImages);
     Promise.resolve(p).then(() => setIsLoading(false));
     setAttachImages([]);
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
     setPromptHints([]);
     if (!isMobileScreen) inputRef.current?.focus();
-    if (!isMulti) {
-      setAutoScroll(true);
-    } else {
-      setAutoScroll(false);
-    }
-    // Skip Matomo tracking in multi-llm mode
-    if (!isMulti) {
-      const modelName = session?.mask?.name;
-      trackMatomoEvent("Chat", "Send message", modelName);
-    }
+    setAutoScroll(true);
+    const modelName = session?.mask?.name;
+    trackMatomoEvent("Chat", "Send message", modelName);
   };
 
   const onPromptSelect = (prompt: RenderPompt) => {
@@ -919,20 +844,6 @@ function _Chat() {
       inputRef.current?.focus();
     }, 30);
   };
-
-  const setChildInput = useCallback((childId: string, value: string) => {
-    setChildInputs((prev) => ({ ...prev, [childId]: value }));
-  }, []);
-
-  const doChildSubmit = useCallback(
-    (childId: string) => {
-      const text = (childInputs[childId] || "").trim();
-      if (text.length === 0) return;
-      chatStore.onUserInputToChild?.(childId, text);
-      setChildInput(childId, "");
-    },
-    [chatStore, childInputs, scrollDomToBottom, setAutoScroll, setChildInput],
-  );
 
   // stop response
   const onUserStop = (messageId: string) => {
@@ -1135,13 +1046,8 @@ function _Chat() {
     const isMalicious = (m: any) =>
       typeof m?.content === "string" && m.content.trim() === MALICIOUS_ANSWER;
 
-    // Check visible main messages (same behavior as before).
-    if (messages.some(isMalicious)) return true;
-
-    // In multi-LLM / multi-agent mode, also check child panes.
-    const children = session.multiLlmChildren ?? [];
-    return children.some((child) => (child.messages ?? []).some(isMalicious));
-  }, [messages, session.multiLlmChildren]);
+    return messages.some(isMalicious);
+  }, [messages]);
 
   const onChatBodyScroll = (e: HTMLElement) => {
     const bottomHeight = e.scrollTop + e.clientHeight;
@@ -1340,16 +1246,10 @@ function _Chat() {
     setAttachImages(images);
   }
 
-  const multiLlmStarted =
-    session.multiLlmChildren && session.multiLlmChildren.length > 0;
-
-  const isMultiLlm = !!multiLlmStarted && session.multiMode === "llm";
-  const isMultiAgents = !!multiLlmStarted && session.multiMode === "agents";
   return (
     <div className={styles.chat} key={session.id}>
       <div
         className={`window-header ${styles.headerContainer}`}
-        data-tauri-drag-region
       >
         {isMobileScreen && (
           <div className="window-actions">
@@ -1381,36 +1281,6 @@ function _Chat() {
               </>
             }
           />
-          {!env.DISABLE_MULTI_LLM && !multiLlmStarted && (
-            <IconButton
-              icon={<PluginIcon />}
-              //  bordered
-              title={"Multi-llm"}
-              onClick={() => {
-                const ok = chatStore.startMultiLlm?.();
-                if (!ok) {
-                  showToast("Start a new empty chat to use Multi-llm");
-                }
-              }}
-            />
-          )}
-          {!env.DISABLE_MULTI_LLM &&
-            session.multiLlmChildren &&
-            session.multiLlmChildren.length > 0 &&
-            multiLlmStarted && (
-              <IconButton
-                icon={multiViewMode === "grid" ? <EyeIcon /> : <EyeIcon />}
-                size={3}
-                title={
-                  multiViewMode === "grid"
-                    ? "View: Grid (click to Tabs)"
-                    : "View: Tabs (click to Grid)"
-                }
-                onClick={() =>
-                  setMultiViewMode((m) => (m === "grid" ? "tabs" : "grid"))
-                }
-              />
-            )}
           {true && (
             <IconButton
               icon={<ExportIcon />}
@@ -1437,7 +1307,7 @@ function _Chat() {
         )}
       </div>
 
-      {/* <div className="window-header" data-tauri-drag-region>
+      {/* <div className="window-header">
         <ChatAction
           onClick={nextTheme}
           text={Locale.Chat.InputActions.Theme[theme]}
@@ -1455,7 +1325,7 @@ function _Chat() {
         />
       </div> */}
       {
-        // <div className="window-header" data-tauri-drag-region>
+        // <div className="window-header">
         //   {isMobileScreen && (
         //     <div className="window-actions">
         //       <div className={"window-action-button"}>
@@ -1545,175 +1415,7 @@ function _Chat() {
           setAutoScroll(false);
         }}
       >
-        {/* Multi grid (LLM or Agents) if present */}
-        {session.multiLlmChildren && session.multiLlmChildren.length > 0 ? (
-          <div className={styles["multi-llm-container"]}>
-            {multiViewMode === "tabs" && (
-              <div className={styles["multi-llm-tabs"]}>
-                {session.multiLlmChildren.map((child) => {
-                  console.log("child", child);
-                  return (
-                    <div
-                      key={child.id}
-                      className={`${styles["multi-llm-tab"]} ${
-                        selectedChildId === child.id ? styles["active"] : ""
-                      }`}
-                      onClick={() => setSelectedChildId(child.id)}
-                    >
-                      {session.multiMode === "agents"
-                        ? child?.mask?.name || ""
-                        : getLlmModelLabel(child?.llmModel)}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {multiViewMode === "grid" ? (
-              <div className={styles["multi-llm-grid"]}>
-                {session.multiLlmChildren.map((child) => (
-                  <div key={child.id} className={styles["multi-llm-pane"]}>
-                    <div className={styles["multi-llm-pane-header"]}>
-                      {session.multiMode === "agents"
-                        ? child?.mask?.name || ""
-                        : getLlmModelLabel(child.llmModel)}
-                    </div>
-                    <div className={styles["multi-llm-messages"]}>
-                      {child.messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={
-                            message.role === "user"
-                              ? styles["chat-message-user"]
-                              : styles["chat-message"]
-                          }
-                        >
-                          <div className={styles["chat-message-container"]}>
-                            <div className={styles["chat-message-item"]}>
-                              <Markdown
-                                content={getMessageTextContent(message)}
-                                loading={
-                                  message.streaming &&
-                                  message.content.length === 0 &&
-                                  message.role !== "user"
-                                }
-                                fontSize={fontSize}
-                                parentRef={scrollRef}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {!hasMalicious && (
-                      <div className={styles["multi-llm-input"]}>
-                        <textarea
-                          rows={1}
-                          placeholder={
-                            session.multiMode === "agents"
-                              ? `Send to ${child?.mask?.name || "this pane"}`
-                              : `Send to ${getLlmModelLabel(child.llmModel)}`
-                          }
-                          value={childInputs[child.id] || ""}
-                          onInput={(e) =>
-                            setChildInput(child.id, e.currentTarget.value)
-                          }
-                          onKeyDown={(e) => {
-                            if (shouldSubmit(e)) {
-                              doChildSubmit(child.id);
-                              e.preventDefault();
-                            }
-                          }}
-                        />
-                        <IconButton
-                          icon={<SendWhiteIcon />}
-                          text={Locale.Chat.Send}
-                          onClick={() => doChildSubmit(child.id)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div className={styles["multi-llm-spacer"]} />
-              </div>
-            ) : (
-              (() => {
-                const child =
-                  session.multiLlmChildren.find(
-                    (c) => c.id === selectedChildId,
-                  ) || session.multiLlmChildren[0];
-                if (!child) return null;
-                return (
-                  <div className={styles["multi-llm-single"]}>
-                    <div className={styles["multi-llm-pane"]}>
-                      <div className={styles["multi-llm-pane-header"]}>
-                        {session.multiMode === "agents"
-                          ? child?.mask?.name || ""
-                          : getLlmModelLabel(child.llmModel)}
-                      </div>
-                      <div className={styles["multi-llm-messages"]}>
-                        {child.messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={
-                              message.role === "user"
-                                ? styles["chat-message-user"]
-                                : styles["chat-message"]
-                            }
-                          >
-                            <div className={styles["chat-message-container"]}>
-                              <div className={styles["chat-message-item"]}>
-                                <Markdown
-                                  content={getMessageTextContent(message)}
-                                  loading={
-                                    message.streaming &&
-                                    message.content.length === 0 &&
-                                    message.role !== "user"
-                                  }
-                                  fontSize={fontSize}
-                                  parentRef={scrollRef}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {!hasMalicious && (
-                        <div className={styles["multi-llm-input"]}>
-                          <textarea
-                            rows={1}
-                            placeholder={
-                              session.multiMode === "agents"
-                                ? `Send to ${child?.mask?.name || "this pane"}`
-                                : `Send to ${getLlmModelLabel(child.llmModel)}`
-                            }
-                            value={childInputs[child.id] || ""}
-                            onInput={(e) =>
-                              setChildInput(child.id, e.currentTarget.value)
-                            }
-                            onKeyDown={(e) => {
-                              if (shouldSubmit(e)) {
-                                doChildSubmit(child.id);
-                                e.preventDefault();
-                              }
-                            }}
-                          />
-                          <IconButton
-                            icon={<SendWhiteIcon />}
-                            text={Locale.Chat.Send}
-                            onClick={() => doChildSubmit(child.id)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className={styles["multi-llm-spacer"]} />
-                  </div>
-                );
-              })()
-            )}
-          </div>
-        ) : (
-          <div className={styles["chat-messages-container"]}>
+        <div className={styles["chat-messages-container"]}>
             {messages.map((message, i) => {
               if (message.role === "system") {
                 return;
@@ -1822,9 +1524,6 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
-                        {env.ENABLE_TTSASR && !isUser && (
-                          <TTSButton message={getMessageTextContent(message)} />
-                        )}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
@@ -1885,8 +1584,7 @@ function _Chat() {
                 </Fragment>
               );
             })}
-          </div>
-        )}
+        </div>
       </div>
 
       {!hasMalicious && (
@@ -1916,10 +1614,8 @@ function _Chat() {
                   setUserInput("/");
                   onSearch("");
                 }}
-                setShowFeedback={setShowFeedback}
               />
             }
-            {env.ENABLE_TTSASR && <RecorderIcon onTranscribed={onInput} />}
             <label
               className={`${styles["chat-input-panel-inner"]} ${
                 attachImages.length != 0
@@ -1937,24 +1633,10 @@ function _Chat() {
                 value={userInput}
                 onKeyDown={onInputKeyDown}
                 onFocus={() => {
-                  if (
-                    !(
-                      session.multiLlmChildren &&
-                      session.multiLlmChildren.length > 0
-                    )
-                  ) {
-                    scrollToBottom();
-                  }
+                  scrollToBottom();
                 }}
                 onClick={() => {
-                  if (
-                    !(
-                      session.multiLlmChildren &&
-                      session.multiLlmChildren.length > 0
-                    )
-                  ) {
-                    scrollToBottom();
-                  }
+                  scrollToBottom();
                 }}
                 onPaste={handlePaste}
                 rows={inputRows}
@@ -2014,13 +1696,6 @@ function _Chat() {
       )}
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
-      )}
-
-      {showFeedback && (
-        <FeedbackModal
-          chatRef={scrollRef}
-          onClose={() => setShowFeedback(false)}
-        />
       )}
 
       {isEditingMessage && (

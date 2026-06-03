@@ -13,8 +13,6 @@ import {
   ModelProvider,
   StoreKey,
   SUMMARIZE_MODEL,
-  GEMINI_SUMMARIZE_MODEL,
-  VISIBLE_DBC_LLM_ENDPOINT_MODELS,
 } from "../constant";
 import { SearchSpeed } from "../constant";
 import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
@@ -23,7 +21,6 @@ import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
-import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
@@ -68,12 +65,6 @@ export interface ChatSession {
   mask: Mask;
   // DBC simple search speed: per-session
   dbcSearchSpeed?: SearchSpeed;
-  // Multi-LLM: if present, this session acts as a parent aggregating children
-  multiLlmChildren?: ChatSession[];
-  // Multi mode indicator for grid rendering.
-  multiMode?: "llm" | "agents"; //agents: local personas(bib.dk, chatbib, faktalink etc.). llm: DBC LLM endpoint(gemma, mixtral etc.)
-  // For child sessions only: the endpoint model to use at the DBC LLM endpoint
-  llmModel?: string;
 }
 
 export const DEFAULT_TOPIC = Locale.Store.DefaultTopic;
@@ -111,24 +102,25 @@ function createEmptySession(): ChatSession {
 }
 
 function getSummarizeModel(currentModel: string) {
+  return "dbc-base";
   // if it is using gpt-* models, force to use 3.5 to summarize
-  if (currentModel.startsWith("gpt")) {
-    const configStore = useAppConfig.getState();
-    const accessStore = useAccessStore.getState();
-    const allModel = collectModelsWithDefaultModel(
-      configStore.models,
-      [configStore.customModels, accessStore.getCustomModels()].join(","),
-      accessStore.defaultModel,
-    );
-    const summarizeModel = allModel.find(
-      (m) => m.name === SUMMARIZE_MODEL && m.available,
-    );
-    return summarizeModel?.name ?? currentModel;
-  }
-  if (currentModel.startsWith("gemini")) {
-    return GEMINI_SUMMARIZE_MODEL;
-  }
-  return currentModel;
+  // if (currentModel.startsWith("gpt")) {
+  //   const configStore = useAppConfig.getState();
+  //   const accessStore = useAccessStore.getState();
+  //   const allModel = collectModelsWithDefaultModel(
+  //     configStore.models,
+  //     [configStore.customModels, accessStore.getCustomModels()].join(","),
+  //     accessStore.defaultModel,
+  //   );
+  //   const summarizeModel = allModel.find(
+  //     (m) => m.name === SUMMARIZE_MODEL && m.available,
+  //   );
+  //   return summarizeModel?.name ?? currentModel;
+  // }
+  // if (currentModel.startsWith("dbc-")) {
+  //   return "dbc-base";
+  // }
+  // return currentModel;
 }
 
 function countMessages(msgs: ChatMessage[]) {
@@ -223,307 +215,6 @@ export const useChatStore = createPersistStore(
     }
 
     const methods = {
-      startMultiLlm() {
-        const session = get().currentSession();
-        // Only allow starting multi-llm on empty chats
-        if (session.messages.length > 0) {
-          return false;
-        }
-        const endpointModels = VISIBLE_DBC_LLM_ENDPOINT_MODELS as string[];
-
-        // Create three child sessions cloning current mask/config
-        const children = endpointModels.map((m) => {
-          const child = createEmptySession();
-          child.mask = JSON.parse(JSON.stringify(session.mask));
-          child.topic = `${session.topic} (${m})`;
-          child.llmModel = m;
-          return child;
-        });
-
-        set(() => {
-          session.multiLlmChildren = children;
-          session.multiMode = "llm";
-          session.lastUpdate = Date.now();
-          session.topic = "Multi-LLM";
-          return { sessions: [...get().sessions] };
-        });
-        return true;
-      },
-
-      startMultiAgents() {
-        const session = get().currentSession();
-        // Only allow starting multi-agent on empty chats
-        if (session.messages.length > 0) {
-          return false;
-        }
-        // Build from eligible personas dynamically, cap at 5
-        const { PERSONAS } = require("../personas");
-        const eligible = (PERSONAS as any[])
-          .filter((p) => p.multiAgentEligible)
-          .slice(0, 5);
-
-        if (eligible.length === 0) {
-          return false;
-        }
-
-        const children = eligible.map((p) => {
-          const child = createEmptySession();
-          // Clone persona mask and use it for the child
-          child.mask = JSON.parse(JSON.stringify(p.mask));
-          child.topic = `${session.topic} (${p.name})`;
-          // Always use chatbib endpoint model for multi-agent
-          child.llmModel = "chatbib";
-          return child;
-        });
-
-        set(() => {
-          session.multiLlmChildren = children;
-          session.multiMode = "agents";
-          session.lastUpdate = Date.now();
-          return { sessions: [...get().sessions] };
-        });
-        return true;
-      },
-
-      onUserInputSmart(content: string, attachImages?: string[]) {
-        const session = get().currentSession();
-        if (session.multiLlmChildren && session.multiLlmChildren.length > 0) {
-          return get().onUserInputMultiLlm(content, attachImages);
-        }
-        return get().onUserInput(content, attachImages);
-      },
-
-      onUserInputMultiLlm(content: string, attachImages?: string[]) {
-        const parent = get().currentSession();
-        const children = parent.multiLlmChildren || [];
-        if (children.length === 0) return;
-
-        // Send to each child in parallel
-        children.forEach((child, idx) => {
-          get()._onUserInputForChild(parent, child, content, attachImages);
-        });
-      },
-
-      onUserInputToChild(
-        childId: string,
-        content: string,
-        attachImages?: string[],
-      ) {
-        const parent = get().currentSession();
-        const child = parent.multiLlmChildren?.find((c) => c.id === childId);
-        if (!child) return;
-        return get()._onUserInputForChild(parent, child, content, attachImages);
-      },
-
-      _getMessagesWithMemoryFor(target: ChatSession) {
-        const modelConfig = target.mask.modelConfig;
-        const clearContextIndex = target.clearContextIndex ?? 0;
-        const messages = target.messages.slice();
-        const totalMessageCount = target.messages.length;
-
-        const contextPrompts = getRequestContextPrompts(target);
-
-        const shouldInjectSystemPrompts =
-          modelConfig.enableInjectSystemPrompts &&
-          target.mask.modelConfig.model.startsWith("gpt-");
-
-        var systemPrompts: ChatMessage[] = [];
-        systemPrompts = shouldInjectSystemPrompts
-          ? [
-              createMessage({
-                role: MessageRole.System,
-                content: fillTemplateWith("", {
-                  ...modelConfig,
-                  template: DEFAULT_SYSTEM_TEMPLATE,
-                }),
-              }),
-            ]
-          : [];
-
-        const memoryPrompt = undefined as any; // disable cross-child memory for now
-        const shouldSendLongTermMemory = false;
-        const longTermMemoryPrompts: ChatMessage[] = [];
-        const longTermMemoryStartIndex = 0;
-
-        const shortTermMemoryStartIndex = Math.max(
-          0,
-          totalMessageCount - modelConfig.historyMessageCount,
-        );
-
-        const memoryStartIndex = shouldSendLongTermMemory
-          ? Math.min(longTermMemoryStartIndex, shortTermMemoryStartIndex)
-          : shortTermMemoryStartIndex;
-        const contextStartIndex = Math.max(clearContextIndex, memoryStartIndex);
-        const maxTokenThreshold = modelConfig.max_tokens;
-
-        const reversedRecentMessages = [] as ChatMessage[];
-        for (
-          let i = totalMessageCount - 1, tokenCount = 0;
-          i >= contextStartIndex && tokenCount < maxTokenThreshold;
-          i -= 1
-        ) {
-          const msg = messages[i];
-          if (!msg || msg.isError) continue;
-          tokenCount += estimateTokenLength(getMessageTextContent(msg));
-          reversedRecentMessages.push(msg);
-        }
-
-        const recentMessages = [
-          ...systemPrompts,
-          ...longTermMemoryPrompts,
-          ...contextPrompts,
-          ...reversedRecentMessages.reverse(),
-        ];
-
-        return recentMessages;
-      },
-
-      _onUserInputForChild(
-        parent: ChatSession,
-        target: ChatSession,
-        content: string,
-        attachImages?: string[],
-      ) {
-        const modelConfig = target.mask.modelConfig;
-        const userContent = fillTemplateWith(content, modelConfig);
-
-        let mContent: string | MultimodalContent[] = userContent;
-        if (attachImages && attachImages.length > 0) {
-          mContent = [
-            {
-              type: "text",
-              text: userContent,
-            },
-          ];
-          mContent = mContent.concat(
-            attachImages.map((url) => ({
-              type: "image_url",
-              image_url: { url },
-            })),
-          );
-        }
-
-        let userMessage: ChatMessage = createMessage({
-          role: MessageRole.User,
-          content: mContent,
-        });
-
-        // For better UX in multi-pane, display the raw user input immediately
-        // while still sending the templated content to the backend.
-        let uiContent: string | MultimodalContent[] = content;
-        if (attachImages && attachImages.length > 0) {
-          uiContent = [
-            { type: "text" as const, text: content },
-            ...attachImages.map((url) => ({
-              type: "image_url" as const,
-              image_url: { url },
-            })),
-          ];
-        }
-
-        const botMessage: ChatMessage = createMessage({
-          role: MessageRole.Assistant,
-          streaming: true,
-          model: modelConfig.model,
-        });
-
-        const recentMessages = get()._getMessagesWithMemoryFor(target);
-        const sendMessages = recentMessages.concat(userMessage);
-        const messageIndex = target.messages.length + 1;
-
-        // save messages into child
-        set((state) => {
-          const sessions = state.sessions.slice();
-          const parentIndex = sessions.findIndex((x) => x.id === parent.id);
-          if (parentIndex >= 0) {
-            const parentCopy: ChatSession = { ...sessions[parentIndex] } as any;
-            const childrenCopy = (parentCopy.multiLlmChildren || []).slice();
-            const childIndex = childrenCopy.findIndex(
-              (c) => c.id === target.id,
-            );
-            if (childIndex >= 0) {
-              const targetChild = {
-                ...childrenCopy[childIndex],
-              } as ChatSession;
-              targetChild.messages = targetChild.messages.concat([
-                { ...userMessage, content: uiContent },
-                botMessage,
-              ]);
-              childrenCopy[childIndex] = targetChild;
-              parentCopy.multiLlmChildren = childrenCopy;
-              parentCopy.lastUpdate = Date.now();
-              sessions[parentIndex] = parentCopy;
-            }
-          }
-          return { sessions };
-        });
-
-        var api: ClientApi;
-        if (modelConfig.model.startsWith("dbc")) {
-          api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
-        } else {
-          api = new ClientApi(ModelProvider.GPT);
-        }
-
-        api.llm.chat({
-          messages: sendMessages,
-          config: { ...modelConfig, stream: true, llmModel: target.llmModel },
-          onUpdate(message) {
-            botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
-            }
-            set((state) => ({ sessions: state.sessions.slice() }));
-          },
-          onFinish(message) {
-            botMessage.streaming = false;
-            if (message) {
-              botMessage.content = message;
-              // do not change parent summary for now; just update lastUpdate
-              set((state) => {
-                const sessions = state.sessions.slice();
-                const i = sessions.findIndex((x) => x.id === parent.id);
-                if (i >= 0) {
-                  const p = { ...sessions[i] } as ChatSession;
-                  p.lastUpdate = Date.now();
-                  sessions[i] = p;
-                }
-                return { sessions };
-              });
-            }
-            ChatControllerPool.remove(target.id, botMessage.id);
-          },
-          onError(error) {
-            const isAborted = error.message.includes("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
-            botMessage.isError = !isAborted;
-            set((state) => ({ sessions: state.sessions.slice() }));
-            ChatControllerPool.remove(target.id, botMessage.id ?? messageIndex);
-            console.error("[Chat child] failed ", error);
-          },
-          onController(controller) {
-            ChatControllerPool.addController(
-              target.id,
-              botMessage.id ?? messageIndex,
-              controller,
-            );
-          },
-          conversationIdOverride: target.id,
-        });
-      },
       clearSessions() {
         set(() => ({
           sessions: [createEmptySession()],
@@ -739,12 +430,6 @@ export const useChatStore = createPersistStore(
         var api: ClientApi;
         if (modelConfig.model.startsWith("dbc")) {
           api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
         } else {
           api = new ClientApi(ModelProvider.GPT);
         }
@@ -927,12 +612,6 @@ export const useChatStore = createPersistStore(
         var api: ClientApi;
         if (modelConfig.model.startsWith("dbc")) {
           api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
         } else {
           api = new ClientApi(ModelProvider.GPT);
         }

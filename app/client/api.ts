@@ -1,23 +1,16 @@
-import { getClientConfig } from "../config/client";
 import {
   ACCESS_CODE_PREFIX,
   Azure,
   ModelProvider,
   ServiceProvider,
 } from "../constant";
-import { ChatMessage, ModelType, useAccessStore, useChatStore } from "../store";
-import { TGIApi } from "./platforms/tgi";
+import { useAccessStore } from "../store";
 import { DBCApi } from "./platforms/dbc";
 import { ChatGPTApi } from "./platforms/openai";
-import { GeminiProApi } from "./platforms/google";
-import { ClaudeApi } from "./platforms/anthropic";
 import { MessageRole } from "../typing";
 import { env } from "../utils/appsettings";
 export const ROLES = ["system", "user", "assistant"] as const;
 //export type MessageRole = (typeof ROLES)[number];
-
-export const Models = ["gpt-3.5-turbo", "gpt-4"] as const;
-export type ChatModel = ModelType;
 
 export interface MultimodalContent {
   type: "text" | "image_url";
@@ -78,88 +71,17 @@ export abstract class LLMApi {
   abstract models(): Promise<LLMModel[]>;
 }
 
-type ProviderName = "openai" | "azure" | "claude" | "palm";
-
-interface Model {
-  name: string;
-  provider: ProviderName;
-  ctxlen: number;
-}
-
-interface ChatProvider {
-  name: ProviderName;
-  apiConfig: {
-    baseUrl: string;
-    apiKey: string;
-    summaryModel: Model;
-  };
-  models: Model[];
-
-  chat: () => void;
-  usage: () => void;
-}
-
 export class ClientApi {
   public llm: LLMApi;
 
   constructor(provider: ModelProvider = ModelProvider.GPT) {
     switch (provider) {
-      case ModelProvider.GeminiPro:
-        this.llm = new GeminiProApi();
-        break;
-      case ModelProvider.Claude:
-        this.llm = new ClaudeApi();
-        break;
-      case ModelProvider.TGI:
-        this.llm = new TGIApi();
-        break;
       case ModelProvider.DBC:
         this.llm = new DBCApi();
         break;
 
       default:
         this.llm = new ChatGPTApi();
-    }
-  }
-
-  config() {}
-
-  prompts() {}
-
-  masks() {}
-
-  async share(messages: ChatMessage[], avatarUrl: string | null = null) {
-    const msgs = messages
-      .map((m) => ({
-        from: m.role === "user" ? "human" : "gpt",
-        value: m.content,
-      }))
-      .concat([
-        {
-          from: "human",
-          value:
-            "Share from [NextChat]: https://github.com/Yidadaa/ChatGPT-Next-Web",
-        },
-      ]);
-
-    const clientConfig = getClientConfig();
-    const proxyUrl = "/sharegpt";
-    const rawUrl = "https://sharegpt.com/api/conversations";
-    const shareUrl = clientConfig?.isApp ? rawUrl : proxyUrl;
-    const res = await fetch(shareUrl, {
-      body: JSON.stringify({
-        avatarUrl,
-        items: msgs,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
-
-    const resJson = await res.json();
-    if (resJson.id) {
-      return `https://shareg.pt/${resJson.id}`;
     }
   }
 }
@@ -170,35 +92,26 @@ export function getHeaders() {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  const modelConfig = useChatStore.getState().currentSession().mask.modelConfig;
-  const isGoogle = modelConfig.model.startsWith("gemini");
   const isAzure = accessStore.provider === ServiceProvider.Azure;
   const authHeader = isAzure ? "api-key" : "Authorization";
   const envApiKey = env.API_KEY;
   const apiKey = envApiKey
     ? envApiKey
-    : isGoogle
-      ? accessStore.googleApiKey
-      : isAzure
-        ? accessStore.azureApiKey
-        : accessStore.openaiApiKey;
-  const clientConfig = getClientConfig();
+    : isAzure
+      ? accessStore.azureApiKey
+      : accessStore.openaiApiKey;
   const makeBearer = (s: string) => `${isAzure ? "" : "Bearer "}${s.trim()}`;
   const validString = (x: string) => x && x.length > 0;
 
-  // when using google api in app, not set auth header
-  if (!(isGoogle && clientConfig?.isApp)) {
-    // use user's api key first
-    if (validString(apiKey)) {
-      headers[authHeader] = makeBearer(apiKey);
-    } else if (
-      accessStore.enabledAccessControl() &&
-      validString(accessStore.accessCode)
-    ) {
-      headers[authHeader] = makeBearer(
-        ACCESS_CODE_PREFIX + accessStore.accessCode,
-      );
-    }
+  if (validString(apiKey)) {
+    headers[authHeader] = makeBearer(apiKey);
+  } else if (
+    accessStore.enabledAccessControl() &&
+    validString(accessStore.accessCode)
+  ) {
+    headers[authHeader] = makeBearer(
+      ACCESS_CODE_PREFIX + accessStore.accessCode,
+    );
   }
 
   return headers;

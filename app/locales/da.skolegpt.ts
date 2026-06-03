@@ -15,7 +15,7 @@ const da = {
     Return: "Tilbage",
     Title: "Adgangskode",
     Tips: "Skriv venligst koden herunder",
-    SubTips: "Eller brug din egen OpenAI- eller Google-nøgle",
+    SubTips: "Eller brug din egen OpenAI-nøgle",
     Input: "Adgangskode",
     Confirm: "OK",
     Later: "Senere",
@@ -48,8 +48,6 @@ const da = {
       FullScreen: "Fuld skærm",
       RefreshTitle: "Opdatér titel",
       RefreshToast: "Anmodning om ny titel sendt",
-      Speech: "Afspil",
-      StopSpeech: "Stop",
     },
     Commands: {
       new: "Ny chat",
@@ -86,8 +84,6 @@ const da = {
       );
     },
     Send: "Send",
-    StartSpeak: "Start oplæsning",
-    StopSpeak: "Stop oplæsning",
     Config: {
       Reset: "Nulstil til standard",
       SaveAs: "Gem som assistent",
@@ -110,7 +106,7 @@ const da = {
     MessageFromYou: "Fra dig",
     MessageFromChatGPT: "Fra ChatGPT",
     MessageFromChat: "AI",
-    Share: "Del til ShareGPT",
+    Share: "Del",
     Format: {
       Title: "Filformat",
       SubTitle: "Vælg enten Markdown eller PNG-billede",
@@ -213,44 +209,6 @@ const da = {
     AutoGenerateTitle: {
       Title: "Lav titel automatisk",
       SubTitle: "Foreslå en titel ud fra chatten",
-    },
-    Sync: {
-      CloudState: "Seneste opdatering",
-      NotSyncYet: "Endnu ikke synkroniseret",
-      Success: "Synkronisering lykkedes",
-      Fail: "Synkronisering mislykkedes",
-      Config: {
-        Modal: {
-          Title: "Indstil synk",
-          Check: "Tjek forbindelse",
-        },
-        SyncType: {
-          Title: "Synk-type",
-          SubTitle: "Vælg en synk-tjeneste",
-        },
-        Proxy: {
-          Title: "Aktivér proxy",
-          SubTitle: "Brug proxy for at undgå netværksproblemer",
-        },
-        ProxyUrl: {
-          Title: "Proxy-adresse",
-          SubTitle: "Bruges kun til projektets egen proxy",
-        },
-        WebDav: {
-          Endpoint: "WebDAV-adresse",
-          UserName: "Brugernavn",
-          Password: "Kodeord",
-        },
-        UpStash: {
-          Endpoint: "UpStash Redis REST URL",
-          UserName: "Backup-navn",
-          Password: "UpStash Redis REST Token",
-        },
-      },
-      LocalState: "Lokale data",
-      Overview: (overview: any) =>
-        `${overview.chat} chats, ${overview.message} beskeder, ${overview.prompt} prompts, ${overview.mask} assistenter`,
-      ImportFailed: "Import mislykkedes",
     },
     Mask: {
       Splash: {
@@ -735,16 +693,6 @@ const da = {
         Action: "Kopiér link",
       },
     },
-  },
-  NewChat: {
-    Return: "Tilbage",
-    Skip: "Start straks",
-    Title: "Vælg en assistent",
-    SubTitle: "Chat med den assistent, du vælger",
-    More: "Se flere",
-    NotShow: "Vis ikke igen",
-    ConfirmNoShow:
-      "Er du sikker på, at du ikke vil se det igen? Du kan altid slå det til under indstillinger.",
   },
   UI: {
     Confirm: "OK",

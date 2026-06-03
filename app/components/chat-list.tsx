@@ -151,9 +151,7 @@ export function ChatList(props: { narrow?: boolean }) {
                 title={item.topic}
                 time={new Date(item.lastUpdate).toLocaleString()}
                 count={item.messages.length}
-                hideCount={
-                  !!(item.multiLlmChildren && item.multiLlmChildren.length > 0)
-                }
+                hideCount={false}
                 key={item.id}
                 id={item.id}
                 index={i}
