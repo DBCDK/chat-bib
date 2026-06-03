@@ -200,7 +200,7 @@ export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
   },
   "malicious-guard": {
     label: "malicious-guard",
-    model: "Qwen/Qwen3-VL-8B-Instruct",
+    model: "google/gemma-3-12b-it",
     hiddenFromUi: true,
   },
 } as const;
