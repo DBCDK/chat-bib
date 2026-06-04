@@ -89,6 +89,9 @@ export async function llmGenerate(input: LLMRequest) {
 
       rawValues.forEach((rawValue) => {
         const decodedValue = rawValue.replace(/data:\s*/, "").trim();
+        if (!decodedValue || decodedValue === "[DONE]") {
+          return;
+        }
         try {
           const obj = JSON.parse(decodedValue);
 

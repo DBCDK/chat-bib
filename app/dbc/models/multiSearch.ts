@@ -116,6 +116,10 @@ async function finalAnswer({
   parameters: any;
   say: Function;
 }) {
+  const fallbackAnswer = works
+    .slice(0, 5)
+    .map((work) => `- ${work.title} (${work.workId})`)
+    .join("\n");
   const systemPrompt2 = `Disse er nogle værker, som du SKAL bruge til at besvare spørgsmål. Du må kun bruge disse værker. 
   
   værker:  ${JSON.stringify(works.slice(0, 20))}
@@ -144,9 +148,14 @@ async function finalAnswer({
     say,
   });
 
+  const answer = finalAnswer.trim();
+  if (!answer && fallbackAnswer) {
+    say(`Her er nogle relevante værker:\n${fallbackAnswer}`);
+  }
+
   const carousel: string[] = [];
   works.forEach((work) => {
-    if (finalAnswer.includes(work.workId)) {
+    if (answer.includes(work.workId) || (!answer && carousel.length < 5)) {
       //MaterialCard.serialize({ say, workId: work.workId });
       carousel.push(work.workId);
     }
