@@ -41,6 +41,7 @@ const skolegpt: RuntimeEnv = {
   DEFAULT_NEW_CHAT: "skolegptv3",
   SYSTEM_PROMPT_IN_SIDEBAR: "true",
   DISABLE_MODELS: "true",
+  DISABLE_FEEDBACK: "true",
   LOCALE: "skolegpt",
   INJECT_ANALYTICS:
     "<script> var _paq = window._paq = window._paq || []; _paq.push(['disableCookies']); _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']); (function() { var u='https://stats.dbc.dk/'; _paq.push(['setTrackerUrl', u+'matomo.php']); _paq.push(['setSiteId', '43']); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s); })(); </script>",
@@ -73,6 +74,7 @@ const chatdbc: RuntimeEnv = {
   DEFAULT_NEW_CHAT: "skolegptv3",
   SYSTEM_PROMPT_IN_SIDEBAR: true,
   DISABLE_MODELS: false,
+  DISABLE_FEEDBACK: "true",
   LOCALE: "skolegpt",
   DEFAULT_MASK: "DBC",
   USE_MASK_AS_SESSION_NAME: "true",

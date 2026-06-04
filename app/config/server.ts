@@ -14,7 +14,6 @@ declare global {
       BASE_URL?: string;
       OPENAI_ORG_ID?: string; // openai only
 
-      VERCEL?: string;
       BUILD_MODE?: "standalone" | "export";
 
       HIDE_USER_API_KEY?: string; // disable user's api key input
@@ -125,7 +124,6 @@ export const getServerSideConfig = () => {
     codes: ACCESS_CODES,
 
     proxyUrl: process.env.PROXY_URL,
-    isVercel: !!process.env.VERCEL,
 
     hideUserApiKey: !!process.env.HIDE_USER_API_KEY,
     disableGPT4,

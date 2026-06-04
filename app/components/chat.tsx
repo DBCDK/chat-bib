@@ -97,6 +97,7 @@ import { useMaskStore } from "../store/mask";
 import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
 import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
+import { FeedbackModal } from "./feedback";
 
 import { getClientConfig } from "../config/client";
 import { useAllModels } from "../utils/hooks";
@@ -443,6 +444,7 @@ export function ChatActions(props: {
   showPromptHints: () => void;
   hitBottom: boolean;
   uploading: boolean;
+  setShowFeedback: (_: boolean) => void;
 }) {
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -524,6 +526,18 @@ export function ChatActions(props: {
   return (
     <div className={styles["chat-input-actions"]}>
       <DbcSettings />
+      {env.DISABLE_FEEDBACK ? (
+        ""
+      ) : (
+        <IconButton
+          className={styles.feedback}
+          text={Locale.Chat.InputActions.Feedback}
+          key="feedback"
+          onClick={() => {
+            props.setShowFeedback(true);
+          }}
+        />
+      )}
       {couldStop && (
         <ChatAction
           onClick={stopAll}
@@ -708,6 +722,7 @@ function _Chat() {
   const fontSize = config.fontSize;
 
   const [showExport, setShowExport] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState("");
@@ -1614,6 +1629,7 @@ function _Chat() {
                   setUserInput("/");
                   onSearch("");
                 }}
+                setShowFeedback={setShowFeedback}
               />
             }
             <label
@@ -1696,6 +1712,13 @@ function _Chat() {
       )}
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal
+          chatRef={scrollRef}
+          onClose={() => setShowFeedback(false)}
+        />
       )}
 
       {isEditingMessage && (

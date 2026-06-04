@@ -1,0 +1,40 @@
+.modal {
+  max-width: 560px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.description {
+  margin: 0;
+  color: var(--black);
+  line-height: 1.5;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: var(--border-in-light);
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--black);
+  background-color: var(--white);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--black);
+
+  p {
+    margin: 0;
+  }
+}

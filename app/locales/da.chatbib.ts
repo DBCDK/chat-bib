@@ -63,6 +63,7 @@ const da = {
       Clear: "Ryd kontekst",
       Settings: "Indstillinger",
       UploadImage: "Upload billeder",
+      Feedback: "Send feedback",
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
@@ -80,6 +81,13 @@ const da = {
       SaveAs: "Gem som maske",
     },
     IsContext: "Kontekstuel prompt",
+  },
+  Feedback: {
+    Title: "Feedback",
+    Placeholder: "Indtast din feedback her",
+    Submit: "Send",
+    CheckboxText: "Vedhæft samtalen i din feedback",
+    Error: "Feedback kunne ikke sendes",
   },
   Export: {
     Title: "Eksporter beskeder",

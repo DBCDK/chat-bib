@@ -71,6 +71,7 @@ const da = {
       Clear: "Ryd kontekst",
       Settings: "Indstillinger",
       UploadImage: "Upload billeder",
+      Feedback: "Send feedback",
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
@@ -98,6 +99,13 @@ const da = {
       showShortcutKey: "Vis hurtigtaster",
       clearContext: "Ryd kontekst",
     },
+  },
+  Feedback: {
+    Title: "Feedback",
+    Placeholder: "Skriv din feedback her",
+    Submit: "Send",
+    CheckboxText: "Vedhæft samtalen i din feedback",
+    Error: "Feedback kunne ikke sendes",
   },
   Export: {
     Title: "Eksportér beskeder",
