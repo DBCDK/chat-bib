@@ -110,7 +110,6 @@ const da = {
     MessageFromYou: "Fra dig",
     MessageFromChatGPT: "Fra ChatGPT",
     MessageFromChat: "AI",
-    Share: "Del til ShareGPT",
     Format: {
       Title: "Filformat",
       SubTitle: "Vælg enten Markdown eller PNG-billede",

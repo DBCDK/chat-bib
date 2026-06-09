@@ -13,7 +13,6 @@ import {
   ModelProvider,
   StoreKey,
   SUMMARIZE_MODEL,
-  GEMINI_SUMMARIZE_MODEL,
   VISIBLE_DBC_LLM_ENDPOINT_MODELS,
 } from "../constant";
 import { SearchSpeed } from "../constant";
@@ -23,7 +22,6 @@ import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
-import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
@@ -124,9 +122,6 @@ function getSummarizeModel(currentModel: string) {
       (m) => m.name === SUMMARIZE_MODEL && m.available,
     );
     return summarizeModel?.name ?? currentModel;
-  }
-  if (currentModel.startsWith("gemini")) {
-    return GEMINI_SUMMARIZE_MODEL;
   }
   return currentModel;
 }
@@ -461,12 +456,6 @@ export const useChatStore = createPersistStore(
         var api: ClientApi;
         if (modelConfig.model.startsWith("dbc")) {
           api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
         } else {
           api = new ClientApi(ModelProvider.GPT);
         }
@@ -739,12 +728,6 @@ export const useChatStore = createPersistStore(
         var api: ClientApi;
         if (modelConfig.model.startsWith("dbc")) {
           api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
         } else {
           api = new ClientApi(ModelProvider.GPT);
         }
@@ -927,12 +910,6 @@ export const useChatStore = createPersistStore(
         var api: ClientApi;
         if (modelConfig.model.startsWith("dbc")) {
           api = new ClientApi(ModelProvider.DBC);
-        } else if (modelConfig.model.startsWith("tgi")) {
-          api = new ClientApi(ModelProvider.TGI);
-        } else if (modelConfig.model.startsWith("gemini")) {
-          api = new ClientApi(ModelProvider.GeminiPro);
-        } else if (identifyDefaultClaudeModel(modelConfig.model)) {
-          api = new ClientApi(ModelProvider.Claude);
         } else {
           api = new ClientApi(ModelProvider.GPT);
         }

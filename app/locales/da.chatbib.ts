@@ -94,7 +94,6 @@ const da = {
     Download: "Download",
     MessageFromYou: "Besked fra dig",
     MessageFromChatGPT: "Besked fra ChatGPT",
-    Share: "Del til ShareGPT",
     Format: {
       Title: "Eksportformat",
       SubTitle: "Markdown eller PNG-billede",

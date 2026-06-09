@@ -8,7 +8,6 @@ import {
   Modal,
   Select,
   showImageModal,
-  showModal,
   showToast,
 } from "./ui-lib";
 import { IconButton } from "./button";
@@ -22,7 +21,6 @@ import {
 import CopyIcon from "../icons/copy.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 import ChatGptIcon from "../icons/chatgpt.png";
-import ShareIcon from "../icons/share.svg";
 import BotIcon from "../icons/bot.png";
 
 import DownloadIcon from "../icons/download.svg";
@@ -35,12 +33,9 @@ import NextImage from "next/image";
 import { toBlob, toPng, toJpeg } from "html-to-image";
 import { DEFAULT_MASK_AVATAR } from "../store/mask";
 
-import { prettyObject } from "../utils/format";
-import { EXPORT_MESSAGE_CLASS_NAME, ModelProvider } from "../constant";
+import { EXPORT_MESSAGE_CLASS_NAME } from "../constant";
 import { getClientConfig } from "../config/client";
-import { ClientApi } from "../client/api";
 import { getMessageTextContent } from "../utils";
-import { identifyDefaultClaudeModel } from "../utils/checkers";
 import { MessageRole } from "../typing";
 import { env } from "../utils/appsettings";
 
@@ -304,120 +299,11 @@ export function RenderExport(props: {
     </div>
   );
 }
-const onRenderMsgs = (msgs: ChatMessage[]) => {
-  var api: ClientApi;
-  // if (config.modelConfig.model.startsWith("gemini")) {
-  //   api = new ClientApi(ModelProvider.GeminiPro);
-  // } else if (identifyDefaultClaudeModel(config.modelConfig.model)) {
-  //   api = new ClientApi(ModelProvider.Claude);
-  // } else {
-
-  // }
-  api = new ClientApi(ModelProvider.GPT);
-  api
-    .share(msgs)
-    .then((res) => {
-      if (!res) return;
-      showModal({
-        title: Locale.Export.Share,
-        children: [
-          <input
-            type="text"
-            value={res}
-            key="input"
-            style={{
-              width: "100%",
-              maxWidth: "unset",
-            }}
-            readOnly
-            onClick={(e) => e.currentTarget.select()}
-          ></input>,
-        ],
-        actions: [
-          <IconButton
-            icon={<CopyIcon />}
-            text={Locale.Chat.Actions.Copy}
-            key="copy"
-            onClick={() => copyToClipboard(res)}
-          />,
-        ],
-      });
-      setTimeout(() => {
-        window.open(res, "_blank");
-      }, 800);
-    })
-    .catch((e) => {
-      console.error("[Share]", e);
-      showToast(prettyObject(e));
-    });
-};
 export function PreviewActions(props: {
   download: () => void;
   copy: () => void;
   showCopy?: boolean;
-  messages?: ChatMessage[];
 }) {
-  const [loading, setLoading] = useState(false);
-  const [shouldExport, setShouldExport] = useState(false);
-  const config = useAppConfig();
-  const onRenderMsgs = (msgs: ChatMessage[]) => {
-    setShouldExport(false);
-
-    var api: ClientApi;
-    if (config.modelConfig.model.startsWith("gemini")) {
-      api = new ClientApi(ModelProvider.GeminiPro);
-    } else if (identifyDefaultClaudeModel(config.modelConfig.model)) {
-      api = new ClientApi(ModelProvider.Claude);
-    } else {
-      api = new ClientApi(ModelProvider.GPT);
-    }
-
-    api
-      .share(msgs)
-      .then((res) => {
-        if (!res) return;
-        showModal({
-          title: Locale.Export.Share,
-          children: [
-            <input
-              type="text"
-              value={res}
-              key="input"
-              style={{
-                width: "100%",
-                maxWidth: "unset",
-              }}
-              readOnly
-              onClick={(e) => e.currentTarget.select()}
-            ></input>,
-          ],
-          actions: [
-            <IconButton
-              icon={<CopyIcon />}
-              text={Locale.Chat.Actions.Copy}
-              key="copy"
-              onClick={() => copyToClipboard(res)}
-            />,
-          ],
-        });
-        setTimeout(() => {
-          window.open(res, "_blank");
-        }, 800);
-      })
-      .catch((e) => {
-        console.error("[Share]", e);
-        showToast(prettyObject(e));
-      })
-      .finally(() => setLoading(false));
-  };
-
-  const share = async () => {
-    if (props.messages?.length) {
-      setLoading(true);
-      setShouldExport(true);
-    }
-  };
-
   return (
     <>
       <div className={styles["preview-actions"]}>
@@ -437,27 +323,6 @@ export function PreviewActions(props: {
           icon={<DownloadIcon />}
           onClick={props.download}
         ></IconButton>
-        {/* <IconButton
-          text={Locale.Export.Share}
-          bordered
-          shadow
-          icon={loading ? <LoadingIcon /> : <ShareIcon />}
-          onClick={share}
-        ></IconButton> */}
-      </div>
-      <div
-        style={{
-          position: "fixed",
-          right: "200vw",
-          pointerEvents: "none",
-        }}
-      >
-        {shouldExport && (
-          <RenderExport
-            messages={props.messages ?? []}
-            onRender={onRenderMsgs}
-          />
-        )}
       </div>
     </>
   );
@@ -718,7 +583,6 @@ export function MarkdownPreviewer(props: {
         copy={copy}
         download={download}
         showCopy={true}
-        messages={props.messages}
       />
       <div className="markdown-body">
         <pre className={styles["export-content"]}>{mdText}</pre>
@@ -759,7 +623,6 @@ export function JsonPreviewer(props: {
         copy={copy}
         download={download}
         showCopy={false}
-        messages={props.messages}
       />
       <div className="markdown-body" onClick={copy}>
         <Markdown content={mdText} />
