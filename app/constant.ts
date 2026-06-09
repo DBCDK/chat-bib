@@ -186,12 +186,12 @@ export const internalAllowedWebDavEndpoints = [
 // Set hiddenFromUi: true for aliases used internally but not shown in chat options.
 export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
   chatbib: {
-    label: "chatbib",
+    label: "chatbib(gemma3-12b)",
     model: "google/gemma-3-12b-it",
   },
-  "gemma3-12b": {
-    label: "Gemma 3 12B",
-    model: "google/gemma-3-12b-it",
+  "mistral-3.1":{
+    label: "Mistral 3.1",
+    model: "mistral/Mistral-Small-3.1-24B-Instruct",
   },
   "fakta-chat": {
     label: "fakta-chat",
@@ -200,7 +200,7 @@ export const DBC_LLM_ENDPOINT_MODEL_CONFIG = {
   },
   "malicious-guard": {
     label: "malicious-guard",
-    model: "google/gemma-3-12b-it",
+    model: "mistral/Mistral-Small-3.1-24B-Instruct",
     hiddenFromUi: true,
   },
 } as const;
