@@ -186,50 +186,6 @@ const da = {
       Title: "Generer titel automatisk",
       SubTitle: "Generer en passende titel baseret på samtaleindholdet",
     },
-    Sync: {
-      CloudState: "Sidste opdatering",
-      NotSyncYet: "Ikke synkroniseret endnu",
-      Success: "Synkronisering lykkedes",
-      Fail: "Synkronisering mislykkedes",
-
-      Config: {
-        Modal: {
-          Title: "Konfigurer synkronisering",
-          Check: "Tjek forbindelse",
-        },
-        SyncType: {
-          Title: "Synkroniseringstype",
-          SubTitle: "Vælg din foretrukne synkroniseringstjeneste",
-        },
-        Proxy: {
-          Title: "Aktivér CORS Proxy",
-          SubTitle: "Aktivér en proxy for at undgå CORS-begrænsninger",
-        },
-        ProxyUrl: {
-          Title: "Proxy Endpoint",
-          SubTitle:
-            "Kun gældende for den indbyggede CORS-proxy til dette projekt",
-        },
-
-        WebDav: {
-          Endpoint: "WebDAV Endpoint",
-          UserName: "Brugernavn",
-          Password: "Adgangskode",
-        },
-
-        UpStash: {
-          Endpoint: "UpStash Redis REST URL",
-          UserName: "Backup navn",
-          Password: "UpStash Redis REST Token",
-        },
-      },
-
-      LocalState: "Lokale data",
-      Overview: (overview: any) => {
-        return `${overview.chat} chats, ${overview.message} beskeder, ${overview.prompt} prompts, ${overview.mask} masker`;
-      },
-      ImportFailed: "Import fra fil mislykkedes",
-    },
     Mask: {
       Splash: {
         Title: "Maskesplash-skærm",
