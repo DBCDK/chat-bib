@@ -8,6 +8,7 @@ import { useMaskStore } from "../store/mask";
 import { usePromptStore } from "../store/prompt";
 import { StoreKey } from "../constant";
 import { merge } from "./merge";
+import { downloadAs } from "../utils";
 
 type NonFunctionKeys<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? never : K;
@@ -126,6 +127,12 @@ export function getLocalAppState() {
   ) as AppState;
 
   return appState;
+}
+
+export function exportLocalAppState() {
+  const state = getLocalAppState();
+  const fileName = `Backup-${new Date().toLocaleString()}.json`;
+  downloadAs(JSON.stringify(state), fileName);
 }
 
 export function setLocalAppState(appState: AppState) {

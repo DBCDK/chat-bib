@@ -70,24 +70,12 @@ if (mode !== "export") {
         destination: "https://api.openai.com/v1/:path*",
       },
       {
-        source: "/api/proxy/google/:path*",
-        destination: "https://generativelanguage.googleapis.com/:path*",
-      },
-      {
         source: "/api/proxy/openai/:path*",
         destination: "https://api.openai.com/:path*",
       },
       {
-        source: "/api/proxy/anthropic/:path*",
-        destination: "https://api.anthropic.com/:path*",
-      },
-      {
         source: "/google-fonts/:path*",
         destination: "https://fonts.googleapis.com/:path*",
-      },
-      {
-        source: "/sharegpt",
-        destination: "https://sharegpt.com/api/conversations",
       },
     ];
 

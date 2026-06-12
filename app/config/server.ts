@@ -16,7 +16,6 @@ declare global {
 
       VERCEL?: string;
       BUILD_MODE?: "standalone" | "export";
-      BUILD_APP?: string; // is building desktop app
 
       HIDE_USER_API_KEY?: string; // disable user's api key input
       DISABLE_GPT4?: string; // allow user to use gpt-4 or not
@@ -29,10 +28,6 @@ declare global {
       AZURE_URL?: string; // https://{azure-url}/openai/deployments/{deploy-name}
       AZURE_API_KEY?: string;
       AZURE_API_VERSION?: string;
-
-      // google only
-      GOOGLE_API_KEY?: string;
-      GOOGLE_URL?: string;
 
       // google tag manager
       GTM_ID?: string;
@@ -92,9 +87,6 @@ export const getServerSideConfig = () => {
   }
 
   const isAzure = !!process.env.AZURE_URL;
-  const isGoogle = !!process.env.GOOGLE_API_KEY;
-  const isAnthropic = !!process.env.ANTHROPIC_API_KEY;
-
   // const apiKeyEnvVar = process.env.OPENAI_API_KEY ?? "";
   // const apiKeys = apiKeyEnvVar.split(",").map((v) => v.trim());
   // const randomIndex = Math.floor(Math.random() * apiKeys.length);
@@ -113,10 +105,6 @@ export const getServerSideConfig = () => {
     tgiGroqUrl: process.env.TGI_GROQ_URL,
     braveKey: process.env.BRAVE_KEY,
     faktaChatUrl: process.env.FAKTA_CHAT_URL,
-    generateStreamUrl:
-      process.env.GENERATE_STREAM_URL ||
-      // "http://hawkeye-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
-      "http://chat-bib-tgi-1-0.mi-prod.svc.cloud.dbc.dk/generate_stream",
     dbcLlmEndpoint: process.env.DBC_LLM_ENDPOINT || "https://llm.dbc.dk",
     dbcLlmToken: process.env.DBC_LLM_TOKEN,
 
@@ -128,15 +116,6 @@ export const getServerSideConfig = () => {
     azureUrl: process.env.AZURE_URL,
     azureApiKey: getApiKey(process.env.AZURE_API_KEY),
     azureApiVersion: process.env.AZURE_API_VERSION,
-
-    isGoogle,
-    googleApiKey: getApiKey(process.env.GOOGLE_API_KEY),
-    googleUrl: process.env.GOOGLE_URL,
-
-    isAnthropic,
-    anthropicApiKey: getApiKey(process.env.ANTHROPIC_API_KEY),
-    anthropicApiVersion: process.env.ANTHROPIC_API_VERSION,
-    anthropicUrl: process.env.ANTHROPIC_URL,
 
     gtmId: process.env.GTM_ID,
 
