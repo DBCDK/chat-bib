@@ -5,7 +5,6 @@ import styles from "./feedback.module.scss";
 import { Modal, showToast } from "./ui-lib";
 import { useAppConfig, useChatStore } from "../store";
 import { IconButton } from "./button";
-import { CheckButton } from "./settings";
 
 export function FeedbackModal(props: {
   chatRef: React.RefObject<HTMLDivElement>;
