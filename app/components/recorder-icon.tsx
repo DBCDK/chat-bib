@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import LoadingButtonIcon from "../icons/loading.svg";
+import MicrophoneSttIcon from "../icons/microphone-stt.svg";
 import { Recorder } from "../utils/recorder";
 
 const MAX_RECORDING_MS = 30_000;
@@ -98,10 +99,14 @@ export function RecorderIcon(props: {
       >
         {isTranscribing ? (
           <LoadingButtonIcon style={{ width: 26, height: 26 }} />
-        ) : isRecording ? (
-          "⏹"
         ) : (
-          "🎤"
+          <MicrophoneSttIcon
+            style={{
+              width: 26,
+              height: 26,
+              color: isRecording ? "red" : "black",
+            }}
+          />
         )}
       </div>
       <div style={{ fontSize: "11px", height: 16, lineHeight: "16px" }}>

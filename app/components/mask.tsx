@@ -12,6 +12,7 @@ import DeleteIcon from "../icons/delete.svg";
 import EyeIcon from "../icons/eye.svg";
 import CopyIcon from "../icons/copy.svg";
 import DragIcon from "../icons/drag.svg";
+import ShareIcon from "../icons/share.svg";
 
 import { DEFAULT_MASK_AVATAR, Mask, useMaskStore } from "../store/mask";
 import {
@@ -64,6 +65,39 @@ function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
+}
+
+// Build an app link with the assistant name and optional system prompt.
+// URLSearchParams does the URL encoding.
+function buildAssistantParamLink(mask: Mask, path: string): string {
+  const systemPrompt = mask.context?.[0]
+    ? getMessageTextContent(mask.context[0]).trim()
+    : "";
+  const url = new URL(path, location.origin);
+  url.searchParams.set("name", mask.name);
+  if (systemPrompt) url.searchParams.set("prompt", systemPrompt);
+  return url.toString();
+}
+
+export function buildSkoletubeShareLink(mask: Mask): string {
+  const systemPrompt = mask.context?.[0]
+    ? getMessageTextContent(mask.context[0]).trim()
+    : "";
+
+  // SkoleTube needs embed_code, so we wrap the launch page in an iframe.
+  const launchLink = buildAssistantParamLink(mask, Path.Skoletube);
+  const embedCode = `<iframe src="${launchLink}" width="100%" height="400" frameborder="0"></iframe>`;
+
+  // Open SkoleTube's publish page with this assistant prefilled.
+  const publishUrl = new URL("https://www.skoletube.dk/media/publish/");
+  publishUrl.searchParams.set("method", "embed");
+  publishUrl.searchParams.set("embed_code", embedCode);
+  publishUrl.searchParams.set("iframe", "true");
+  publishUrl.searchParams.set("title", mask.name);
+  if (systemPrompt) publishUrl.searchParams.set("description", systemPrompt);
+  publishUrl.searchParams.set("keyword", "skolegpt assistent");
+
+  return publishUrl.toString();
 }
 
 export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
@@ -772,6 +806,19 @@ export function MaskPage() {
                   maskStore.create(editingMask);
                   setEditingMaskId(undefined);
                 }}
+              />,
+              <IconButton
+                key="share-skoletube"
+                icon={<ShareIcon />}
+                bordered
+                text={Locale.Mask.EditModal.ShareSkoletube}
+                onClick={() =>
+                  window.open(
+                    buildSkoletubeShareLink(editingMask),
+                    "_blank",
+                    "noopener,noreferrer",
+                  )
+                }
               />,
               <IconButton
                 key="close"

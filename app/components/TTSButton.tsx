@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import LoadingButtonIcon from "../icons/loading.svg";
+import SpeakerTtsIcon from "../icons/speaker-Tts.svg";
 import { env } from "../utils/appsettings";
 
 export function TTSButton(props: { message: string }) {
@@ -233,7 +234,7 @@ export function TTSButton(props: { message: string }) {
       ) : isLoading ? (
         <LoadingButtonIcon style={{ width: 30, height: 30 }} />
       ) : (
-        "🔈"
+        <SpeakerTtsIcon style={{ width: 30, height: 30 }} />
       )}
     </button>
   );

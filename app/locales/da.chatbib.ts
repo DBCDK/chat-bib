@@ -397,6 +397,7 @@ const da = {
         `Rediger promptskabelon ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Klon",
+      ShareSkoletube: "Del på SkoleTube",
     },
     Config: {
       Avatar: "Bot-avatar",

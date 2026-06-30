@@ -666,6 +666,7 @@ const da = {
         `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      ShareSkoletube: "Del på SkoleTube",
     },
     Config: {
       Avatar: "Assistent ikon",
