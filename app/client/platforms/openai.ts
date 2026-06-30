@@ -55,6 +55,27 @@ interface RequestPayload {
   max_tokens?: number;
 }
 
+/**
+ * Merge system prompts into a single system prompt.
+ */
+function mergeSystemPrompts(messages: RequestPayload["messages"]) {
+  const systemPrompts = messages.filter((m) => m.role === "system");
+  if (systemPrompts.length <= 1) return messages;
+
+  const mergedSystemPrompt = systemPrompts
+    .map((m) => m.content)
+    .filter((content): content is string => typeof content === "string")
+    .join("\n\n");
+
+  return [
+    {
+      ...systemPrompts[0],
+      content: mergedSystemPrompt,
+    },
+    ...messages.filter((m) => m.role !== "system"),
+  ];
+}
+
 export class ChatGPTApi implements LLMApi {
   private disableListModels = true;
 
@@ -121,7 +142,7 @@ export class ChatGPTApi implements LLMApi {
     };
 
     const requestPayload: RequestPayload = {
-      messages,
+      messages: mergeSystemPrompts(messages),
       stream: options.config.stream,
       model: modelConfig.model,
       temperature: modelConfig.temperature,
