@@ -398,6 +398,7 @@ const da = {
       Download: "Download",
       Clone: "Klon",
       ShareSkoletube: "Del på SkoleTube",
+      ShareLink: "Del via link",
     },
     Config: {
       Avatar: "Bot-avatar",

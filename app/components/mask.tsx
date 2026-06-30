@@ -821,6 +821,17 @@ export function MaskPage() {
                 }
               />,
               <IconButton
+                key="share-link"
+                icon={<CopyIcon />}
+                bordered
+                text={Locale.Mask.EditModal.ShareLink}
+                onClick={() =>
+                  copyToClipboard(
+                    buildAssistantParamLink(editingMask, Path.NewChat),
+                  )
+                }
+              />,
+              <IconButton
                 key="close"
                 icon={<CloseIcon />}
                 bordered
