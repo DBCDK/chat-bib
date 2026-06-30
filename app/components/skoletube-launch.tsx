@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Path } from "../constant";
 
-// This page is what SkoleTube shows inside its iframe.
+// This page is what SkoleTube displays inside its iframe.
 // Instead of running the chat in that small box, we just show one big button
 // that opens SkoleGPT in a new tab. The name and prompt stay in the link,
 // so the new tab can build the same assistant again.
