@@ -104,7 +104,7 @@ export function RecorderIcon(props: {
             style={{
               width: 26,
               height: 26,
-              color: isRecording ? "red" : "black",
+              color: isRecording ? "red" : "var(--primary)",
             }}
           />
         )}

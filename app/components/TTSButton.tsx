@@ -234,7 +234,7 @@ export function TTSButton(props: { message: string }) {
       ) : isLoading ? (
         <LoadingButtonIcon style={{ width: 30, height: 30 }} />
       ) : (
-        <SpeakerTtsIcon style={{ width: 30, height: 30 }} />
+        <SpeakerTtsIcon style={{ width: 30, height: 30, color: "var(--primary)" }} />
       )}
     </button>
   );
