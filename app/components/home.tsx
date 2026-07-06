@@ -64,6 +64,13 @@ const JumpToChat = dynamic(
   },
 );
 
+const SkoletubeLaunch = dynamic(
+  async () => (await import("./skoletube-launch")).SkoletubeLaunch,
+  {
+    loading: () => <Loading noLogo />,
+  },
+);
+
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
   loading: () => <Loading noLogo />,
 });
@@ -193,6 +200,7 @@ function Screen() {
                 path={Path.NewChat}
                 element={env.MASKS_ONLY ? <JumpToChat /> : <NewChat />}
               />
+              <Route path={Path.Skoletube} element={<SkoletubeLaunch />} />
               <Route path={Path.Masks} element={<MaskPage />} />
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />

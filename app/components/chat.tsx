@@ -11,6 +11,7 @@ import React, {
 import { RecorderIcon } from "./recorder-icon";
 
 import SendWhiteIcon from "../icons/send-white.svg";
+import SendArrowIcon from "../icons/send-arrow.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
 import ExportIcon from "../icons/share.svg";
@@ -1987,8 +1988,7 @@ function _Chat() {
                 </div>
               )}
               <IconButton
-                icon={<SendWhiteIcon />}
-                text={Locale.Chat.Send}
+                icon={<SendArrowIcon />}
                 className={styles["chat-input-send"]}
                 type="primary"
                 onClick={() => {
