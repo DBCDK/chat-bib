@@ -647,6 +647,7 @@
   cursor: text;
   display: flex;
   flex: 1;
+  position: relative;
   // border-radius: 24px;
   // border: var(--border-in-light);
   // border: 2px solid black;
@@ -687,8 +688,8 @@
   color: white;
 
   position: absolute;
-  right: 22px;
-  bottom: 24px;
+  right: 10px;
+  bottom: 10px;
   padding: 10px 12px;
 }
 
