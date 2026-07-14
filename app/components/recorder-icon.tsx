@@ -8,6 +8,9 @@ const MAX_RECORDING_MS = 30_000;
 
 export function RecorderIcon(props: {
   onTranscribed: (text: string) => void;
+  // keep the button at the bottom (next to the text field) instead of the top;
+  // used when attached files make the input box taller
+  pinned?: boolean;
 }) {
   const recorderRef = React.useRef<Recorder | null>(null);
   const stopTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
@@ -74,6 +77,7 @@ export function RecorderIcon(props: {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        alignSelf: props.pinned ? "flex-end" : undefined,
         lineHeight: 1,
       }}
     >

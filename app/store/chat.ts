@@ -16,7 +16,12 @@ import {
   VISIBLE_DBC_LLM_ENDPOINT_MODELS,
 } from "../constant";
 import { SearchSpeed } from "../constant";
-import { ClientApi, RequestMessage, MultimodalContent } from "../client/api";
+import {
+  ClientApi,
+  RequestMessage,
+  MultimodalContent,
+  FileAttachment,
+} from "../client/api";
 import { ChatControllerPool } from "../client/controller";
 import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
@@ -671,7 +676,12 @@ export const useChatStore = createPersistStore(
         get().summarizeSession();
       },
 
-      async onUserInput(content: string, attachImages?: string[]) {
+      async onUserInput(
+        content: string,
+        attachImages?: string[],
+        attachFiles?: FileAttachment[],
+        attachImageNames?: string[],
+      ) {
         const session = get().currentSession();
         const modelConfig = session.mask.modelConfig;
 
@@ -679,23 +689,23 @@ export const useChatStore = createPersistStore(
 
         let mContent: string | MultimodalContent[] = userContent;
 
-        if (attachImages && attachImages.length > 0) {
-          mContent = [
-            {
-              type: "text",
-              text: userContent,
-            },
-          ];
-          mContent = mContent.concat(
-            attachImages.map((url) => {
-              return {
+        const hasImages = !!attachImages?.length;
+        const hasFiles = !!attachFiles?.length;
+        if (hasImages || hasFiles) {
+          mContent = [{ type: "text", text: userContent }];
+          if (hasImages) {
+            mContent = mContent.concat(
+              attachImages!.map((url, i) => ({
                 type: "image_url",
-                image_url: {
-                  url: url,
-                },
-              };
-            }),
-          );
+                image_url: { url, name: attachImageNames?.[i] },
+              })),
+            );
+          }
+          if (hasFiles) {
+            mContent = mContent.concat(
+              attachFiles!.map((file) => ({ type: "file", file })),
+            );
+          }
         }
         let userMessage: ChatMessage = createMessage({
           role: MessageRole.User,

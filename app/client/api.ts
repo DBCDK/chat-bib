@@ -11,12 +11,30 @@ import { env } from "../utils/appsettings";
 export const ROLES = ["system", "user", "assistant"] as const;
 //export type MessageRole = (typeof ROLES)[number];
 
+// A non-image attachment (pdf, text file, ...). The file itself is saved in
+// IndexedDB under "id" (not in the chat history, so the history stays small);
+// the viewer opens it by that id. "url" is an old-style inline file, still used
+// for older chats and for images. "text" is the text we send to the model (it
+// can't read the file itself); "preview" is a small preview picture.
+export interface FileAttachment {
+  name: string;
+  mime: string;
+  id?: string;
+  url?: string;
+  text?: string;
+  preview?: string;
+}
+
 export interface MultimodalContent {
-  type: "text" | "image_url";
+  type: "text" | "image_url" | "file";
   text?: string;
   image_url?: {
     url: string;
+    // the image's file name, kept for the screen (hover text + preview title).
+    // removed before we send the request to the model in getMessageContentForApi.
+    name?: string;
   };
+  file?: FileAttachment;
 }
 
 export interface RequestMessage {

@@ -25,11 +25,7 @@ import {
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
-import {
-  getMessageTextContent,
-  getMessageImages,
-  isVisionModel,
-} from "@/app/utils";
+import { foldContentsForApi, isVisionModel } from "@/app/utils";
 import { env } from "@/app/utils/appsettings";
 
 export interface OpenAIListModelResponse {
@@ -107,9 +103,10 @@ export class ChatGPTApi implements LLMApi {
 
   async chat(options: ChatOptions) {
     const visionModel = isVisionModel(options.config.model);
-    const messages = options.messages.map((v) => ({
+    const contents = foldContentsForApi(options.messages, visionModel);
+    const messages = options.messages.map((v, i) => ({
       role: v.role,
-      content: visionModel ? v.content : getMessageTextContent(v),
+      content: contents[i],
     }));
 
     const modelConfig = {
@@ -120,10 +117,22 @@ export class ChatGPTApi implements LLMApi {
       },
     };
 
+    // some models (like skolegpt-v3) can't read images. if the request has an
+    // image, send it to a model that can, set in env.IMAGE_MODEL.
+    const hasImage = messages.some(
+      (m) =>
+        Array.isArray(m.content) &&
+        m.content.some((part) => part.type === "image_url"),
+    );
+    const model =
+      hasImage && env.IMAGE_MODEL
+        ? (env.IMAGE_MODEL as string)
+        : modelConfig.model;
+
     const requestPayload: RequestPayload = {
       messages,
       stream: options.config.stream,
-      model: modelConfig.model,
+      model,
       temperature: modelConfig.temperature,
       presence_penalty: modelConfig.presence_penalty,
       frequency_penalty: modelConfig.frequency_penalty,

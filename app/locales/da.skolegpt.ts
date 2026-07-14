@@ -72,7 +72,7 @@ const da = {
       Masks: "Assistenter",
       Clear: "Ryd kontekst",
       Settings: "Indstillinger",
-      UploadImage: "Upload billeder",
+      UploadImage: "Vedhæft billede eller fil",
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
