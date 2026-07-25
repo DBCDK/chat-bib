@@ -1,4 +1,46 @@
 @import "../styles/animation.scss";
+
+.share-button-anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.share-menu-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  animation: slide-in ease 0.3s;
+}
+
+.share-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  background: var(--white);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  min-width: 200px;
+}
+
+.share-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: var(--hover-color);
+  }
+}
+
 .mask-page {
   height: 100%;
   display: flex;
