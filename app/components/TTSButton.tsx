@@ -3,11 +3,22 @@ import * as React from "react";
 import LoadingButtonIcon from "../icons/loading.svg";
 import SpeakerTtsIcon from "../icons/speaker-Tts.svg";
 import { env } from "../utils/appsettings";
+import { IconButton } from "./button";
 
-export function TTSButton(props: { message: string }) {
+// Plays a chat answer out loud, one sentence at a time. While one sentence
+// plays, the next one is already being downloaded, so there is no pause
+// between them.
+// There are two ways this can start. One is the play button under a single
+// answer, which only reads that one answer. The other is the auto read
+// button in the chat header, which reads every new answer by itself once
+// turned on.
+export function useTts() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // The id of the message being read right now. The play button for that
+  // message uses it to show that it is playing.
+  const [activeKey, setActiveKey] = React.useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const objectUrlsRef = React.useRef<Set<string>>(new Set());
   const playTokenRef = React.useRef(0);
@@ -59,6 +70,7 @@ export function TTSButton(props: { message: string }) {
     objectUrlsRef.current.clear();
     setIsLoading(false);
     setIsPlaying(false);
+    setActiveKey(null);
   }, []);
 
   const revokeUrl = React.useCallback((url: string) => {
@@ -138,104 +150,136 @@ export function TTSButton(props: { message: string }) {
     [revokeUrl],
   );
 
-  const onClick = async () => {
-    const service = env.ENABLE_TTSASR
-      ? `${env.BASE_URL}v1/audio/speech`
-      : null;
-    const text = props.message?.trim();
+  const speak = React.useCallback(
+    async (message: string, key: string | null = null) => {
+      const service = env.ENABLE_TTSASR
+        ? `${env.BASE_URL}v1/audio/speech`
+        : null;
+      const text = message?.trim();
 
-    if (!service || !text) return;
+      if (!service || !text) return;
 
-    // If user clicks again while loading or playing, stop everything.
-    if (isLoading || isPlaying) {
+      // Stop anything already playing so a new answer replaces the old one.
       stopPlayback();
-      return;
-    }
 
-    setIsLoading(true);
-    setIsPlaying(false);
-    setError(null);
+      setIsLoading(true);
+      setIsPlaying(false);
+      setError(null);
+      setActiveKey(key);
 
-    const token = playTokenRef.current;
-    const sentences = splitIntoSentences(text);
-    if (sentences.length === 0) {
-      setIsLoading(false);
-      return;
-    }
+      const token = playTokenRef.current;
+      const sentences = splitIntoSentences(text);
+      if (sentences.length === 0) {
+        setIsLoading(false);
+        return;
+      }
 
-    try {
-      // Pipeline: fetch sentence N+1 while sentence N is playing.
-      let currentAudioUrl = await fetchWavFromService(
-        service,
-        sentences[0],
-        token,
-      );
-      if (!currentAudioUrl) return;
+      try {
+        // Pipeline: fetch sentence N+1 while sentence N is playing.
+        let currentAudioUrl = await fetchWavFromService(
+          service,
+          sentences[0],
+          token,
+        );
+        if (!currentAudioUrl) return;
 
-      let nextFetch: Promise<string | null> | null = null;
+        let nextFetch: Promise<string | null> | null = null;
 
-      for (let i = 0; i < sentences.length; i++) {
-        if (token !== playTokenRef.current) return;
+        for (let i = 0; i < sentences.length; i++) {
+          if (token !== playTokenRef.current) return;
 
-        const isLast = i === sentences.length - 1;
-        if (!isLast) {
-          // Kick off the next request immediately, while current audio plays.
-          nextFetch = fetchWavFromService(service, sentences[i + 1], token);
+          const isLast = i === sentences.length - 1;
+          if (!isLast) {
+            // Kick off the next request immediately, while current audio plays.
+            nextFetch = fetchWavFromService(service, sentences[i + 1], token);
+          }
+
+          const stillValid = await playAudioUrl(currentAudioUrl, token);
+          if (!stillValid) return;
+
+          if (!isLast) {
+            currentAudioUrl = await nextFetch!;
+            if (!currentAudioUrl) return;
+          }
         }
-
-        const stillValid = await playAudioUrl(currentAudioUrl, token);
-        if (!stillValid) return;
-
-        if (!isLast) {
-          currentAudioUrl = await nextFetch!;
-          if (!currentAudioUrl) return;
+      } catch (e: unknown) {
+        // If the user stops playback, the sentence that was loading also
+        // fails, which would show a fake error. Only show a real error if
+        // this play attempt is still the active one.
+        if (token === playTokenRef.current) {
+          const message =
+            e instanceof Error
+              ? e.message
+              : typeof e === "string"
+                ? e
+                : "ukendt fejl";
+          setError(message);
+          console.error("TTS error:", e);
+        }
+      } finally {
+        // Only clear the loading and playing state if this play attempt is
+        // still the active one. If a newer play attempt already started,
+        // let it keep control instead.
+        if (token === playTokenRef.current) {
+          setIsLoading(false);
+          setIsPlaying(false);
+          setActiveKey(null);
         }
       }
-    } catch (e: unknown) {
-      const message =
-        e instanceof Error
-          ? e.message
-          : typeof e === "string"
-            ? e
-            : "TTS failed";
-      setError(message);
-      console.error("TTS error:", e);
-    } finally {
-      setIsLoading(false);
-      setIsPlaying(false);
-    }
+    },
+    [stopPlayback, splitIntoSentences, fetchWavFromService, playAudioUrl],
+  );
+
+  return {
+    activeKey,
+    isLoading,
+    isPlaying,
+    error,
+    speak,
+    stop: stopPlayback,
   };
+}
+
+type TtsController = ReturnType<typeof useTts>;
+
+export function TTSButton(props: {
+  message: string;
+  messageKey: string;
+  tts: TtsController;
+}) {
+  const { activeKey, isLoading, isPlaying, speak, stop } = props.tts;
+
+  // Every answer has its own play button. This makes sure only the button
+  // for the answer that is actually playing shows the playing icon, even
+  // when the auto read button started it instead of a click.
+  const active = activeKey === props.messageKey;
+  const busy = active && (isLoading || isPlaying);
 
   return (
-    <button
-      type="button"
-      title={
-        error
-          ? `TTS failed: ${error}`
-          : isPlaying || isLoading
-            ? "Stop"
-            : "Play"
+    <IconButton
+      title={busy ? "Stop oplæsning" : "Læs højt"}
+      icon={
+        active && isPlaying ? (
+          <span
+            style={{ fontSize: 16, lineHeight: 1, color: "var(--primary)" }}
+          >
+            ⏹
+          </span>
+        ) : active && isLoading ? (
+          <LoadingButtonIcon style={{ width: 16, height: 16 }} />
+        ) : (
+          <SpeakerTtsIcon
+            style={{ width: 16, height: 16, color: "var(--primary)" }}
+          />
+        )
       }
-      aria-label={isPlaying || isLoading ? "Stop" : "Play"}
-      style={{
-        float: "right",
-        fontSize: "30px",
-        cursor: "pointer",
-        margin: 8,
-        padding: 0,
-        lineHeight: 1,
-        background: "transparent",
-        border: "none",
+      onClick={() => {
+        if (busy) {
+          stop();
+        } else {
+          void speak(props.message, props.messageKey);
+        }
       }}
-      onClick={onClick}
-    >
-      {isPlaying ? (
-        "⏹"
-      ) : isLoading ? (
-        <LoadingButtonIcon style={{ width: 30, height: 30 }} />
-      ) : (
-        <SpeakerTtsIcon style={{ width: 30, height: 30, color: "var(--primary)" }} />
-      )}
-    </button>
+    />
   );
 }
