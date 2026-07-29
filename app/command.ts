@@ -6,6 +6,7 @@ type Command = (param: string) => void;
 interface Commands {
   fill?: Command;
   submit?: Command;
+  newchat?: Command;
   mask?: Command;
   code?: Command;
   settings?: Command;

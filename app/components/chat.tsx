@@ -1188,6 +1188,15 @@ function _Chat() {
     submit: (text) => {
       doSubmit(text);
     },
+    newchat: (text) => {
+      if (text.trim() === "") return;
+      // Always start a fresh conversation. Used by the skolegpt.dk landing
+      // chatbox so a returning visitor's message never lands in their old chat.
+      chatStore.newSession();
+      setIsLoading(true);
+      chatStore.onUserInput(text).then(() => setIsLoading(false));
+      setAutoScroll(true);
+    },
     code: (text) => {
       if (accessStore.disableFastLink) return;
       console.log("[Command] got code from url: ", text);
