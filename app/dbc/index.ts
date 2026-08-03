@@ -15,6 +15,10 @@ export type CustomModel = {
 export type Message = {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
+  // Images attached to a user message. The search part treats messages as text;
+  // images are only sent to the model in llmClient, and only when the model can
+  // read them (gemma).
+  images?: string[];
 };
 
 export type LLMParameters = {

@@ -52,8 +52,29 @@ export async function llmGenerate(input: LLMRequest) {
   const topP = parameters.top_p ?? 1;
   const maxTokens = parameters.max_new_tokens || 500;
 
+  // gemma can read images, the other models can't. For gemma, put any images
+  // into the message the way the API expects; for the others, take the images
+  // out so they only get text.
+  const supportsImages = modelName.includes("gemma");
+  const apiMessages = input.messages.map((message) => {
+    const { images, ...rest } = message;
+    if (supportsImages && images && images.length > 0) {
+      return {
+        role: rest.role,
+        content: [
+          { type: "text", text: rest.content },
+          ...images.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+          })),
+        ],
+      };
+    }
+    return rest;
+  });
+
   const requestBodyStr = JSON.stringify({
-    messages: input.messages,
+    messages: apiMessages,
     model: modelName,
     temperature: temperature,
     top_p: topP,

@@ -23,7 +23,7 @@ import Locale from "../../locales";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
 import {
-  getMessageTextContent,
+  foldContentsForApi,
   getMessageImages,
   isVisionModel,
 } from "@/app/utils";
@@ -96,10 +96,21 @@ export class DBCApi implements LLMApi {
 
   async chat(options: ChatOptions) {
     const visionModel = isVisionModel(options.config.model);
-    const messages = options.messages.map((v) => ({
-      role: v.role,
-      content: getMessageTextContent(v),
-    }));
+    // the search (rag) part only handles text, so leave images out here
+    // (keepImages = false). Images go in a separate field below and are only
+    // sent to gemma (see llmClient).
+    const contents = foldContentsForApi(options.messages, false);
+    const messages = options.messages.map((v, i) => {
+      const message: Message = {
+        role: v.role,
+        content: contents[i] as string,
+      };
+      const images = getMessageImages(v);
+      if (images.length > 0) {
+        message.images = images;
+      }
+      return message;
+    });
 
     const conversationId =
       options.conversationIdOverride ||

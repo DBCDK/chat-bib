@@ -28,7 +28,8 @@ const skolegpt: RuntimeEnv = {
   API_KEY: token,
   ENABLE_TTSASR: true,
   SHOW_SETTINGS: "true",
-  CUSTOM_MODELS: "skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
+  CUSTOM_MODELS:
+    "google/gemma-4-26B-A4B-it,skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
   CHAT_DISCLAIMER:
     "SkoleGPT kan tage fejl. Tjek altid vigtige oplysninger og råd med en pålidelig kilde.",
   APP_TITLE: "SkoleGPT",
@@ -52,9 +53,15 @@ const skolegpt: RuntimeEnv = {
   MASK_BUTTON: "true",
   MASKS_ONLY: "true",
   DEFAULT_MESSAGE_COUNT: "16",
-  DEFAULT_MODEL: "skolegpt-v3",
+  DEFAULT_MODEL: "google/gemma-4-26B-A4B-it",
   DISABLE_MULTI_LLM: "true",
   BUILTIN_MASK_PROFILE: "skolegpt",
+  // the model that can read images. messages with images are sent here
+  // (skolegpt-v3 can't read images). change this if the image model changes.
+  IMAGE_MODEL: "google/gemma-4-26B-A4B-it",
+  // attaching files/images is only for SkoleGPT. leave this out of the other
+  // apps so their chat stays the same.
+  ENABLE_ATTACHMENTS: "true",
 };
 const chatdbc: RuntimeEnv = {
   APP: "chatdbc",

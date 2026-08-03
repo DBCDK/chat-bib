@@ -15,7 +15,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
       },
     ],
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.7,
       top_p: 0.95,
       max_tokens: 2000,
@@ -44,7 +44,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.6,
       top_p: 0.9,
       max_tokens: 4000,
@@ -74,7 +74,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.7,
       top_p: 0.9,
       max_tokens: 4000,
@@ -103,7 +103,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.7,
       top_p: 0.9,
       max_tokens: 4000,
@@ -132,7 +132,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.7,
       top_p: 0.9,
       max_tokens: 4000,
@@ -161,7 +161,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.8,
       top_p: 1,
       max_tokens: 4000,
@@ -190,7 +190,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.7,
       top_p: 0.9,
       max_tokens: 4000,
@@ -219,7 +219,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.5,
       top_p: 1,
       max_tokens: 4000,
@@ -249,7 +249,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.5,
       top_p: 1,
       max_tokens: 4000,
@@ -279,7 +279,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.5,
       top_p: 1,
       max_tokens: 4000,
@@ -309,7 +309,7 @@ export const SKOLEGPT_MASKS: BuiltinMask[] = [
     ],
     syncGlobalConfig: false,
     modelConfig: {
-      model: "skolegpt-v3",
+      model: "google/gemma-4-26B-A4B-it",
       temperature: 0.5,
       top_p: 1,
       max_tokens: 4000,
