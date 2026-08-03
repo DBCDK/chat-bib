@@ -36,6 +36,9 @@ import PlusIcon from "../icons/plus.svg";
 import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
+import SpeakerTtsIcon from "../icons/speaker-Tts.svg";
+import SpeakerTtsOffIcon from "../icons/speaker-tts-off.svg";
+import CopyTextIcon from "../icons/copy-text.svg";
 import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
@@ -115,7 +118,7 @@ import { FileAttachment, MultimodalContent } from "../client/api";
 import { MessageRole } from "../typing";
 import exp from "constants";
 import { DbcSettings } from "./dbcsettings";
-import { TTSButton } from "./TTSButton";
+import { TTSButton, useTts } from "./TTSButton";
 import { env } from "../utils/appsettings";
 
 const Markdown = dynamic(async () => (await import("./markdown")).Markdown, {
@@ -733,6 +736,47 @@ function _Chat() {
     !!env.ENABLE_ATTACHMENTS &&
     isVisionModel(session.mask.modelConfig.model);
 
+  // This reads new chat answers out loud by itself, but only for skolegpt,
+  // and only once the user turns on the auto read button in the chat
+  // header. All the play buttons in this chat share the same tts object
+  // below, so only the button for the answer that is playing lights up.
+  const autoTts = config.autoTts;
+  const tts = useTts();
+  const { speak: speakTts, stop: stopTts } = tts;
+  const lastSpokenIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!env.ENABLE_TTSASR) return;
+
+    const messages = session.messages;
+    const last = messages[messages.length - 1];
+    const lastId = last?.id ?? null;
+
+    // First time this runs for a chat, just remember the last message. That
+    // way we do not read an old answer that was already there when you opened it.
+    if (lastSpokenIdRef.current === undefined) {
+      lastSpokenIdRef.current = lastId;
+      return;
+    }
+
+    // Only read a brand new answer once it has finished loading.
+    if (
+      !last ||
+      last.role !== MessageRole.Assistant ||
+      last.streaming ||
+      last.isError ||
+      lastId === lastSpokenIdRef.current
+    )
+      return;
+
+    lastSpokenIdRef.current = lastId;
+
+    if (autoTts) {
+      const text = getMessageTextContent(last);
+      if (text.trim()) void speakTts(text, lastId);
+    }
+  }, [session.messages, autoTts, speakTts]);
+
   const [showExport, setShowExport] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -1267,6 +1311,15 @@ function _Chat() {
     submit: (text) => {
       doSubmit(text);
     },
+    newchat: (text) => {
+      if (text.trim() === "") return;
+      // Always start a fresh conversation. Used by the skolegpt.dk landing
+      // chatbox so a returning visitor's message never lands in their old chat.
+      chatStore.newSession();
+      setIsLoading(true);
+      chatStore.onUserInput(text).then(() => setIsLoading(false));
+      setAutoScroll(true);
+    },
     code: (text) => {
       if (accessStore.disableFastLink) return;
       console.log("[Command] got code from url: ", text);
@@ -1441,6 +1494,28 @@ function _Chat() {
               </>
             }
           />
+          {env.ENABLE_TTSASR && (
+            <IconButton
+              className={styles.ttsToggleButton}
+              icon={
+                autoTts ? (
+                  <SpeakerTtsIcon style={{ width: 16, height: 16 }} />
+                ) : (
+                  <SpeakerTtsOffIcon style={{ width: 16, height: 16 }} />
+                )
+              }
+              title={
+                autoTts
+                  ? "Automatisk oplæsning er slået til"
+                  : "Læs svar højt automatisk"
+              }
+              onClick={() => {
+                const next = !autoTts;
+                config.update((c) => (c.autoTts = next));
+                if (!next) stopTts();
+              }}
+            />
+          )}
           {!env.DISABLE_MULTI_LLM && !multiLlmStarted && (
             <IconButton
               icon={<PluginIcon />}
@@ -1889,9 +1964,6 @@ function _Chat() {
                         )}
                       </div>
                       <div className={styles["chat-message-item"]}>
-                        {env.ENABLE_TTSASR && !isUser && (
-                          <TTSButton message={getMessageTextContent(message)} />
-                        )}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
@@ -1973,6 +2045,31 @@ function _Chat() {
                           </div>
                         )}
                       </div>
+
+                      {env.ENABLE_TTSASR && !isUser && (
+                        <div className={styles["chat-message-tools"]}>
+                          <TTSButton
+                            message={getMessageTextContent(message)}
+                            messageKey={message.id}
+                            tts={tts}
+                          />
+                          <IconButton
+                            title={Locale.Chat.Actions.Copy}
+                            icon={
+                              <CopyTextIcon
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  color: "var(--primary)",
+                                }}
+                              />
+                            }
+                            onClick={() =>
+                              copyToClipboard(getMessageTextContent(message))
+                            }
+                          />
+                        </div>
+                      )}
 
                       {/* <div className={styles["chat-message-action-date"]}>
                       {isContext

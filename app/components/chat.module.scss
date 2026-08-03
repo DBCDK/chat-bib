@@ -685,6 +685,14 @@
     min-width: 0;
   }
 }
+
+.chat-message-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
 .chat-input-panel-container {
   position: absolute;
   bottom: 0px;
@@ -859,8 +867,8 @@
   color: white;
 
   position: absolute;
-  right: 22px;
-  bottom: 24px;
+  right: 10px;
+  bottom: 10px;
   padding: 10px 12px;
 }
 
@@ -889,6 +897,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
+  // removes a small gap under the icon so they all line up evenly
+  svg {
+    display: block;
+  }
+}
+
+.ttsToggleButton {
+  // nudge right so it's centered between the light/dark mode button and the share button
+  margin-left: 8px;
 }
 
 .multi-llm-grid {
