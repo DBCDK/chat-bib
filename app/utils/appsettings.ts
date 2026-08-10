@@ -29,7 +29,7 @@ const skolegpt: RuntimeEnv = {
   ENABLE_TTSASR: true,
   SHOW_SETTINGS: "true",
   CUSTOM_MODELS:
-    "google/gemma-4-26B-A4B-it,skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
+    "google/gemma-4-26B-A4B-it,mitcfu-rag,science-rag",
   CHAT_DISCLAIMER:
     "SkoleGPT kan tage fejl. Tjek altid vigtige oplysninger og råd med en pålidelig kilde.",
   APP_TITLE: "SkoleGPT",
@@ -47,7 +47,7 @@ const skolegpt: RuntimeEnv = {
   LOCALE: "skolegpt",
   INJECT_ANALYTICS:
     "<script> var _paq = window._paq = window._paq || []; _paq.push(['disableCookies']); _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']); (function() { var u='https://stats.dbc.dk/'; _paq.push(['setTrackerUrl', u+'matomo.php']); _paq.push(['setSiteId', '43']); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s); })(); </script>",
-  DEFAULT_MASK: "SkoleGPT3",
+  DEFAULT_MASK: "SkoleGPT",
   USE_MASK_AS_SESSION_NAME: "true",
   DISABLE_BOT_HELLO: "true",
   MASK_BUTTON: "true",
@@ -99,3 +99,5 @@ const chatdbc: RuntimeEnv = {
 const settings: Record<string, RuntimeEnv> = { chatbib, skolegpt, chatdbc };
 
 export const env: RuntimeEnv = settings[app] ?? chatbib;
+export const SKOLEGPT_RETIRED_MODEL_ALIASES = ["skolegpt", "skolegpt-v3"];
+export const SKOLEGPT_REPLACEMENT_MODEL = "google/gemma-4-26B-A4B-it";

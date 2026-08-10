@@ -6,7 +6,11 @@ import {
 } from "../constant";
 import { getHeaders } from "../client/api";
 import { getClientConfig } from "../config/client";
-import { env } from "../utils/appsettings";
+import {
+  env,
+  SKOLEGPT_REPLACEMENT_MODEL,
+  SKOLEGPT_RETIRED_MODEL_ALIASES,
+} from "../utils/appsettings";
 import { createPersistStore } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
@@ -111,7 +115,7 @@ export const useAccessStore = createPersistStore(
   }),
   {
     name: StoreKey.Access,
-    version: 2,
+    version: 3,
     migrate(persistedState, version) {
       if (version < 2) {
         const state = persistedState as {
@@ -121,6 +125,24 @@ export const useAccessStore = createPersistStore(
         };
         state.openaiApiKey = state.token;
         state.azureApiVersion = "2023-08-01-preview";
+      }
+
+      if (version < 3 && env.APP === "skolegpt") {
+        const state = persistedState as {
+          defaultModel: string;
+          customModels: string;
+        };
+
+        if (SKOLEGPT_RETIRED_MODEL_ALIASES.includes(state.defaultModel)) {
+          state.defaultModel = SKOLEGPT_REPLACEMENT_MODEL;
+        }
+
+        if (state.customModels) {
+          state.customModels = state.customModels
+            .split(",")
+            .filter((m) => !SKOLEGPT_RETIRED_MODEL_ALIASES.includes(m))
+            .join(",");
+        }
       }
 
       return persistedState as any;

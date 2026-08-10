@@ -298,12 +298,12 @@ export function getMessageContentForApi(
   }
   const images = keepImages
     ? message.content
-        .filter((c) => c.type === "image_url")
-        // send only the image itself; the file name is just for the screen
-        .map((c) => ({
-          type: "image_url" as const,
-          image_url: { url: c.image_url?.url ?? "" },
-        }))
+      .filter((c) => c.type === "image_url")
+      // send only the image itself; the file name is just for the screen
+      .map((c) => ({
+        type: "image_url" as const,
+        image_url: { url: c.image_url?.url ?? "" },
+      }))
     : [];
   if (images.length === 0) {
     return text;
@@ -346,7 +346,6 @@ export function isVisionModel(model: string) {
     "dbc",
     "gemma",
     "chatbib",
-    "skolegpt-v3",
   ];
   const isGpt4Turbo =
     model.includes("gpt-4-turbo") && !model.includes("preview");

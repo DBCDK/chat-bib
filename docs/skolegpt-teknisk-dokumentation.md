@@ -6,7 +6,7 @@ SkoleGPT består af to seperate komponenter:
 - En webserver der håndterer UI, og står for kald til de bagvedliggende sprogmodeller.
 - En webserver der indeholder sprogmodellerne. Den modtager kald og genererer svar.
 
-I skrivende stund er sprogmodellen [Gemma3 12B](https://huggingface.co/google/gemma-3-12b-it), men den kan skiftes ud med en anden model hvis det ønskes.
+I skrivende stund er sprogmodellen `google/gemma-4-26B-A4B-it` (Gemma 4), men den kan skiftes ud med en anden model hvis det ønskes.
 
 Løsningen er hostet hos DBC Digital i deres datacentre i Danmark.
 Der kræves ingen login, og hverken spørgsmål eller svar bliver gemt.
@@ -40,5 +40,5 @@ Dokumentationen kan ses her https://llm.dbc.dk/docs.
 
 For at se en komplet liste over hvilke modeller ens API nøgle giver adgang til kan man tilgå https://llm.dbc.dk/v1/models.
 
-I øjeblikket kører gemma3 modellen i to instancer på, hver på to dedikerede L40S GPU’er, dvs 4 GPU’er i alt.
+I øjeblikket kører modellen i to instancer, hver på et dedikeret RTX Pro 6000-kort, dvs. 2 GPU’er i alt.
 

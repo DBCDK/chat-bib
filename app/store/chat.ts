@@ -31,7 +31,11 @@ import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
 import { DEFAULT_SYSTEM_PERSONA } from "../personas";
-import { env } from "../utils/appsettings";
+import {
+  env,
+  SKOLEGPT_REPLACEMENT_MODEL,
+  SKOLEGPT_RETIRED_MODEL_ALIASES,
+} from "../utils/appsettings";
 
 export type ChatMessage = RequestMessage & {
   date: string;
@@ -330,14 +334,14 @@ export const useChatStore = createPersistStore(
         var systemPrompts: ChatMessage[] = [];
         systemPrompts = shouldInjectSystemPrompts
           ? [
-              createMessage({
-                role: MessageRole.System,
-                content: fillTemplateWith("", {
-                  ...modelConfig,
-                  template: DEFAULT_SYSTEM_TEMPLATE,
-                }),
+            createMessage({
+              role: MessageRole.System,
+              content: fillTemplateWith("", {
+                ...modelConfig,
+                template: DEFAULT_SYSTEM_TEMPLATE,
               }),
-            ]
+            }),
+          ]
           : [];
 
         const memoryPrompt = undefined as any; // disable cross-child memory for now
@@ -825,14 +829,14 @@ export const useChatStore = createPersistStore(
         var systemPrompts: ChatMessage[] = [];
         systemPrompts = shouldInjectSystemPrompts
           ? [
-              createMessage({
-                role: MessageRole.System,
-                content: fillTemplateWith("", {
-                  ...modelConfig,
-                  template: DEFAULT_SYSTEM_TEMPLATE,
-                }),
+            createMessage({
+              role: MessageRole.System,
+              content: fillTemplateWith("", {
+                ...modelConfig,
+                template: DEFAULT_SYSTEM_TEMPLATE,
               }),
-            ]
+            }),
+          ]
           : [];
         if (shouldInjectSystemPrompts) {
           console.log(
@@ -950,8 +954,8 @@ export const useChatStore = createPersistStore(
             onFinish(message) {
               get().updateCurrentSession(
                 (session) =>
-                  (session.topic =
-                    message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
+                (session.topic =
+                  message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
               );
             },
           });
@@ -1064,7 +1068,7 @@ export const useChatStore = createPersistStore(
   },
   {
     name: StoreKey.Chat,
-    version: 3.1,
+    version: 3.2,
     migrate(persistedState, version) {
       const state = persistedState as any;
       const newState = JSON.parse(
@@ -1109,6 +1113,20 @@ export const useChatStore = createPersistStore(
             s.mask.modelConfig.enableInjectSystemPrompts =
               config.modelConfig.enableInjectSystemPrompts;
           }
+        });
+      }
+
+      if (version < 3.2 && env.APP === "skolegpt") {
+        newState.sessions.forEach((s) => {
+          const model = s.mask.modelConfig.model;
+          if (SKOLEGPT_RETIRED_MODEL_ALIASES.includes(model)) {
+            s.mask.modelConfig.model = SKOLEGPT_REPLACEMENT_MODEL;
+          }
+          s.messages.forEach((m) => {
+            if (m.model && SKOLEGPT_RETIRED_MODEL_ALIASES.includes(m.model)) {
+              m.model = SKOLEGPT_REPLACEMENT_MODEL;
+            }
+          });
         });
       }
 

@@ -6,6 +6,7 @@ import { StoreKey } from "../constant";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { MODEL_NAMES } from "../dbc";
+import { env, SKOLEGPT_RETIRED_MODEL_ALIASES, SKOLEGPT_REPLACEMENT_MODEL } from "../utils/appsettings";
 
 export type Mask = {
   id: string;
@@ -105,7 +106,7 @@ export const useMaskStore = createPersistStore(
   }),
   {
     name: StoreKey.Mask,
-    version: 3.1,
+    version: 3.2,
 
     migrate(state, version) {
       const newState = JSON.parse(JSON.stringify(state)) as MaskState;
@@ -121,6 +122,14 @@ export const useMaskStore = createPersistStore(
           updatedMasks[m.id] = m;
         });
         newState.masks = updatedMasks;
+      }
+
+      if (version < 3.2 && env.APP === "skolegpt") {
+        Object.values(newState.masks).forEach((m) => {
+          if (SKOLEGPT_RETIRED_MODEL_ALIASES.includes(m.modelConfig?.model)) {
+            m.modelConfig.model = SKOLEGPT_REPLACEMENT_MODEL;
+          }
+        });
       }
 
       return newState as any;
