@@ -29,7 +29,7 @@ const skolegpt: RuntimeEnv = {
   ENABLE_TTSASR: true,
   SHOW_SETTINGS: "true",
   CUSTOM_MODELS:
-    "google/gemma-4-26B-A4B-it,skolegpt-v3,skolegpt,mitcfu-rag,science-rag",
+    "google/gemma-4-26B-A4B-it,mitcfu-rag,science-rag",
   CHAT_DISCLAIMER:
     "SkoleGPT kan tage fejl. Tjek altid vigtige oplysninger og råd med en pålidelig kilde.",
   APP_TITLE: "SkoleGPT",
@@ -99,3 +99,5 @@ const chatdbc: RuntimeEnv = {
 const settings: Record<string, RuntimeEnv> = { chatbib, skolegpt, chatdbc };
 
 export const env: RuntimeEnv = settings[app] ?? chatbib;
+export const SKOLEGPT_RETIRED_MODEL_ALIASES = ["skolegpt", "skolegpt-v3"];
+export const SKOLEGPT_REPLACEMENT_MODEL = "google/gemma-4-26B-A4B-it";

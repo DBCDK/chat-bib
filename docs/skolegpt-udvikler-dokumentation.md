@@ -26,12 +26,20 @@ curl -sS http://glyph-gate-1-0.ai-prod.svc.cloud.dbc.dk/v1/models \
   -H "Authorization: Bearer $LLM_DBC_TOKEN"
 ```
 
-- "skolegpt" – gemma3
-- "skolegpt-v3" – også gemma3
+- "google/gemma-4-26B-A4B-it" – gemma4
 - "mitcfu-rag" – RAG-løsning
 - "science-rag" – RAG-løsning
 
 Som sagt kan vi opdatere dette i løbende dialog.
+
+**Opdatering (2026-08-10):** SkoleGPT-frontenden (dette repo) kaldte tidligere
+modellen via aliasserne `"skolegpt"` og `"skolegpt-v3"`. Frontenden er nu
+skiftet til at kalde modellen direkte som `"google/gemma-4-26B-A4B-it"`, og
+alle indbyggede assistenter samt allerede oprettede brugerdefinerede
+assistenter er migreret til dette modelnavn (se `app/store/mask.ts`,
+`app/store/chat.ts` og `app/store/access.ts`). Aliasserne `"skolegpt"` og
+`"skolegpt-v3"` findes stadig på selve gatewayen, da andre downstream-services
+fortsat bruger dem — de fjernes først når alle er migreret væk.
 
 Herunder er et par simple eksempler på hvordan man ved hjælp af kode benytter sprogmodellerne:
 Python eksempel på brug af llm.dbc.dk:
@@ -60,7 +68,7 @@ payload = {
         { "role": "user", "content": "Hvad er meningen med livet?" }  
     ],  
     "stream": True,  
-    "model": "skolegpt",  
+    "model": "google/gemma-4-26B-A4B-it",  
     "temperature": 0.7,  
     "top_p": 0.95  
 }
@@ -107,7 +115,7 @@ async function llm(message, apiKey) {
                 { role: "user", content: message }  
             ],  
             stream: true,  
-            model: "skolegpt",  
+            model: "google/gemma-4-26B-A4B-it",  
             temperature: 0.7,  
             presence_penalty: 0,  
             frequency_penalty: 0,  
