@@ -711,9 +711,24 @@ export const useChatStore = createPersistStore(
             );
           }
         }
+        // Files added to the assistant get sent together with the user's
+        // message. That way the model always gets them. They cannot be sent as
+        // their own message because the model only takes one user message at a
+        // time. They are left out of the message we save further down so they
+        // do not look like something the user attached.
+        const maskAttachments = session.mask.attachments ?? [];
+        const sentContent: string | MultimodalContent[] = maskAttachments.length
+          ? [
+              ...(typeof mContent === "string"
+                ? [{ type: "text", text: mContent } as MultimodalContent]
+                : mContent),
+              ...maskAttachments,
+            ]
+          : mContent;
+
         let userMessage: ChatMessage = createMessage({
           role: MessageRole.User,
-          content: mContent,
+          content: sentContent,
         });
 
         const botMessage: ChatMessage = createMessage({

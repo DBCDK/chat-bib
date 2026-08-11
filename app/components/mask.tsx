@@ -23,7 +23,7 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { MultimodalContent, ROLES } from "../client/api";
+import { FileAttachment, MultimodalContent, ROLES } from "../client/api";
 import {
   Input,
   List,
@@ -32,6 +32,7 @@ import {
   Popover,
   Select,
   showConfirm,
+  showToast,
 } from "./ui-lib";
 import { Avatar, AvatarPicker } from "./emoji";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
@@ -58,6 +59,12 @@ import {
 } from "@hello-pangea/dnd";
 import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
+import PlusIcon from "../icons/plus.svg";
+import { env } from "../utils/appsettings";
+import { compressImage } from "@/app/utils/chat";
+import { fileToAttachment, isImageFile, FILE_ACCEPT } from "../utils/attachment";
+import { deleteFileBlob } from "../utils/file-store";
+import { AttachmentViewer } from "./attachment-viewer";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -105,6 +112,129 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
     <Avatar avatar={props.avatar} />
   ) : (
     <Avatar model={props.model} />
+  );
+}
+
+// Lets you add files to the assistant. The files are saved on the assistant and
+// get sent with every chat that uses it so it can always answer from them. The
+// files are handled the same way as when you attach a file to a message.
+function MaskAttachments(props: { mask: Mask; updateMask: Updater<Mask> }) {
+  const attachments = props.mask.attachments ?? [];
+  const [uploading, setUploading] = useState(false);
+  // the file shown in the big preview. null means the preview is closed
+  const [viewer, setViewer] = useState<FileAttachment | null>(null);
+
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const next = [...attachments];
+      for (const file of files) {
+        if (isImageFile(file)) {
+          const url = await compressImage(file, 256 * 1024);
+          next.push({ type: "image_url", image_url: { url, name: file.name } });
+        } else {
+          next.push({ type: "file", file: await fileToAttachment(file) });
+        }
+      }
+      props.updateMask((mask) => (mask.attachments = next));
+    } catch (e: any) {
+      showToast(e?.message || "Kunne ikke vedhæfte filen.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const pickFiles = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept =
+      "image/png, image/jpeg, image/webp, image/heic, image/heif," +
+      FILE_ACCEPT;
+    input.multiple = true;
+    input.onchange = (e: any) => addFiles(Array.from(e.target.files || []));
+    input.click();
+  };
+
+  const removeAt = (index: number) => {
+    const item = attachments[index];
+    // also free the saved file so it does not stay behind for nothing
+    if (item?.type === "file" && item.file?.id) deleteFileBlob(item.file.id);
+    props.updateMask(
+      (mask) => (mask.attachments = attachments.filter((_, i) => i !== index)),
+    );
+  };
+
+  return (
+    <List>
+      <ListItem
+        title="Vedhæftede filer"
+        subTitle="Assistenten kan svare ud fra disse filer i alle chats"
+      >
+        <IconButton
+          icon={<AddIcon />}
+          text={uploading ? "..." : "Tilføj fil"}
+          bordered
+          onClick={pickFiles}
+        />
+      </ListItem>
+      {attachments.length > 0 && (
+        <div
+          className={chatStyle["attach-list"]}
+          style={{ padding: "0 20px 12px" }}
+        >
+          {attachments.map((item, index) => (
+            <div className={chatStyle["attach-item"]} key={index}>
+              {item.type === "image_url" ? (
+                <img
+                  className={chatStyle["attach-item-image"]}
+                  src={item.image_url?.url}
+                  alt=""
+                  title={item.image_url?.name || undefined}
+                  onClick={() =>
+                    setViewer({
+                      url: item.image_url?.url ?? "",
+                      name: item.image_url?.name ?? "",
+                      mime: "image/*",
+                    })
+                  }
+                />
+              ) : (
+                <div
+                  className={chatStyle["attach-item-file"]}
+                  title={item.file?.name}
+                  onClick={() => item.file && setViewer(item.file)}
+                >
+                  {item.file?.preview ? (
+                    <img
+                      className={chatStyle["attach-item-file-preview"]}
+                      src={item.file.preview}
+                      alt=""
+                    />
+                  ) : (
+                    <span className={chatStyle["attach-item-file-label"]}>
+                      {item.file?.name}
+                    </span>
+                  )}
+                </div>
+              )}
+              <button
+                type="button"
+                className={chatStyle["attach-remove"]}
+                title="Fjern"
+                onClick={() => removeAt(index)}
+              >
+                <PlusIcon />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <AttachmentViewer
+        attachment={viewer}
+        onClose={() => setViewer(null)}
+      />
+    </List>
   );
 }
 
@@ -165,6 +295,9 @@ export function MaskConfig(props: {
             />
           </div>
         </div>
+        {env.ENABLE_ATTACHMENTS && (
+          <MaskAttachments mask={props.mask} updateMask={props.updateMask} />
+        )}
         <List>
           <ListItem title="Vis avancerede indstillinger">
             <input
@@ -262,6 +395,10 @@ export function MaskConfig(props: {
           props.updateMask((mask) => (mask.context = context));
         }}
       />
+
+      {env.ENABLE_ATTACHMENTS && (
+        <MaskAttachments mask={props.mask} updateMask={props.updateMask} />
+      )}
 
       <List>
         <ListItem title="Vis avancerede indstillinger">
