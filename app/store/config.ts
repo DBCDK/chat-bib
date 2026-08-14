@@ -6,7 +6,11 @@ import {
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
 } from "../constant";
-import { env } from "../utils/appsettings";
+import {
+  env,
+  SKOLEGPT_REPLACEMENT_MODEL,
+  SKOLEGPT_RETIRED_MODEL_ALIASES,
+} from "../utils/appsettings";
 import { createPersistStore } from "../utils/store";
 
 export type ModelType = (typeof DEFAULT_MODELS)[number]["name"];
@@ -139,7 +143,7 @@ export const useAppConfig = createPersistStore(
   }),
   {
     name: StoreKey.Config,
-    version: 3.9,
+    version: 4.0,
     migrate(persistedState, version) {
       const state = persistedState as ChatConfig;
 
@@ -173,6 +177,18 @@ export const useAppConfig = createPersistStore(
           state.modelConfig.template !== DEFAULT_INPUT_TEMPLATE
             ? state.modelConfig.template
             : config?.template ?? DEFAULT_INPUT_TEMPLATE;
+      }
+
+      // The skolegpt app used to ship `DEFAULT_MODEL: "skolegpt-v3"`, so every
+      // returning user has a retired alias frozen in this store. It is not sent
+      // to the gateway directly, but `createEmptyMask()` seeds new assistants
+      // from it (see store/mask.ts), which would keep minting assistants on a
+      // dead model long after the aliases are gone.
+      if (version < 4.0 && env.APP === "skolegpt") {
+        const model = state.modelConfig?.model;
+        if (model && SKOLEGPT_RETIRED_MODEL_ALIASES.includes(model)) {
+          state.modelConfig.model = SKOLEGPT_REPLACEMENT_MODEL as ModelType;
+        }
       }
 
       return state as any;
