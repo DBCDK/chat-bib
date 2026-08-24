@@ -66,14 +66,12 @@ const JumpToChat = dynamic(
 
 // SKOLETUBE OFF. The SkoleTube page is turned off until release day. To turn it
 // back on remove the comment marks around the block below.
-/*
 const SkoletubeLaunch = dynamic(
   async () => (await import("./skoletube-launch")).SkoletubeLaunch,
   {
     loading: () => <Loading noLogo />,
   },
 );
-*/
 
 const MaskPage = dynamic(async () => (await import("./mask")).MaskPage, {
   loading: () => <Loading noLogo />,
@@ -206,7 +204,7 @@ function Screen() {
               />
               {/* SKOLETUBE OFF. Turned off until release day. To turn it back
                   on remove the comment marks around the line below. */}
-              {/* <Route path={Path.Skoletube} element={<SkoletubeLaunch />} /> */}
+              <Route path={Path.Skoletube} element={<SkoletubeLaunch />} />
               <Route path={Path.Masks} element={<MaskPage />} />
               <Route path={Path.Chat} element={<Chat />} />
               <Route path={Path.Settings} element={<Settings />} />
