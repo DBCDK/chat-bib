@@ -570,7 +570,6 @@ function ShareMenu(props: { mask: Mask }) {
       {/* SKOLETUBE OFF. The share on SkoleTube option is turned off until
           release day. To turn it back on remove the comment marks around the
           block below. */}
-      {/*
       <div
         className={`${styles["share-menu-item"]} clickable`}
         onClick={() =>
@@ -584,7 +583,6 @@ function ShareMenu(props: { mask: Mask }) {
         <ShareIcon />
         <span>{Locale.Mask.EditModal.ShareSkoletube}</span>
       </div>
-      */}
       <div
         className={`${styles["share-menu-item"]} clickable`}
         onClick={() => copyToClipboard(shareLink)}
@@ -712,7 +710,7 @@ export function MaskPage() {
         if (importMasks.name) {
           maskStore.create(importMasks);
         }
-      } catch {}
+      } catch { }
     });
   };
 
