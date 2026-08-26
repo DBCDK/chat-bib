@@ -13,6 +13,7 @@ import EyeIcon from "../icons/eye.svg";
 import CopyIcon from "../icons/copy.svg";
 import DragIcon from "../icons/drag.svg";
 import ShareIcon from "../icons/share.svg";
+import QrIcon from "../icons/qr.svg";
 
 import { DEFAULT_MASK_AVATAR, Mask, useMaskStore } from "../store/mask";
 import {
@@ -37,9 +38,10 @@ import {
 import { Avatar, AvatarPicker } from "./emoji";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
 import { useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 
 import chatStyle from "./chat.module.scss";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   copyToClipboard,
   downloadAs,
@@ -664,6 +666,94 @@ export function ContextPrompts(props: {
   );
 }
 
+// The three share options shown in the "Del" popover: SkoleTube, a copyable
+// link, and a QR code of that same link. Uses the existing link builders.
+function ShareMenu(props: { mask: Mask }) {
+  const [showQr, setShowQr] = useState(false);
+  const shareLink = buildAssistantParamLink(props.mask, Path.NewChat);
+
+  return (
+    <div className={styles["share-menu"]}>
+      {/* SKOLETUBE OFF. The share on SkoleTube option is turned off until
+          release day. To turn it back on remove the comment marks around the
+          block below. */}
+      <div
+        className={`${styles["share-menu-item"]} clickable`}
+        onClick={() =>
+          window.open(
+            buildSkoletubeShareLink(props.mask),
+            "_blank",
+            "noopener,noreferrer",
+          )
+        }
+      >
+        <ShareIcon />
+        <span>{Locale.Mask.EditModal.ShareSkoletube}</span>
+      </div>
+      <div
+        className={`${styles["share-menu-item"]} clickable`}
+        onClick={() => copyToClipboard(shareLink)}
+      >
+        <CopyIcon />
+        <span>{Locale.Mask.EditModal.ShareLink}</span>
+      </div>
+      <div
+        className={`${styles["share-menu-item"]} clickable`}
+        onClick={() => setShowQr((v) => !v)}
+      >
+        <QrIcon />
+        <span>Del via QR</span>
+      </div>
+      {showQr && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <QRCode value={shareLink} size={180} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Wraps the "Del" button and anchors the ShareMenu directly below it,
+// closing when you click anywhere outside (same pattern as Modal's
+// click-outside handling).
+function ShareButton(props: { mask: Mask }) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={anchorRef} className={styles["share-button-anchor"]}>
+      <IconButton
+        icon={<ShareIcon />}
+        bordered
+        text="Del"
+        onClick={() => setOpen((v) => !v)}
+      />
+      {open && (
+        <div className={styles["share-menu-popup"]}>
+          <ShareMenu mask={props.mask} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MaskPage() {
   const navigate = useNavigate();
 
@@ -727,7 +817,7 @@ export function MaskPage() {
         if (importMasks.name) {
           maskStore.create(importMasks);
         }
-      } catch {}
+      } catch { }
     });
   };
 
@@ -916,30 +1006,7 @@ export function MaskPage() {
                   setEditingMaskId(undefined);
                 }}
               />,
-              <IconButton
-                key="share-skoletube"
-                icon={<ShareIcon />}
-                bordered
-                text={Locale.Mask.EditModal.ShareSkoletube}
-                onClick={() =>
-                  window.open(
-                    buildSkoletubeShareLink(editingMask),
-                    "_blank",
-                    "noopener,noreferrer",
-                  )
-                }
-              />,
-              <IconButton
-                key="share-link"
-                icon={<CopyIcon />}
-                bordered
-                text={Locale.Mask.EditModal.ShareLink}
-                onClick={() =>
-                  copyToClipboard(
-                    buildAssistantParamLink(editingMask, Path.NewChat),
-                  )
-                }
-              />,
+              <ShareButton key="share" mask={editingMask} />,
               <IconButton
                 key="close"
                 icon={<CloseIcon />}

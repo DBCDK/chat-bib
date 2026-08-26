@@ -37,6 +37,30 @@ export function createPersistStore<T extends object, M>(
     persistOptions.storage = createJSONStorage(() => migrationAwareStorage);
   }
 
+  // Make hydration failures visible. Zustand runs hydration as a promise chain
+  // and hands any rejection — including anything thrown by `migrate` — to the
+  // callback returned by `onRehydrateStorage`. When a store does not define
+  // one that callback is `undefined`, so the error is discarded without ever
+  // reaching the console: the store silently falls back to its defaults and
+  // then overwrites the persisted data on the next write. Wrap whatever the
+  // store already declared instead of replacing it.
+  const options = persistOptions as any;
+  const storeOnRehydrate = options.onRehydrateStorage;
+  // eslint-disable-next-line no-param-reassign
+  options.onRehydrateStorage = (preHydrationState: any) => {
+    const storeCallback = storeOnRehydrate?.(preHydrationState);
+    return (hydratedState: any, error?: unknown) => {
+      if (error) {
+        console.error(
+          `[store:${options.name}] rehydration failed — persisted data was NOT loaded, ` +
+            `the store is running on defaults and may overwrite it`,
+          error,
+        );
+      }
+      storeCallback?.(hydratedState, error);
+    };
+  };
+
   return create(
     persist(
       combine(

@@ -1095,59 +1095,75 @@ export const useChatStore = createPersistStore(
         JSON.stringify(state),
       ) as typeof DEFAULT_CHAT_STATE;
 
-      if (version < 2) {
-        newState.sessions = [];
+      // Everything below runs inside a try/catch on purpose. If this function
+      // throws, zustand abandons hydration entirely: the store keeps its
+      // defaults and the next write persists those defaults over the user's
+      // real data, so a single malformed session costs them every chat they
+      // have. Degrading to "some sessions were not migrated" is always better.
+      try {
+        if (version < 2) {
+          newState.sessions = [];
 
-        const oldSessions = state.sessions;
-        for (const oldSession of oldSessions) {
-          const newSession = createEmptySession();
-          newSession.topic = oldSession.topic;
-          newSession.messages = [...oldSession.messages];
-          newSession.mask.modelConfig.sendMemory = true;
-          newSession.mask.modelConfig.historyMessageCount =
-            env.DEFAULT_MESSAGE_COUNT ? parseInt(env.DEFAULT_MESSAGE_COUNT) : 4;
-          newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
-          newState.sessions.push(newSession);
+          const oldSessions = state.sessions;
+          for (const oldSession of oldSessions) {
+            const newSession = createEmptySession();
+            newSession.topic = oldSession.topic;
+            newSession.messages = [...oldSession.messages];
+            newSession.mask.modelConfig.sendMemory = true;
+            newSession.mask.modelConfig.historyMessageCount =
+              env.DEFAULT_MESSAGE_COUNT
+                ? parseInt(env.DEFAULT_MESSAGE_COUNT)
+                : 4;
+            newSession.mask.modelConfig.compressMessageLengthThreshold = 1000;
+            newState.sessions.push(newSession);
+          }
         }
-      }
 
-      if (version < 3) {
-        // migrate id to nanoid
-        newState.sessions.forEach((s) => {
-          s.id = nanoid();
-          s.messages.forEach((m) => (m.id = nanoid()));
-        });
-      }
+        if (version < 3) {
+          // migrate id to nanoid
+          newState.sessions.forEach((s) => {
+            s.id = nanoid();
+            s.messages.forEach((m) => (m.id = nanoid()));
+          });
+        }
 
-      // Enable `enableInjectSystemPrompts` attribute for old sessions.
-      // Resolve issue of old sessions not automatically enabling.
-      if (version < 3.1) {
-        newState.sessions.forEach((s) => {
-          if (
-            // Exclude those already set by user
-            !s.mask.modelConfig.hasOwnProperty("enableInjectSystemPrompts")
-          ) {
-            // Because users may have changed this configuration,
-            // the user's current configuration is used instead of the default
-            const config = useAppConfig.getState();
-            s.mask.modelConfig.enableInjectSystemPrompts =
-              config.modelConfig.enableInjectSystemPrompts;
-          }
-        });
-      }
-
-      if (version < 3.2 && env.APP === "skolegpt") {
-        newState.sessions.forEach((s) => {
-          const model = s.mask.modelConfig.model;
-          if (SKOLEGPT_RETIRED_MODEL_ALIASES.includes(model)) {
-            s.mask.modelConfig.model = SKOLEGPT_REPLACEMENT_MODEL;
-          }
-          s.messages.forEach((m) => {
-            if (m.model && SKOLEGPT_RETIRED_MODEL_ALIASES.includes(m.model)) {
-              m.model = SKOLEGPT_REPLACEMENT_MODEL;
+        // Enable `enableInjectSystemPrompts` attribute for old sessions.
+        // Resolve issue of old sessions not automatically enabling.
+        if (version < 3.1) {
+          newState.sessions.forEach((s) => {
+            if (
+              // Exclude those already set by user
+              !s.mask.modelConfig.hasOwnProperty("enableInjectSystemPrompts")
+            ) {
+              // Because users may have changed this configuration,
+              // the user's current configuration is used instead of the default
+              const config = useAppConfig.getState();
+              s.mask.modelConfig.enableInjectSystemPrompts =
+                config.modelConfig.enableInjectSystemPrompts;
             }
           });
-        });
+        }
+
+        if (version < 3.2 && env.APP === "skolegpt") {
+          // Optional chaining throughout: sessions written by older builds are
+          // not guaranteed to have a well-formed mask.
+          newState.sessions?.forEach((s) => {
+            const model = s.mask?.modelConfig?.model;
+            if (model && SKOLEGPT_RETIRED_MODEL_ALIASES.includes(model)) {
+              s.mask.modelConfig.model = SKOLEGPT_REPLACEMENT_MODEL;
+            }
+            s.messages?.forEach((m) => {
+              if (m.model && SKOLEGPT_RETIRED_MODEL_ALIASES.includes(m.model)) {
+                m.model = SKOLEGPT_REPLACEMENT_MODEL;
+              }
+            });
+          });
+        }
+      } catch (e) {
+        console.error(
+          "[chat store] migration failed; keeping the user's data unmigrated",
+          e,
+        );
       }
 
       return newState as any;
