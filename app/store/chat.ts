@@ -1,4 +1,5 @@
 import { trimTopic, getMessageTextContent } from "../utils";
+import { materialsToText } from "../utils/material";
 
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
@@ -711,20 +712,24 @@ export const useChatStore = createPersistStore(
             );
           }
         }
-        // Files added to the assistant get sent together with the user's
-        // message. That way the model always gets them. They cannot be sent as
-        // their own message because the model only takes one user message at a
-        // time. They are left out of the message we save further down so they
-        // do not look like something the user attached.
-        const maskAttachments = session.mask.attachments ?? [];
-        const sentContent: string | MultimodalContent[] = maskAttachments.length
-          ? [
-              ...(typeof mContent === "string"
-                ? [{ type: "text", text: mContent } as MultimodalContent]
-                : mContent),
-              ...maskAttachments,
-            ]
-          : mContent;
+        // The notes made from files added to the assistant get sent together
+        // with the user's message. That way the model always has them. They
+        // cannot be sent as their own message because the model only takes one
+        // user message at a time. They are left out of the message we save
+        // further down so they do not show up as text the user wrote.
+        const materials = session.mask.materials ?? [];
+        const materialText = materials.length
+          ? "Materiale til denne assistent:\n" + materialsToText(materials)
+          : "";
+        const sentContent: string | MultimodalContent[] = !materialText
+          ? mContent
+          : typeof mContent === "string"
+            ? mContent + "\n\n" + materialText
+            : mContent.map((part) =>
+                part.type === "text"
+                  ? { ...part, text: part.text + "\n\n" + materialText }
+                  : part,
+              );
 
         let userMessage: ChatMessage = createMessage({
           role: MessageRole.User,

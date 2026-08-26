@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { MODEL_NAMES } from "../dbc";
 import { env, SKOLEGPT_RETIRED_MODEL_ALIASES, SKOLEGPT_REPLACEMENT_MODEL } from "../utils/appsettings";
-import { MultimodalContent } from "../client/api";
+import type { MaskMaterial } from "../utils/material";
 
 export type Mask = {
   id: string;
@@ -16,10 +16,10 @@ export type Mask = {
   name: string;
   hideContext?: boolean;
   context: ChatMessage[];
-  // Files added to the assistant. This can be pictures and documents. They get
-  // sent with every chat that uses this assistant. Same shape a normal message
-  // uses for its own files.
-  attachments?: MultimodalContent[];
+  // Short notes made from files the user added. The files themselves are not
+  // kept, only these notes, so the assistant stays small enough to be shared
+  // in a link. They get sent with every chat that uses this assistant.
+  materials?: MaskMaterial[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;
   lang: Lang;

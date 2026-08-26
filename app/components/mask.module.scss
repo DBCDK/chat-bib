@@ -106,3 +106,17 @@
     }
   }
 }
+
+.material-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 70%;
+}
+
+.material-text {
+  font-size: 12px;
+  opacity: 0.8;
+  white-space: pre-wrap;
+  text-align: left;
+}

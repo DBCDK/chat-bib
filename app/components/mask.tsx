@@ -3,7 +3,7 @@ import { ErrorBoundary } from "./error";
 
 import styles from "./mask.module.scss";
 
-import DownloadIcon from "../icons/download.svg";
+import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
@@ -23,7 +23,7 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { FileAttachment, MultimodalContent, ROLES } from "../client/api";
+import { MultimodalContent, ROLES } from "../client/api";
 import {
   Input,
   List,
@@ -61,10 +61,12 @@ import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
 import PlusIcon from "../icons/plus.svg";
 import { env } from "../utils/appsettings";
-import { compressImage } from "@/app/utils/chat";
-import { fileToAttachment, isImageFile, FILE_ACCEPT } from "../utils/attachment";
-import { deleteFileBlob } from "../utils/file-store";
-import { AttachmentViewer } from "./attachment-viewer";
+import { FILE_ACCEPT } from "../utils/attachment";
+import {
+  fileToMaterial,
+  materialsToText,
+  SHARE_CHAR_BUDGET,
+} from "../utils/material";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -83,6 +85,10 @@ function buildAssistantParamLink(mask: Mask, path: string): string {
   const url = new URL(path, location.origin);
   url.searchParams.set("name", mask.name);
   if (systemPrompt) url.searchParams.set("prompt", systemPrompt);
+  // the notes made from files travel with the link so the person who gets it
+  // has the same material
+  const material = materialsToText(mask.materials ?? []);
+  if (material) url.searchParams.set("material", material);
   return url.toString();
 }
 
@@ -115,33 +121,34 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
   );
 }
 
-// Lets you add files to the assistant. The files are saved on the assistant and
-// get sent with every chat that uses it so it can always answer from them. The
-// files are handled the same way as when you attach a file to a message.
-function MaskAttachments(props: { mask: Mask; updateMask: Updater<Mask> }) {
-  const attachments = props.mask.attachments ?? [];
-  const [uploading, setUploading] = useState(false);
-  // the file shown in the big preview. null means the preview is closed
-  const [viewer, setViewer] = useState<FileAttachment | null>(null);
+// Lets you add files to the assistant. The file is read once and the model
+// writes a short note about it. Only the note is kept, not the file, so the
+// assistant stays small enough to be shared in a link. The note is sent with
+// every chat that uses this assistant.
+function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
+  const materials = props.mask.materials ?? [];
+  const [busy, setBusy] = useState(false);
+
+  // how much room the notes and the prompt take up in a share link
+  const promptLength = props.mask.context?.[0]
+    ? getMessageTextContent(props.mask.context[0]).length
+    : 0;
+  const usedChars = promptLength + materialsToText(materials).length;
+  const tooLongToShare = usedChars > SHARE_CHAR_BUDGET;
 
   const addFiles = async (files: File[]) => {
     if (files.length === 0) return;
-    setUploading(true);
+    setBusy(true);
     try {
-      const next = [...attachments];
+      const next = [...materials];
       for (const file of files) {
-        if (isImageFile(file)) {
-          const url = await compressImage(file, 256 * 1024);
-          next.push({ type: "image_url", image_url: { url, name: file.name } });
-        } else {
-          next.push({ type: "file", file: await fileToAttachment(file) });
-        }
+        next.push(await fileToMaterial(file));
       }
-      props.updateMask((mask) => (mask.attachments = next));
+      props.updateMask((mask) => (mask.materials = next));
     } catch (e: any) {
-      showToast(e?.message || "Kunne ikke vedhæfte filen.");
+      showToast(e?.message || "Kunne ikke læse filen.");
     } finally {
-      setUploading(false);
+      setBusy(false);
     }
   };
 
@@ -156,84 +163,47 @@ function MaskAttachments(props: { mask: Mask; updateMask: Updater<Mask> }) {
     input.click();
   };
 
-  const removeAt = (index: number) => {
-    const item = attachments[index];
-    // also free the saved file so it does not stay behind for nothing
-    if (item?.type === "file" && item.file?.id) deleteFileBlob(item.file.id);
+  const removeAt = (index: number) =>
     props.updateMask(
-      (mask) => (mask.attachments = attachments.filter((_, i) => i !== index)),
+      (mask) => (mask.materials = materials.filter((_, i) => i !== index)),
     );
-  };
 
   return (
     <List>
       <ListItem
-        title="Vedhæftede filer"
-        subTitle="Assistenten kan svare ud fra disse filer i alle chats"
+        title="Materiale fra filer"
+        subTitle="Assistenten analysere filen og gemmer et kort resumé"
       >
         <IconButton
           icon={<AddIcon />}
-          text={uploading ? "..." : "Tilføj fil"}
+          text={busy ? "Læser..." : "Tilføj fil"}
           bordered
           onClick={pickFiles}
         />
       </ListItem>
-      {attachments.length > 0 && (
-        <div
-          className={chatStyle["attach-list"]}
-          style={{ padding: "0 20px 12px" }}
-        >
-          {attachments.map((item, index) => (
-            <div className={chatStyle["attach-item"]} key={index}>
-              {item.type === "image_url" ? (
-                <img
-                  className={chatStyle["attach-item-image"]}
-                  src={item.image_url?.url}
-                  alt=""
-                  title={item.image_url?.name || undefined}
-                  onClick={() =>
-                    setViewer({
-                      url: item.image_url?.url ?? "",
-                      name: item.image_url?.name ?? "",
-                      mime: "image/*",
-                    })
-                  }
-                />
-              ) : (
-                <div
-                  className={chatStyle["attach-item-file"]}
-                  title={item.file?.name}
-                  onClick={() => item.file && setViewer(item.file)}
-                >
-                  {item.file?.preview ? (
-                    <img
-                      className={chatStyle["attach-item-file-preview"]}
-                      src={item.file.preview}
-                      alt=""
-                    />
-                  ) : (
-                    <span className={chatStyle["attach-item-file-label"]}>
-                      {item.file?.name}
-                    </span>
-                  )}
-                </div>
-              )}
-              <button
-                type="button"
-                className={chatStyle["attach-remove"]}
-                title="Fjern"
-                onClick={() => removeAt(index)}
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          ))}
-        </div>
+      {materials.map((material, index) => (
+        <ListItem key={index} title={material.name}>
+          <div className={styles["material-row"]}>
+            <span className={styles["material-text"]}>{material.text}</span>
+            <IconButton icon={<DeleteIcon />} onClick={() => removeAt(index)} />
+          </div>
+        </ListItem>
+      ))}
+      {materials.length > 0 && (
+        <ListItem
+          title={
+            "Plads brugt i delelink: " +
+            usedChars +
+            " tegn ud af " +
+            SHARE_CHAR_BUDGET
+          }
+          subTitle={
+            tooLongToShare
+              ? "Det er for meget til et link. Fjern et fil resumé eller gør systemprompten kortere."
+              : "Der er plads nok til at dele assistenten via link"
+          }
+        />
       )}
-      <AttachmentViewer
-        attachment={viewer}
-        onClose={() => setViewer(null)}
-      />
     </List>
   );
 }
@@ -296,7 +266,7 @@ export function MaskConfig(props: {
           </div>
         </div>
         {env.ENABLE_ATTACHMENTS && (
-          <MaskAttachments mask={props.mask} updateMask={props.updateMask} />
+          <MaskMaterials mask={props.mask} updateMask={props.updateMask} />
         )}
         <List>
           <ListItem title="Vis avancerede indstillinger">
@@ -397,7 +367,7 @@ export function MaskConfig(props: {
       />
 
       {env.ENABLE_ATTACHMENTS && (
-        <MaskAttachments mask={props.mask} updateMask={props.updateMask} />
+        <MaskMaterials mask={props.mask} updateMask={props.updateMask} />
       )}
 
       <List>
@@ -777,10 +747,11 @@ export function MaskPage() {
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 bordered
                 onClick={downloadAll}
                 text={Locale.UI.Export}
+                title="Gem alle dine assistenter i en fil"
               />
             </div>
             <div className="window-action-button">
@@ -789,6 +760,7 @@ export function MaskPage() {
                 text={Locale.UI.Import}
                 bordered
                 onClick={() => importFromFile()}
+                title="Upload assistenter fra en fil"
               />
             </div>
             {/*
@@ -922,7 +894,7 @@ export function MaskPage() {
             onClose={closeMaskModal}
             actions={[
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 text={Locale.Mask.EditModal.Download}
                 key="export"
                 bordered
