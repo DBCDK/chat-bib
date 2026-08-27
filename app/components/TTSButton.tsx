@@ -1,4 +1,8 @@
 import * as React from "react";
+import {
+  EventStreamContentType,
+  fetchEventSource,
+} from "@fortaine/fetch-event-source";
 
 import LoadingButtonIcon from "../icons/loading.svg";
 import SpeakerTtsIcon from "../icons/speaker-Tts.svg";
@@ -22,6 +26,26 @@ export function useTts() {
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const objectUrlsRef = React.useRef<Set<string>>(new Set());
   const playTokenRef = React.useRef(0);
+
+  // base64 (of a 16-bit PCM WAV) -> object URL, tracked for revocation.
+  // Streaming analogue of fetchWavFromService's res.blob() -> createObjectURL.
+  const base64ToAudioObjectUrl = React.useCallback(
+    (b64: string): string | null => {
+      let bin: string;
+      try {
+        bin = atob(b64);
+      } catch {
+        return null;
+      }
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "audio/wav" });
+      const url = URL.createObjectURL(blob);
+      objectUrlsRef.current.add(url);
+      return url;
+    },
+    [],
+  );
 
   const splitIntoSentences = React.useCallback((raw: string): string[] => {
     // Split at newlines first, then split further at:
@@ -94,7 +118,7 @@ export function useTts() {
         },
         body: JSON.stringify({
           input: sentence,
-          model: "CoRal-project/roest-v3-chatterbox-500m",
+          model: "CoRal-project/roest-v3-chatterbox-500m-triton",
           response_format: "wav",
         }),
       });
@@ -150,27 +174,88 @@ export function useTts() {
     [revokeUrl],
   );
 
-  const speak = React.useCallback(
-    async (message: string, key: string | null = null) => {
-      const service = env.ENABLE_TTSASR
-        ? `${env.BASE_URL}v1/audio/speech`
-        : null;
-      const text = message?.trim();
+  // NEW: consume the audio stream from glyph-gate and enqueue each WAV chunk.
+  // Reuses the repo's SSE consumer (openai.ts). The promise resolves when the
+  // stream closes and rejects on a transport/content error, so the caller can
+  // fall back or surface the error.
+  const streamWavFromService = React.useCallback(
+    (
+      service: string,
+      text: string,
+      token: number,
+      onChunk: (audioUrl: string) => void,
+    ): Promise<void> => {
+      return fetchEventSource(service, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.API_KEY}`,
+        },
+        // Stream against the triton adapter (it has stream_speech). The plain
+        // chatterbox_tts model has no stream_speech and would 400 before the
+        // first chunk, which would silently trip the non-streaming fallback.
+        body: JSON.stringify({
+          input: text,
+          model: "CoRal-project/roest-v3-chatterbox-500m-triton",
+          response_format: "wav",
+          stream: true,
+        }),
+        openWhenHidden: true,
+        onopen: async (res) => {
+          // A non-2xx or a non-SSE body means streaming isn't supported; throw
+          // so fetchEventSource rejects (no retry) and the caller can fall back.
+          if (
+            !res.ok ||
+            !res.headers
+              .get("content-type")
+              ?.startsWith(EventStreamContentType)
+          ) {
+            throw new Error(`TTS stream failed (${res.status})`);
+          }
+        },
+        onmessage: (evt) => {
+          if (token !== playTokenRef.current) return;
+          if (evt.data === "[DONE]") return;
+          let msg: {
+            type?: string;
+            audio?: string;
+            message?: string;
+            error?: { message?: string };
+          };
+          try {
+            msg = JSON.parse(evt.data);
+          } catch {
+            return;
+          }
+          if (msg.type === "audio" && msg.audio) {
+            const url = base64ToAudioObjectUrl(msg.audio);
+            if (url) onChunk(url);
+          } else if (msg.error || msg.message || msg.type === "error") {
+            // glyph-gate emits an OpenAI-style error frame before [DONE].
+            // Close the stream; the caller decides fallback vs. showing it.
+            throw new Error(msg.message || msg.error?.message || "ukendt fejl");
+          }
+          // meta / done: nothing to do here; the stream close finalizes.
+        },
+        onerror: (err) => {
+          // Throw so fetchEventSource rejects instead of retrying.
+          throw err;
+        },
+      });
+    },
+    [base64ToAudioObjectUrl],
+  );
 
-      if (!service || !text) return;
-
-      // Stop anything already playing so a new answer replaces the old one.
-      stopPlayback();
-
-      setIsLoading(true);
-      setIsPlaying(false);
-      setError(null);
-      setActiveKey(key);
-
+  // Non-streaming fallback: the old per-fragment pipeline. Kept so TTS still
+  // works if a deployment hasn't been upgraded to stream (see speak below).
+  const speakFragments = React.useCallback(
+    async (service: string, text: string) => {
       const token = playTokenRef.current;
       const sentences = splitIntoSentences(text);
       if (sentences.length === 0) {
         setIsLoading(false);
+        setIsPlaying(false);
+        setActiveKey(null);
         return;
       }
 
@@ -217,9 +302,6 @@ export function useTts() {
           console.error("TTS error:", e);
         }
       } finally {
-        // Only clear the loading and playing state if this play attempt is
-        // still the active one. If a newer play attempt already started,
-        // let it keep control instead.
         if (token === playTokenRef.current) {
           setIsLoading(false);
           setIsPlaying(false);
@@ -227,7 +309,92 @@ export function useTts() {
         }
       }
     },
-    [stopPlayback, splitIntoSentences, fetchWavFromService, playAudioUrl],
+    [splitIntoSentences, fetchWavFromService, playAudioUrl],
+  );
+
+  // Streaming happy path: one request, the server chunks and streams. Play
+  // each chunk back-to-back as it arrives via a FIFO queue. If the stream
+  // errors before the first chunk, fall back to the non-streaming path.
+  const speak = React.useCallback(
+    async (message: string, key: string | null = null) => {
+      const service = env.ENABLE_TTSASR
+        ? `${env.BASE_URL}v1/audio/speech`
+        : null;
+      const text = message?.trim();
+      if (!service || !text) return;
+
+      // Stop anything already playing so a new answer replaces the old one.
+      stopPlayback();
+
+      setIsLoading(true);
+      setIsPlaying(false);
+      setError(null);
+      setActiveKey(key);
+      const token = playTokenRef.current;
+
+      // A FIFO of object URLs awaiting play. Play the front; when it ends,
+      // play the next. Finalize only once the stream is closed AND the queue
+      // is drained, so the last chunk finishes before we reset the UI.
+      const queue: string[] = [];
+      let playingCurrent = false;
+      let streamClosed = false;
+      let finished = false;
+      let receivedAnyChunk = false;
+
+      const finalize = () => {
+        if (finished) return;
+        finished = true;
+        if (token === playTokenRef.current) {
+          setIsLoading(false);
+          setIsPlaying(false);
+          setActiveKey(null);
+        }
+      };
+
+      const pump = () => {
+        if (token !== playTokenRef.current) return;
+        const next = queue.shift();
+        if (next) {
+          playingCurrent = true;
+          void playAudioUrl(next, token).then(() => {
+            if (token !== playTokenRef.current) return;
+            playingCurrent = false;
+            pump();
+          });
+        } else if (streamClosed) {
+          finalize();
+        }
+      };
+
+      const onChunk = (url: string) => {
+        if (token !== playTokenRef.current) return;
+        receivedAnyChunk = true;
+        queue.push(url);
+        if (!playingCurrent) pump();
+      };
+
+      try {
+        await streamWavFromService(service, text, token, onChunk);
+      } catch (e: unknown) {
+        if (token !== playTokenRef.current) return;
+        // No audio was ever queued: the stream failed before the first chunk.
+        // Fall back to the non-streaming per-fragment path so TTS still works.
+        if (!receivedAnyChunk) {
+          void speakFragments(service, text);
+          return;
+        }
+        // Audio already played, then the stream errored: partial playback is
+        // fine (no replay); surface the error instead.
+        setError(e instanceof Error ? e.message : "ukendt fejl");
+      }
+
+      // Stream closed (or errored mid-play). If nothing is playing, drain the
+      // queue now (pump finalizes when empty); if something is playing, its
+      // .then() pumps again when it ends. A token change aborts this path.
+      streamClosed = true;
+      if (!playingCurrent) pump();
+    },
+    [stopPlayback, streamWavFromService, playAudioUrl, speakFragments],
   );
 
   return {
