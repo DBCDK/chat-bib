@@ -131,7 +131,16 @@ async function finalAnswer({
   //  Listen skal være i dette format Værker: workId1, workId2, workId3, workId4, workId5
   //  I slutning af din besked skal du retunere en liste med værk id'er sepereret med komma. Du må ikke retunere andet info om værkerne.
 
-  const copy = [...messages];
+  // gemma's chat template only accepts a leading system message followed by
+  // alternating user/assistant turns, so the bot hello (an assistant message
+  // before the first user message) makes the request fail with a 400.
+  const firstUserIndex = messages.findIndex((entry) => entry.role === "user");
+  const copy = messages.filter(
+    (entry, index) =>
+      firstUserIndex < 0 ||
+      index >= firstUserIndex ||
+      entry.role !== "assistant",
+  );
   copy.push({
     role: "system",
     content: systemPrompt2,
