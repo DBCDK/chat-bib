@@ -162,3 +162,24 @@
   white-space: pre-wrap;
   text-align: left;
 }
+
+.material-budget {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 20px 12px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+// shown when the text is too long to be shared reliably
+.material-budget-over {
+  color: red;
+  opacity: 1;
+  font-weight: bold;
+}
+
+.material-budget-warning {
+  font-size: 14px;
+  line-height: 1;
+}

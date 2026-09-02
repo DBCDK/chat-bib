@@ -192,19 +192,24 @@ function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
         </ListItem>
       ))}
       {materials.length > 0 && (
-        <ListItem
+        <div
+          className={`${styles["material-budget"]} ${
+            tooLongToShare ? styles["material-budget-over"] : ""
+          }`}
           title={
-            "Plads brugt i delelink: " +
-            usedChars +
-            " tegn ud af " +
-            SHARE_CHAR_BUDGET
+            "Bruger du for mange tegn, virker deling ikke altid. " +
+            "Det gælder både deling via link, QR kode og SkoleTube."
           }
-          subTitle={
-            tooLongToShare
-              ? "Det er for meget til et link. Fjern et fil resumé eller gør systemprompten kortere."
-              : "Der er plads nok til at dele assistenten via link"
-          }
-        />
+        >
+          {tooLongToShare && (
+            <span className={styles["material-budget-warning"]}>⚠️</span>
+          )}
+          <span>
+            Plads brugt til deling: {usedChars} af {SHARE_CHAR_BUDGET} tegn.
+            {tooLongToShare &&
+              " Fjern et resumé eller gør systemprompten kortere."}
+          </span>
+        </div>
       )}
     </List>
   );
