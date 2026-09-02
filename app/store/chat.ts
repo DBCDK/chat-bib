@@ -931,8 +931,8 @@ export const useChatStore = createPersistStore(
         // remove error messages if any
         const messages = session.messages;
 
-        // should summarize topic after chating more than 50 words
-        const SUMMARIZE_MIN_LEN = 50;
+        // should summarize topic after chating more than 10 or 50 words
+        const SUMMARIZE_MIN_LEN = env.APP === "skolegpt" ? 10 : 50;
 
         if (
           config.enableAutoGenerateTitle &&
