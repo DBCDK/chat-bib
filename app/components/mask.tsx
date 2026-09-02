@@ -198,16 +198,17 @@ function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
           }`}
           title={
             "Bruger du for mange tegn, virker deling ikke altid. " +
-            "Det gælder både deling via link, QR kode og SkoleTube."
+            "Det gælder både deling via link, QR kode og SkoleTube. " +
+            "Gør systemprompten kortere eller slet et resumé."
           }
         >
           {tooLongToShare && (
             <span className={styles["material-budget-warning"]}>⚠️</span>
           )}
           <span>
-            Plads brugt til deling: {usedChars} af {SHARE_CHAR_BUDGET} tegn.
-            {tooLongToShare &&
-              " Fjern et resumé eller gør systemprompten kortere."}
+            {tooLongToShare
+              ? `Assistenten virker, men er for lang til at dele (${usedChars}/${SHARE_CHAR_BUDGET} tegn).`
+              : `Plads brugt til deling: ${usedChars}/${SHARE_CHAR_BUDGET} tegn.`}
           </span>
         </div>
       )}
