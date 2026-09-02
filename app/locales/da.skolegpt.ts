@@ -561,7 +561,7 @@ const da = {
       History: (content: string) =>
         "Her er et kort resume af, hvad vi har snakket om: " + content,
       Topic:
-        "Find en kort overskrift med 4-5 ord om emnet. Ingen tegnsætning eller anførselstegn.",
+        "Giv denne samtale en kort overskrift på 1 til 5 ord. Svar kun med overskriften og intet andet. Skriv på dansk. Ingen tegnsætning eller anførselstegn. Beskriv altid hvad samtalen handler om, også hvis den kun er en hilsen eller en enkelt bemærkning.",
       Summarize:
         "Skriv et kort resumé (under 200 ord) af vores samtale til senere brug.",
     },
