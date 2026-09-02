@@ -16,9 +16,9 @@ export type Mask = {
   name: string;
   hideContext?: boolean;
   context: ChatMessage[];
-  // Short notes made from files the user added. The files themselves are not
-  // kept, only these notes, so the assistant stays small enough to be shared
-  // in a link. They get sent with every chat that uses this assistant.
+  // Short notes made from files the user added. The files are not kept and
+  // only the notes are. That keeps the assistant small enough to be shared in
+  // a link. They get sent with every chat that uses this assistant.
   materials?: MaskMaterial[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;

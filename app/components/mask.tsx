@@ -124,9 +124,9 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
 }
 
 // Lets you add files to the assistant. The file is read once and the model
-// writes a short note about it. Only the note is kept, not the file, so the
-// assistant stays small enough to be shared in a link. The note is sent with
-// every chat that uses this assistant.
+// writes a short note about it. Only the note is kept and the file is thrown
+// away. That keeps the assistant small enough to be shared in a link. The note
+// is sent with every chat that uses this assistant.
 function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
   const materials = props.mask.materials ?? [];
   const [busy, setBusy] = useState(false);

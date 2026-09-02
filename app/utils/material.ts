@@ -6,19 +6,20 @@ import { env } from "./appsettings";
 import { extractPdf, isImageFile } from "./attachment";
 
 // A short note made from a file the user added to an assistant. Only the note
-// is kept. The file itself is thrown away, so the assistant stays small enough
-// to be shared in a link.
+// is kept and the file itself is thrown away. That keeps the assistant small
+// enough to be shared in a link.
 export type MaskMaterial = {
   name: string;
   text: string;
 };
 
 // The most characters one note may take up. Kept small on purpose because the
-// note has to fit in a share link together with the system prompt.
+// note has to fit in a share link next to the system prompt.
 export const MAX_MATERIAL_CHARS = 500;
 
 // Roughly how many characters of name plus prompt plus notes a share link can
-// hold before it gets too long for some browsers and for SkoleTube.
+// hold. Go past this and sharing can stop working. The QR code runs out of
+// room first.
 export const SHARE_CHAR_BUDGET = 1500;
 
 // The most characters of file text we send to the model when asking for a note.
@@ -70,7 +71,7 @@ export async function fileToMaterial(file: File): Promise<MaskMaterial> {
   let content: string | MultimodalContent[];
 
   if (isImageFile(file)) {
-    // loaded only when it is needed, because it only works in the browser and
+    // loaded only when it is needed because it only works in the browser and
     // this file is also read on the server
     const { compressImage } = await import("./chat");
     const url = await compressImage(file, 256 * 1024);
@@ -88,9 +89,9 @@ export async function fileToMaterial(file: File): Promise<MaskMaterial> {
 
   const answer = (await askModel(content, model)).trim();
   if (!answer) {
-    // An empty answer usually means the request was turned down, for example
-    // if the model is not allowed. The model name is in the message so it is
-    // easier to see what went wrong.
+    // An empty answer usually means the request was turned down. That happens
+    // for example when the model is not allowed. The model name is in the
+    // message so it is easier to see what went wrong.
     console.error("Empty answer when reading file. Model used:", model);
     throw new Error(
       "Kunne ikke lave et resumé af filen. Modellen " +

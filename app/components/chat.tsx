@@ -73,8 +73,7 @@ import {
 
 import { compressImage } from "@/app/utils/chat";
 import { fileToAttachment, isImageFile, FILE_ACCEPT } from "../utils/attachment";
-import { deleteFileBlob } from "../utils/file-store";
-import { AttachmentViewer } from "./attachment-viewer";
+import { loadFileBlob, deleteFileBlob } from "../utils/file-store";
 
 import dynamic from "next/dynamic";
 
@@ -835,6 +834,35 @@ function _Chat() {
   const [isDragging, setIsDragging] = useState(false);
   const [viewerAttachment, setViewerAttachment] =
     useState<FileAttachment | null>(null);
+  // The link the viewer shows for the open attachment. For files kept in
+  // IndexedDB we look the file up by its id and make a temporary link here; for
+  // older files and images we just use the link that's already stored.
+  const [viewerUrl, setViewerUrl] = useState<string>("");
+  useEffect(() => {
+    if (!viewerAttachment) {
+      setViewerUrl("");
+      return;
+    }
+    if (viewerAttachment.url) {
+      setViewerUrl(viewerAttachment.url);
+      return;
+    }
+    if (!viewerAttachment.id) {
+      setViewerUrl("");
+      return;
+    }
+    let objectUrl = "";
+    let cancelled = false;
+    loadFileBlob(viewerAttachment.id).then((blob) => {
+      if (cancelled || !blob) return;
+      objectUrl = URL.createObjectURL(blob);
+      setViewerUrl(objectUrl);
+    });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [viewerAttachment]);
   const openImageViewer = (url: string, name = "") =>
     setViewerAttachment({ url, name, mime: "image/*" });
   const [childInputs, setChildInputs] = useState<Record<string, string>>({});
@@ -2285,10 +2313,29 @@ function _Chat() {
         />
       )}
 
-      <AttachmentViewer
-        attachment={viewerAttachment}
-        onClose={() => setViewerAttachment(null)}
-      />
+      {viewerAttachment && (
+        <div className="modal-mask">
+          <Modal
+            title={viewerAttachment.name || "Vedhæftning"}
+            defaultMax={true}
+            onClose={() => setViewerAttachment(null)}
+          >
+            <div className={styles["attachment-viewer"]}>
+              {!viewerUrl ? (
+                <p>Filen kan ikke længere vises.</p>
+              ) : viewerAttachment.mime.startsWith("image/") ? (
+                <img src={viewerUrl} alt="" />
+              ) : (
+                <iframe
+                  className={styles["attachment-viewer-frame"]}
+                  src={viewerUrl}
+                  title={viewerAttachment.name}
+                />
+              )}
+            </div>
+          </Modal>
+        </div>
+      )}
     </div>
   );
 }
