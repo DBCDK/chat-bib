@@ -191,7 +191,8 @@ function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
           </div>
         </ListItem>
       ))}
-      {materials.length > 0 && (
+      {/* also shown with no files at all so a long system prompt gives a warning too */}
+      {(materials.length > 0 || tooLongToShare) && (
         <div
           className={`${styles["material-budget"]} ${
             tooLongToShare ? styles["material-budget-over"] : ""
@@ -199,7 +200,9 @@ function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
           title={
             "Bruger du for mange tegn, virker deling ikke altid. " +
             "Det gælder både deling via link, QR kode og SkoleTube. " +
-            "Gør systemprompten kortere eller slet et resumé."
+            (materials.length > 0
+              ? "Gør systemprompten kortere eller slet et resumé."
+              : "Gør systemprompten kortere.")
           }
         >
           {tooLongToShare && (
