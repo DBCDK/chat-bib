@@ -3,7 +3,7 @@ import { ErrorBoundary } from "./error";
 
 import styles from "./mask.module.scss";
 
-import DownloadIcon from "../icons/download.svg";
+import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
@@ -33,6 +33,7 @@ import {
   Popover,
   Select,
   showConfirm,
+  showToast,
 } from "./ui-lib";
 import { Avatar, AvatarPicker } from "./emoji";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
@@ -60,6 +61,14 @@ import {
 } from "@hello-pangea/dnd";
 import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
+import PlusIcon from "../icons/plus.svg";
+import { env } from "../utils/appsettings";
+import { FILE_ACCEPT } from "../utils/attachment";
+import {
+  fileToMaterial,
+  materialsToText,
+  SHARE_CHAR_BUDGET,
+} from "../utils/material";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -78,6 +87,10 @@ function buildAssistantParamLink(mask: Mask, path: string): string {
   const url = new URL(path, location.origin);
   url.searchParams.set("name", mask.name);
   if (systemPrompt) url.searchParams.set("prompt", systemPrompt);
+  // the notes made from files travel with the link so the person who gets it
+  // has the same material
+  const material = materialsToText(mask.materials ?? []);
+  if (material) url.searchParams.set("material", material);
   return url.toString();
 }
 
@@ -107,6 +120,102 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
     <Avatar avatar={props.avatar} />
   ) : (
     <Avatar model={props.model} />
+  );
+}
+
+// Lets you add files to the assistant. The file is read once and the model
+// writes a short note about it. Only the note is kept and the file is thrown
+// away. That keeps the assistant small enough to be shared in a link. The note
+// is sent with every chat that uses this assistant.
+function MaskMaterials(props: { mask: Mask; updateMask: Updater<Mask> }) {
+  const materials = props.mask.materials ?? [];
+  const [busy, setBusy] = useState(false);
+
+  // how much room the notes and the prompt take up in a share link
+  const promptLength = props.mask.context?.[0]
+    ? getMessageTextContent(props.mask.context[0]).length
+    : 0;
+  const usedChars = promptLength + materialsToText(materials).length;
+  const tooLongToShare = usedChars > SHARE_CHAR_BUDGET;
+
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    setBusy(true);
+    try {
+      const next = [...materials];
+      for (const file of files) {
+        next.push(await fileToMaterial(file));
+      }
+      props.updateMask((mask) => (mask.materials = next));
+    } catch (e: any) {
+      showToast(e?.message || "Kunne ikke læse filen.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pickFiles = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept =
+      "image/png, image/jpeg, image/webp, image/heic, image/heif," +
+      FILE_ACCEPT;
+    input.multiple = true;
+    input.onchange = (e: any) => addFiles(Array.from(e.target.files || []));
+    input.click();
+  };
+
+  const removeAt = (index: number) =>
+    props.updateMask(
+      (mask) => (mask.materials = materials.filter((_, i) => i !== index)),
+    );
+
+  return (
+    <List>
+      <ListItem
+        title="Materiale fra filer"
+        subTitle="Assistenten analysere filen og gemmer et kort resumé"
+      >
+        <IconButton
+          icon={<AddIcon />}
+          text={busy ? "Læser..." : "Tilføj fil"}
+          bordered
+          onClick={pickFiles}
+        />
+      </ListItem>
+      {materials.map((material, index) => (
+        <ListItem key={index} title={material.name}>
+          <div className={styles["material-row"]}>
+            <span className={styles["material-text"]}>{material.text}</span>
+            <IconButton icon={<DeleteIcon />} onClick={() => removeAt(index)} />
+          </div>
+        </ListItem>
+      ))}
+      {/* also shown with no files at all so a long system prompt gives a warning too */}
+      {(materials.length > 0 || tooLongToShare) && (
+        <div
+          className={`${styles["material-budget"]} ${
+            tooLongToShare ? styles["material-budget-over"] : ""
+          }`}
+          title={
+            "Bruger du for mange tegn, virker deling ikke altid. " +
+            "Det gælder både deling via link, QR kode og SkoleTube. " +
+            (materials.length > 0
+              ? "Gør systemprompten kortere eller slet et resumé."
+              : "Gør systemprompten kortere.")
+          }
+        >
+          {tooLongToShare && (
+            <span className={styles["material-budget-warning"]}>⚠️</span>
+          )}
+          <span>
+            {tooLongToShare
+              ? `Assistenten virker, men er for lang til at dele (${usedChars}/${SHARE_CHAR_BUDGET} tegn).`
+              : `Plads brugt til deling: ${usedChars}/${SHARE_CHAR_BUDGET} tegn.`}
+          </span>
+        </div>
+      )}
+    </List>
   );
 }
 
@@ -167,6 +276,9 @@ export function MaskConfig(props: {
             />
           </div>
         </div>
+        {env.ENABLE_ATTACHMENTS && (
+          <MaskMaterials mask={props.mask} updateMask={props.updateMask} />
+        )}
         <List>
           <ListItem title="Vis avancerede indstillinger">
             <input
@@ -264,6 +376,10 @@ export function MaskConfig(props: {
           props.updateMask((mask) => (mask.context = context));
         }}
       />
+
+      {env.ENABLE_ATTACHMENTS && (
+        <MaskMaterials mask={props.mask} updateMask={props.updateMask} />
+      )}
 
       <List>
         <ListItem title="Vis avancerede indstillinger">
@@ -730,10 +846,11 @@ export function MaskPage() {
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 bordered
                 onClick={downloadAll}
                 text={Locale.UI.Export}
+                title="Gem alle dine assistenter i en fil"
               />
             </div>
             <div className="window-action-button">
@@ -742,6 +859,7 @@ export function MaskPage() {
                 text={Locale.UI.Import}
                 bordered
                 onClick={() => importFromFile()}
+                title="Upload assistenter fra en fil"
               />
             </div>
             {/*
@@ -875,7 +993,7 @@ export function MaskPage() {
             onClose={closeMaskModal}
             actions={[
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 text={Locale.Mask.EditModal.Download}
                 key="export"
                 bordered

@@ -1,4 +1,5 @@
 import { trimTopic, getMessageTextContent } from "../utils";
+import { materialsToText } from "../utils/material";
 
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
@@ -711,9 +712,28 @@ export const useChatStore = createPersistStore(
             );
           }
         }
+        // The notes made from files added to the assistant get sent together
+        // with the user's message. That way the model always has them. They
+        // cannot be sent as their own message because the model only takes one
+        // user message at a time. They are left out of the message we save
+        // further down so they do not show up as text the user wrote.
+        const materials = session.mask.materials ?? [];
+        const materialText = materials.length
+          ? "Materiale til denne assistent:\n" + materialsToText(materials)
+          : "";
+        const sentContent: string | MultimodalContent[] = !materialText
+          ? mContent
+          : typeof mContent === "string"
+            ? mContent + "\n\n" + materialText
+            : mContent.map((part) =>
+                part.type === "text"
+                  ? { ...part, text: part.text + "\n\n" + materialText }
+                  : part,
+              );
+
         let userMessage: ChatMessage = createMessage({
           role: MessageRole.User,
-          content: mContent,
+          content: sentContent,
         });
 
         const botMessage: ChatMessage = createMessage({
