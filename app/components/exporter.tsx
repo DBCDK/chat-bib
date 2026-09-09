@@ -23,7 +23,7 @@ import LoadingIcon from "../icons/three-dots.svg";
 import ChatGptIcon from "../icons/chatgpt.png";
 import BotIcon from "../icons/bot.png";
 
-import DownloadIcon from "../icons/download.svg";
+import DownloadIcon from "../icons/export.svg";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageSelector, useMessageSelector } from "./message-selector";
 import { Avatar } from "./emoji";
