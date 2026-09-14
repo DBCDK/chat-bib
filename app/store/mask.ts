@@ -36,6 +36,26 @@ export function isSystemPromptHidden(
   return mask.builtin && hiddenBuiltinMaskIds.includes(mask.id);
 }
 
+// Hidden system prompts are shared as base64url in the `p` link param, so the
+// prompt isn't readable as plain text in the link. This only obscures it; it
+// is not encryption.
+export function encodeHiddenPrompt(prompt: string): string {
+  const bytes = new TextEncoder().encode(prompt);
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function decodeHiddenPrompt(encoded: string): string | undefined {
+  try {
+    const binary = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return undefined;
+  }
+}
+
 export const DEFAULT_MASK_STATE = {
   masks: {} as Record<string, Mask>,
 };

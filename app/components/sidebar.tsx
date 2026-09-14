@@ -12,7 +12,7 @@ import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
 import PluginIcon from "../icons/plugin.svg";
 import DragIcon from "../icons/drag.svg";
-import LockIcon from "../icons/lock.svg";
+import EyeOffIcon from "../icons/eye-off.svg";
 
 import Locale from "../locales";
 
@@ -197,10 +197,10 @@ export function SideBar(props: { className?: string }) {
                 <span>Systemprompt</span>
                 {systemPromptHidden && (
                   <span
-                    className={styles["system-prompt-lock"]}
+                    className={styles["system-prompt-eye"]}
                     title="Systemprompten er skjult"
                   >
-                    <LockIcon />
+                    <EyeOffIcon />
                   </span>
                 )}
               </div>

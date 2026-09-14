@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Path } from "../constant";
 import { useChatStore } from "../store";
-import { Mask, useMaskStore } from "../store/mask";
+import { Mask, decodeHiddenPrompt, useMaskStore } from "../store/mask";
 import { BUILTIN_MASK_STORE } from "../masks";
 import { MessageRole } from "../typing";
 import { createMessage } from "../store/chat";
@@ -18,8 +18,13 @@ export function JumpToChat() {
 
     const params = new URLSearchParams(location.search);
     const name = params.get("name")?.trim() || undefined;
-    const prompt = params.get("prompt")?.trim() || undefined;
-
+    const encodedPrompt = params.get("p");
+    const prompt =
+      (encodedPrompt
+        ? decodeHiddenPrompt(encodedPrompt)
+        : params.get("prompt")
+      )?.trim() || undefined;
+    const hideSystemPrompt = params.has("h") || !!encodedPrompt;
     const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
     const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
 
@@ -47,8 +52,11 @@ export function JumpToChat() {
             context: [
               createMessage({ role: MessageRole.System, content: prompt }),
             ],
+            hideSystemPrompt,
           })
-        : matchedMask;
+        : hideSystemPrompt && matchedMask
+          ? { ...matchedMask, builtin: false, hideSystemPrompt: true }
+          : matchedMask;
 
     chatStore.newSession(maskToUse);
     setShouldNavigate(true);
