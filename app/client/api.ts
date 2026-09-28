@@ -23,6 +23,11 @@ export interface FileAttachment {
   url?: string;
   text?: string;
   preview?: string;
+  // Pictures that sat inside this file (the pictures in a Word document, or
+  // the first pages of a pdf drawn as pictures).
+  // Sent to the model with the message, not shown as their own attachment,
+  // and stripped out again before the message is saved.
+  images?: string[];
 }
 
 export interface MultimodalContent {
@@ -33,6 +38,13 @@ export interface MultimodalContent {
     // the image's file name, kept for the screen (hover text + preview title).
     // removed before we send the request to the model in getMessageContentForApi.
     name?: string;
+    // Set when the picture sat inside an attached file. The model still gets
+    // it but the message on screen only shows the file, because the picture is
+    // part of that file and not something the user attached on its own.
+    fromFile?: boolean;
+    // id of that file, so pictures from two files with the same name are
+    // still numbered separately
+    fileId?: string;
   };
   file?: FileAttachment;
 }

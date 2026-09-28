@@ -111,6 +111,52 @@
   }
 }
 
+.attachment-viewer-text {
+  width: 100%;
+  max-height: 70vh;
+  overflow-y: auto;
+  // keeps the line breaks from the document instead of running it together
+  white-space: pre-wrap;
+  // the parent centres its child so this pulls a long text back to the top
+  align-self: flex-start;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.attachment-viewer-docx {
+  width: 100%;
+  max-height: 75vh;
+  overflow: auto;
+  // the parent centres its child so this pulls a long document to the top
+  align-self: flex-start;
+  // the library draws a paper white page so the text has to stay dark even
+  // when the rest of the app is in dark mode
+  background: #ffffff;
+  color: #000000;
+
+  // the page is drawn at its real width so it is scaled down to fit
+  :global(.docx-wrapper) {
+    background: transparent;
+    padding: 0;
+  }
+
+  :global(.docx) {
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+  }
+}
+
 .attachment-viewer-frame {
   width: 100%;
   height: 100%;

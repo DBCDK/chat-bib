@@ -67,6 +67,8 @@ const da = {
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
+    TooManyImages: (max: number) =>
+      `Du kan højst vedhæfte ${max} billeder ad gangen. De sidste kom ikke med.`,
     Input: (submitKey: string) => {
       return "Send besked til ChatBib";
       var inputHints = `${submitKey} for at sende`;

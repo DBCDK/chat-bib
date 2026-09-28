@@ -76,6 +76,8 @@ const da = {
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
+    TooManyImages: (max: number) =>
+      `Du kan højst vedhæfte ${max} billeder ad gangen. De sidste kom ikke med.`,
     Input: (submitKey: string) => {
       let inputHints = `${submitKey} for at sende`;
       if (submitKey === String(SubmitKey.Enter)) {

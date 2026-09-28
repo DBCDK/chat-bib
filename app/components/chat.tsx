@@ -72,7 +72,12 @@ import {
 } from "../utils";
 
 import { compressImage } from "@/app/utils/chat";
-import { fileToAttachment, isImageFile, FILE_ACCEPT } from "../utils/attachment";
+import {
+  fileToAttachment,
+  isImageFile,
+  FILE_ACCEPT,
+  DOCX_MIME,
+} from "../utils/attachment";
 import { loadFileBlob, deleteFileBlob } from "../utils/file-store";
 
 import dynamic from "next/dynamic";
@@ -100,6 +105,7 @@ import {
   type DbcLlmEndpointModel,
   LAST_INPUT_KEY,
   MALICIOUS_ANSWER,
+  MAX_ATTACHED_IMAGES,
   Path,
   REQUEST_TIMEOUT_MS,
   UNFINISHED_INPUT,
@@ -997,11 +1003,22 @@ function _Chat() {
         p = chatStore.onUserInputSmart(userInput, attachImages);
       }
     } else {
+      // Pictures from inside a document are sent alongside the ones the user
+      // picked, but taken off the attachment first so the same picture isn't
+      // stored twice (the message already carries it separately).
+      const fileImages: { url: string; name: string; fileId?: string }[] = [];
+      for (const file of attachFiles) {
+        for (const image of file.images ?? []) {
+          fileImages.push({ url: image, name: file.name, fileId: file.id });
+        }
+      }
+      const filesToSend = attachFiles.map(({ images, ...file }) => file);
       p = chatStore.onUserInput(
         userInput,
         attachImages,
-        attachFiles,
+        filesToSend,
         attachImageNames,
+        fileImages,
       );
     }
     Promise.resolve(p).then(() => setIsLoading(false));
@@ -1402,8 +1419,8 @@ function _Chat() {
     processFiles(files);
   }
 
-  // used by the attach button and drag-and-drop: images get shrunk (max 3),
-  // other files get their text read out
+  // used by the attach button and drag-and-drop: images get shrunk, other
+  // files get their text read out
   async function processFiles(files: File[]) {
     if (files.length === 0) return;
     setUploading(true);
@@ -1411,16 +1428,24 @@ function _Chat() {
       const images = [...attachImages];
       const imageNames = [...attachImageNames];
       const docs = [...attachFiles];
+      let leftOut = 0;
       for (const file of files) {
         if (isImageFile(file)) {
-          const dataUrl = await compressImage(file, 256 * 1024);
-          if (images.length < 3) {
-            images.push(dataUrl);
-            imageNames.push(file.name || "");
+          if (images.length >= MAX_ATTACHED_IMAGES) {
+            leftOut += 1;
+            continue;
           }
+          const dataUrl = await compressImage(file, 256 * 1024);
+          images.push(dataUrl);
+          imageNames.push(file.name || "");
         } else {
           docs.push(await fileToAttachment(file));
         }
+      }
+      // Say so instead of quietly dropping them. Before this the extra
+      // pictures just never turned up and nobody was told why.
+      if (leftOut > 0) {
+        showToast(Locale.Chat.TooManyImages(MAX_ATTACHED_IMAGES));
       }
       setAttachImages(images);
       setAttachImageNames(imageNames);
@@ -2321,7 +2346,12 @@ function _Chat() {
             onClose={() => setViewerAttachment(null)}
           >
             <div className={styles["attachment-viewer"]}>
-              {!viewerUrl ? (
+              {/* Browsers can't render a Word file inline, so show the text
+                  pulled out at attach time instead. Checked before the link
+                  since it still works even if the file blob is gone. */}
+              {viewerAttachment.mime === DOCX_MIME ? (
+                <DocxPreview url={viewerUrl} text={viewerAttachment.text} />
+              ) : !viewerUrl ? (
                 <p>Filen kan ikke længere vises.</p>
               ) : viewerAttachment.mime.startsWith("image/") ? (
                 <img src={viewerUrl} alt="" />
@@ -2337,6 +2367,69 @@ function _Chat() {
         </div>
       )}
     </div>
+  );
+}
+
+// Shows a Word document the way it looks in Word (pictures, tables,
+// headings), using the original file kept in the browser rather than the
+// text pulled out for the model. Falls back to that text if drawing fails.
+function DocxPreview(props: { url: string; text?: string }) {
+  const holder = useRef<HTMLDivElement>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    // The file is fetched from the browser store in the background so the link
+    // is still empty on the first render. Wait for it rather than giving up.
+    if (!props.url) return;
+    const target = holder.current;
+    if (!target) return;
+    let stillOpen = true;
+    setFailed(false);
+    (async () => {
+      try {
+        // loaded only when a document is opened so it stays out of the
+        // everyday bundle
+        const [docx, blob] = await Promise.all([
+          import("docx-preview"),
+          fetch(props.url).then((response) => response.blob()),
+        ]);
+        if (!stillOpen) return;
+        target.innerHTML = "";
+        await docx.renderAsync(blob, target, undefined, {
+          // pictures are put straight into the page so there is no temporary
+          // link left behind when the window closes
+          useBase64URL: true,
+          // mammoth leaves these out of the text so showing them here gives
+          // the reader the whole document
+          renderHeaders: true,
+          renderFooters: true,
+          renderFootnotes: true,
+        });
+      } catch (e) {
+        console.error("[Docx] could not draw the document", e);
+        if (stillOpen) setFailed(true);
+      }
+    })();
+    return () => {
+      stillOpen = false;
+    };
+  }, [props.url]);
+
+  return (
+    <>
+      {failed && (
+        <div className={styles["attachment-viewer-text"]}>
+          {props.text || "Dokumentet kan ikke vises."}
+        </div>
+      )}
+      {/* Kept mounted even while the text is showing, since this is what
+          the document gets drawn into. */}
+      <div
+        ref={holder}
+        className={styles["attachment-viewer-docx"]}
+        hidden={failed}
+      />
+    </>
   );
 }
 
