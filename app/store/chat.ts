@@ -605,7 +605,9 @@ export const useChatStore = createPersistStore(
         get().selectSession(limit(i + delta));
       },
 
-      deleteSession(index: number) {
+      // silent is used by the tidying this store does on its own. The user
+      // did not delete anything then so they should not be told that they did.
+      deleteSession(index: number, silent = false) {
         const deletingLastSession = get().sessions.length === 1;
         const deletedSession = get().sessions.at(index);
 
@@ -634,16 +636,18 @@ export const useChatStore = createPersistStore(
           get().newSession();
         }
 
-        showToast(
-          Locale.Home.DeleteToast,
-          {
-            text: Locale.Home.Revert,
-            onClick() {
-              set(() => restoreState);
+        if (!silent) {
+          showToast(
+            Locale.Home.DeleteToast,
+            {
+              text: Locale.Home.Revert,
+              onClick() {
+                set(() => restoreState);
+              },
             },
-          },
-          5000,
-        );
+            5000,
+          );
+        }
       },
 
       currentSession() {
@@ -665,7 +669,7 @@ export const useChatStore = createPersistStore(
           session?.mask?.context?.[0]?.content === "" &&
           session.messages.length == 0
         ) {
-          get().deleteSession(index);
+          get().deleteSession(index, true);
         }
 
         return session;
@@ -685,6 +689,8 @@ export const useChatStore = createPersistStore(
         attachImages?: string[],
         attachFiles?: FileAttachment[],
         attachImageNames?: string[],
+        // pictures that sat inside one of the attached files
+        fileImages?: { url: string; name: string; fileId?: string }[],
       ) {
         const session = get().currentSession();
         const modelConfig = session.mask.modelConfig;
@@ -695,13 +701,22 @@ export const useChatStore = createPersistStore(
 
         const hasImages = !!attachImages?.length;
         const hasFiles = !!attachFiles?.length;
-        if (hasImages || hasFiles) {
+        const hasFileImages = !!fileImages?.length;
+        if (hasImages || hasFiles || hasFileImages) {
           mContent = [{ type: "text", text: userContent }];
           if (hasImages) {
             mContent = mContent.concat(
               attachImages!.map((url, i) => ({
                 type: "image_url",
                 image_url: { url, name: attachImageNames?.[i] },
+              })),
+            );
+          }
+          if (hasFileImages) {
+            mContent = mContent.concat(
+              fileImages!.map(({ url, name, fileId }) => ({
+                type: "image_url",
+                image_url: { url, name, fromFile: true, fileId },
               })),
             );
           }
@@ -727,11 +742,20 @@ export const useChatStore = createPersistStore(
         const sendMessages = recentMessages.concat(userMessage);
         const messageIndex = get().currentSession().messages.length + 1;
 
+        // Pictures from a file are sent with this message but not kept in the
+        // chat — otherwise they'd get resent to the model on every later
+        // message, the way file text already does, and that adds up fast.
+        // The file itself is still kept, so its text keeps going out too.
+        const savedContent =
+          hasFileImages && Array.isArray(mContent)
+            ? mContent.filter((part) => !part.image_url?.fromFile)
+            : mContent;
+
         // save user's and bot's message
         get().updateCurrentSession((session) => {
           const savedUserMessage = {
             ...userMessage,
-            content: mContent,
+            content: savedContent,
           };
           session.messages = session.messages.concat([
             savedUserMessage,
@@ -1056,7 +1080,7 @@ export const useChatStore = createPersistStore(
         let mask = chatStore.sessions[0].mask;
         if (mask.avatar == "gpt-bot" && mask.context.length == 0) {
           chatStore.newSession();
-          chatStore.deleteSession(1);
+          chatStore.deleteSession(1, true);
         }
       }
     }
