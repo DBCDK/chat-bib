@@ -6,6 +6,7 @@ import { Mask, decodeHiddenPrompt, useMaskStore } from "../store/mask";
 import { BUILTIN_MASK_STORE } from "../masks";
 import { MessageRole } from "../typing";
 import { createMessage } from "../store/chat";
+import { showToast } from "./ui-lib";
 
 export function JumpToChat() {
   const location = useLocation();
@@ -18,13 +19,24 @@ export function JumpToChat() {
 
     const params = new URLSearchParams(location.search);
     const name = params.get("name")?.trim() || undefined;
+    const hasEncodedPrompt = params.has("p");
     const encodedPrompt = params.get("p");
     const prompt =
-      (encodedPrompt
-        ? decodeHiddenPrompt(encodedPrompt)
+      (hasEncodedPrompt
+        ? decodeHiddenPrompt(encodedPrompt ?? "")
         : params.get("prompt")
       )?.trim() || undefined;
-    const hideSystemPrompt = params.has("h") || !!encodedPrompt;
+    const hideSystemPrompt = params.has("h") || hasEncodedPrompt;
+
+    // A `p` that can't be decoded means the link is broken; don't guess an
+    // assistant from the name alone, just open a normal new chat.
+    if (hasEncodedPrompt && !prompt) {
+      showToast("Linket er ugyldigt. Assistenten kunne ikke åbnes.");
+      chatStore.newSession();
+      setShouldNavigate(true);
+      return;
+    }
+
     const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
     const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
 
