@@ -16,6 +16,7 @@ import { ModelProvider, Path, SlotID } from "../constant";
 import { ErrorBoundary } from "./error";
 
 import { getISOLang, getLang } from "../locales";
+import { useAssistentFromUrl } from "./use-assistent-from-url";
 
 import {
   BrowserRouter as Router,
@@ -152,6 +153,7 @@ const loadAsyncGoogleFont = () => {
 };
 
 function Screen() {
+  useAssistentFromUrl();
   const config = useAppConfig();
   const location = useLocation();
   const isHome = !env.HOMEPAGE_IS_MASKLIST && location.pathname === Path.Home;
