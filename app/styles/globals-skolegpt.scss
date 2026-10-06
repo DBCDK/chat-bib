@@ -1,33 +1,63 @@
 @import "./animation.scss";
 @import "./window.scss";
 
+// Work Sans (CFU), selv-hostet fra public/skolegpt/fonts – ingen eksterne kald
+@mixin work-sans($file, $weight) {
+  @font-face {
+    font-family: "Work Sans";
+    src: url("/skolegpt/fonts/#{$file}") format("opentype");
+    font-weight: $weight;
+    font-style: normal;
+    font-display: swap; // vis tekst med det samme, mens fonten indlæses
+  }
+}
+
+@include work-sans("WorkSans-Regular-cfu.otf", 400);
+@include work-sans("WorkSans-Medium-cfu.otf", 500);
+@include work-sans("WorkSans-SemiBold-cfu.otf", 600);
+@include work-sans("WorkSans-Bold-cfu.otf", 700);
+
 :root {
-  --chat-input-padding: 14px 90px 14px 14px;
+  // højre side giver plads til mikrofon + send-knap inde i feltet
+  --chat-input-padding: 14px 130px 14px 10px;
   --chat-input-min-height: 60px;
+  // centrerer mikrofon og send-knap (36px høje) på en linje: (60px - 36px) / 2
+  --chat-input-send-bottom: 12px;
+  // send-knappen: lys grå når feltet er tomt, orange når der er skrevet noget
+  --chat-send-color: #b4b4b0; // Sort-300
+  --chat-send-active-color: var(--button-color); // Orange-500
+  --chat-send-icon-color: #eef4e4; // Grøn-100, pilen
+  // rammen om den valgte samtale i sidebaren
+  --chat-item-selected-color: var(--button-color); // Orange-500
+  // samtale-titler i sidebaren: semibold i stedet for bold
+  --chat-item-title-weight: 600;
 }
 
 @mixin light {
   --theme: light;
 
-  /* color */
-  --white: white;
-  --black: rgb(48, 48, 48);
-  --dark-text: rgb(120 120 120);
-  --gray: rgb(245, 245, 245);
-  --dark-gray: rgb(235 235 235);
-  --primary: #666;
+  /* color – SkoleGPT */
+  --white: #ffffff; // Hvid
+  --black: #181816; // Sort-900
+  --dark-text: #767671; // Sort-500
+  --gray: #eef4e4; // Grøn-100
+  --dark-gray: #f2f1ef; // Sort-100
+  --primary: #474744; // Sort-700
   --second: var(--gray);
-  --hover-color: #f3f3f3;
-  --bar-color: #f00;
+  --hover-color: #f2f1ef; // Sort-100
+  --bar-color: #474744; // Sort-700, scrollbar
+  --button-color: #f05a23; // Orange-500
+  --button-text-color: #eef4e4; // Grøn-100
+  --button-hover-color: var(--black); // Sort-900
+  --danger-color: #e54846; // Rød-500, slet-ikon
   --theme-color: var(--gray);
-// --card-color: var(--second);
---card-color:#f2f1e9;
+  --card-color: #f2f1ef; // Sort-100
   /* shadow */
   --shadow: 50px 50px 100px 10px rgb(0, 0, 0, 0.1);
   --card-shadow: 0px 2px 4px 0px rgb(0, 0, 0, 0.05);
 
   /* stroke */
-  --border-in-light: 1px solid rgb(222, 222, 222);
+  --border-in-light: 1px solid #b4b4b0; // Sort-300
 
   --border-darker: rgb(0, 0, 0, 0.2);
 }
@@ -45,7 +75,11 @@
   --second: #282828;
   --hover-color: #323232;
 
-  --bar-color: rgba(255, 255, 255, 0.1);
+  --bar-color: #767671; // Sort-500, scrollbar (lysere, så den ses på mørk baggrund)
+  --button-color: #f05a23; // Orange-500
+  --button-text-color: #eef4e4; // Grøn-100
+  --button-hover-color: #b4440b; // Orange-700 (--black er lys i mørkt tema)
+  --danger-color: #e54846; // Rød-500, slet-ikon
 
   --border-in-light: 1px solid rgba(255, 255, 255, 0.192);
 
@@ -107,8 +141,7 @@
 html {
   height: var(--full-height);
 
-  font-family: "Noto Sans", "SF Pro SC", "SF Pro Text", "SF Pro Icons",
-    "PingFang SC", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  font-family: "Work Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 }
 
 body {
@@ -145,10 +178,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--bar-color);
+  background-color: transparent;
   border-radius: 20px;
   background-clip: content-box;
   border: 1px solid transparent;
+}
+
+// Scrollbaren vises kun, mens der scrolles (se app/utils/scrollbar.ts)
+[data-scrolling]::-webkit-scrollbar-thumb {
+  background-color: var(--bar-color);
 }
 
 select {

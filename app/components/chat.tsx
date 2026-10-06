@@ -33,6 +33,7 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import PlusIcon from "../icons/plus.svg";
+import AttachIcon from "../icons/attach.svg";
 import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -2132,30 +2133,6 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
-            <div className={styles["chat-input-row"]}>
-            {canAttach && (
-              <div
-                className={`${styles["chat-input-attach"]} ${
-                  hasAttachments ? styles["chat-input-icon-pinned"] : ""
-                }`}
-                onClick={uploading ? undefined : uploadImage}
-                role="button"
-                aria-label="Vedhæft fil"
-                title={Locale.Chat.InputActions.UploadImage}
-              >
-                <div className={styles["chat-input-attach-icon"]}>
-                  {uploading ? (
-                    <LoadingButtonIcon style={{ width: 25, height: 25 }} />
-                  ) : (
-                    <PlusIcon style={{ width: 25, height: 25 }} />
-                  )}
-                </div>
-                <div className={styles["chat-input-attach-spacer"]} />
-              </div>
-            )}
-            {env.ENABLE_TTSASR && (
-              <RecorderIcon onTranscribed={onInput} pinned={hasAttachments} />
-            )}
             <label
               className={`${styles["chat-input-panel-inner"]} ${
                 hasAttachments ? styles["chat-input-panel-inner-attach"] : ""
@@ -2233,51 +2210,80 @@ function _Chat() {
                   ))}
                 </div>
               )}
-              <textarea
-                id="chat-input"
-                ref={inputRef}
-                className={styles["chat-input"]}
-                placeholder={Locale.Chat.Input(submitKey)}
-                onInput={(e) => onInput(e.currentTarget.value)}
-                value={userInput}
-                onKeyDown={onInputKeyDown}
-                onFocus={() => {
-                  if (
-                    !(
-                      session.multiLlmChildren &&
-                      session.multiLlmChildren.length > 0
-                    )
-                  ) {
-                    scrollToBottom();
-                  }
-                }}
-                onClick={() => {
-                  if (
-                    !(
-                      session.multiLlmChildren &&
-                      session.multiLlmChildren.length > 0
-                    )
-                  ) {
-                    scrollToBottom();
-                  }
-                }}
-                onPaste={handlePaste}
-                rows={inputRows}
-                autoFocus={autoFocus}
-                style={{
-                  fontSize: config.fontSize,
-                }}
-              />
+              <div className={styles["chat-input-field"]}>
+                {canAttach && (
+                  <div
+                    className={styles["chat-input-attach"]}
+                    onClick={(e) => {
+                      // the button is inside the input's <label>; don't let
+                      // the click also focus the text field
+                      e.preventDefault();
+                      if (!uploading) uploadImage();
+                    }}
+                    role="button"
+                    aria-label="Vedhæft fil"
+                    title={Locale.Chat.InputActions.UploadImage}
+                  >
+                    {uploading ? (
+                      <LoadingButtonIcon style={{ width: 24, height: 24 }} />
+                    ) : (
+                      <AttachIcon style={{ width: 24, height: 24 }} />
+                    )}
+                  </div>
+                )}
+                <textarea
+                  id="chat-input"
+                  ref={inputRef}
+                  className={styles["chat-input"]}
+                  placeholder={Locale.Chat.Input(submitKey)}
+                  onInput={(e) => onInput(e.currentTarget.value)}
+                  value={userInput}
+                  onKeyDown={onInputKeyDown}
+                  onFocus={() => {
+                    if (
+                      !(
+                        session.multiLlmChildren &&
+                        session.multiLlmChildren.length > 0
+                      )
+                    ) {
+                      scrollToBottom();
+                    }
+                  }}
+                  onClick={() => {
+                    if (
+                      !(
+                        session.multiLlmChildren &&
+                        session.multiLlmChildren.length > 0
+                      )
+                    ) {
+                      scrollToBottom();
+                    }
+                  }}
+                  onPaste={handlePaste}
+                  rows={inputRows}
+                  autoFocus={autoFocus}
+                  style={{
+                    fontSize: config.fontSize,
+                  }}
+                />
+              </div>
+              {env.ENABLE_TTSASR && (
+                <RecorderIcon
+                  onTranscribed={onInput}
+                  className={styles["chat-input-mic"]}
+                />
+              )}
               <IconButton
                 icon={<SendArrowIcon />}
-                className={styles["chat-input-send"]}
+                className={`${styles["chat-input-send"]} ${
+                  userInput.trim() ? styles["chat-input-send-active"] : ""
+                }`}
                 type="primary"
                 onClick={() => {
                   doSubmit(userInput);
                 }}
               />
             </label>
-            </div>
           </div>
         </div>
       )}
