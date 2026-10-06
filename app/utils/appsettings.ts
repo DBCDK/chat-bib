@@ -33,7 +33,7 @@ const skolegpt: RuntimeEnv = {
   CHAT_DISCLAIMER:
     "SkoleGPT kan tage fejl. Tjek altid vigtige oplysninger og råd med en pålidelig kilde.",
   APP_TITLE: "SkoleGPT",
-  APP_TAGLINE: "",
+  APP_TAGLINE: "Chatassistent til skolen",
   APP_LOGO: "skolegpt/skolegpt-white.svg",
   CONTAINER_CSS_CLASS: "skolegpt",
   DISABLE_GOOGLE_FONTS: true,
@@ -44,7 +44,7 @@ const skolegpt: RuntimeEnv = {
   CONFIRM_DELETE_CHAT: true,
   SIDEBAR_INLINE_LOGO: true,
   SIDEBAR_HIDE_BUILTIN_NOTE: true,
-  SIDEBAR_COMPACT_BUTTONS: true,
+  SIDEBAR_LARGE_BUTTONS: true,
   CLEANUP_EMPTY_SESSIONS: "true",
   DEFAULT_NEW_CHAT: "skolegptv3",
   SYSTEM_PROMPT_IN_SIDEBAR: "true",
