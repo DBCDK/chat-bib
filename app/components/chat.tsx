@@ -882,6 +882,21 @@ function _Chat() {
     { leading: true, trailing: true },
   );
 
+  // INPUT_HINTS_ON_CLICK: the placeholder shows the keyboard shortcuts once the
+  // field is clicked. Not on focus, since the field gets focus on page load.
+  const [showInputHints, setShowInputHints] = useState(false);
+  let inputPlaceholder = Locale.Chat.Input(submitKey);
+  if (env.INPUT_HINTS_ON_CLICK) {
+    const keyboardHints = [
+      `${submitKey} sender`,
+      submitKey === SubmitKey.Enter && "Shift + Enter ny linje",
+      "/ søg i prompts",
+    ];
+    inputPlaceholder = showInputHints
+      ? keyboardHints.filter(Boolean).join(" · ")
+      : `Spørg ${env.APP_TITLE}`;
+  }
+
   // auto grow input
   const [inputRows, setInputRows] = useState(1);
   const measure = useDebouncedCallback(
@@ -2235,7 +2250,8 @@ function _Chat() {
                   id="chat-input"
                   ref={inputRef}
                   className={styles["chat-input"]}
-                  placeholder={Locale.Chat.Input(submitKey)}
+                  placeholder={inputPlaceholder}
+                  onBlur={() => setShowInputHints(false)}
                   onInput={(e) => onInput(e.currentTarget.value)}
                   value={userInput}
                   onKeyDown={onInputKeyDown}
@@ -2250,6 +2266,7 @@ function _Chat() {
                     }
                   }}
                   onClick={() => {
+                    setShowInputHints(true);
                     if (
                       !(
                         session.multiLlmChildren &&
@@ -2288,17 +2305,7 @@ function _Chat() {
         </div>
       )}
       {env.CHAT_DISCLAIMER && (
-        <div
-          style={{
-            marginTop: -15,
-            marginBottom: 5,
-            textAlign: "center",
-            fontSize: 10,
-            color: "#666",
-          }}
-        >
-          {env.CHAT_DISCLAIMER}
-        </div>
+        <div className={styles["chat-disclaimer"]}>{env.CHAT_DISCLAIMER}</div>
       )}
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />
