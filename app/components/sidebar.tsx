@@ -3,7 +3,8 @@ import { useEffect, useRef, useMemo } from "react";
 import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
-import ChatSettings from "../icons/chat-settings.svg";
+import SettingsIcon from "../icons/settings.svg";
+import ChatSettingsIcon from "../icons/chat-settings.svg";
 import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
@@ -166,14 +167,23 @@ export function SideBar(props: { className?: string }) {
       }}
     >
       <div className={styles["sidebar-header"]} data-tauri-drag-region>
-        {/* <div className={styles["sidebar-logo"] + " no-dark"}>
-          <Link to={Path.Home}>
-            <img
-              src={env.APP_LOGO ?? "/chatbib/dbclogo.png"}
-              style={{ width: "40px", cursor: "pointer" }}
-            />
+        {env.SIDEBAR_INLINE_LOGO ? (
+          <Link
+            to={Path.Home}
+            className={styles["sidebar-logo-inline"] + " no-dark"}
+          >
+            <img src={env.APP_LOGO} alt="" />
           </Link>
-        </div> */}
+        ) : (
+          <div className={styles["sidebar-logo"] + " no-dark"}>
+            <Link to={Path.Home}>
+              <img
+                src={env.APP_LOGO ?? "/chatbib/dbclogo.png"}
+                style={{ width: "100px", cursor: "pointer" }}
+              />
+            </Link>
+          </div>
+        )}
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
             {env.APP_TITLE ?? "ChatBib"}
@@ -189,7 +199,7 @@ export function SideBar(props: { className?: string }) {
           <div className={styles["system-prompt-preview"]}>
             <div className={styles["system-prompt-label"]}>
               Systemprompt
-              {/* {!editableSystemPrompt && (
+              {!editableSystemPrompt && !env.SIDEBAR_HIDE_BUILTIN_NOTE && (
                 <div
                   style={{
                     color: "gray",
@@ -201,7 +211,7 @@ export function SideBar(props: { className?: string }) {
                   Indbygget assistent kan ikke ændres. Opret ny assistent for at
                   redigere.
                 </div>
-              )} */}
+              )}
             </div>
 
             <textarea
@@ -273,7 +283,11 @@ export function SideBar(props: { className?: string }) {
         {env.SHOW_SETTINGS && (
           <div className={styles["sidebar-action"]}>
             <Link to={Path.Settings}>
-              <IconButton icon={<ChatSettings />} size={3} shadow />
+              {env.SIDEBAR_COMPACT_BUTTONS ? (
+                <IconButton icon={<ChatSettingsIcon />} size={3} shadow />
+              ) : (
+                <IconButton icon={<SettingsIcon />} shadow />
+              )}
             </Link>
           </div>
         )}
@@ -287,7 +301,7 @@ export function SideBar(props: { className?: string }) {
         </div> */}
         <IconButton
           className={styles.newChatButton}
-          size={3}
+          size={env.SIDEBAR_COMPACT_BUTTONS ? 3 : 4}
           //    icon={<AddIcon  />}
           text={shouldNarrow ? undefined : Locale.Home.NewChat}
           onClick={() => {

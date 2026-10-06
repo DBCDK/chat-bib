@@ -154,14 +154,29 @@
   position: relative;
   padding-top: 20px;
   padding-bottom: 20px;
+
   display: flex;
-  justify-content: flex-start;
+  // SkoleGPT-temaet sætter variablen til flex-start (titlen til venstre)
+  justify-content: var(--sidebar-header-justify, end);
 }
 
 .sidebar-logo {
   position: absolute;
   left: 0;
-  bottom: 5px;
+  bottom: 18px;
+}
+
+// logoet ved siden af titlen (slås til med SIDEBAR_INLINE_LOGO i appsettings)
+.sidebar-logo-inline {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  margin-right: 10px;
+
+  img {
+    height: 36px;
+    width: auto;
+  }
 }
 
 .sidebar-title {
@@ -201,12 +216,14 @@
 }
 
 .chat-item-selected {
-  border-color: var(--primary);
+  // SkoleGPT-temaet sætter variablen (Orange-500); andre apps bruger --primary
+  border-color: var(--chat-item-selected-color, var(--primary));
 }
 
 .chat-item-title {
   font-size: 14px;
-  font-weight: bolder;
+  // SkoleGPT-temaet sætter variablen (600, semibold); andre apps bruger bolder
+  font-weight: var(--chat-item-title-weight, bolder);
   display: block;
   width: calc(100% - 15px);
   overflow: hidden;
@@ -231,6 +248,13 @@
 
 .chat-item:hover > .chat-item-delete:hover {
   opacity: 1;
+}
+
+// Rød skraldespand (slås til med TRASH_DELETE_ICON i appsettings)
+.chat-item-delete-trash {
+  top: 2px;
+  right: 2px;
+  color: var(--danger-color);
 }
 
 .chat-item-info {
@@ -358,12 +382,17 @@
   direction: rtl;
 }
 
+// --button-* sættes kun i SkoleGPT-temaet; andre apps bruger fallback-værdierne
+// (samme udseende som før: --primary med hvid tekst, ingen farveskift ved hover)
 .sidebar .newChatButton {
-  background-color: var(--bar-color);
+  background-color: var(--button-color, var(--primary));
   width: 300px;
-  color: var(--gray);
+  color: var(--button-text-color, white);
   &:hover {
-    background-color: rgb(24, 24, 22); // Sort-900 vid hover
+    background-color: var(
+      --button-hover-color,
+      var(--button-color, var(--primary))
+    );
   }
 }
 
