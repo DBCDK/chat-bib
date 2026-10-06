@@ -16,7 +16,7 @@ import { ModelProvider, Path, SlotID } from "../constant";
 import { ErrorBoundary } from "./error";
 
 import { getISOLang, getLang } from "../locales";
-import { useAssistentFromUrl } from "./use-assistent-from-url";
+import { useAssistentFromUrl } from "../utils/assistent-from-url";
 
 import {
   BrowserRouter as Router,
@@ -153,7 +153,7 @@ const loadAsyncGoogleFont = () => {
 };
 
 function Screen() {
-  useAssistentFromUrl();
+  const loadingAssistent = useAssistentFromUrl();
   const config = useAppConfig();
   const location = useLocation();
   const isHome = !env.HOMEPAGE_IS_MASKLIST && location.pathname === Path.Home;
@@ -169,6 +169,12 @@ function Screen() {
       loadAsyncGoogleFont();
     }
   }, []);
+
+  // Vis kun en loader, mens en assistent fra ?assistent= indlæses,
+  // så forsiden ikke blinker, før chatten åbner
+  if (loadingAssistent) {
+    return <Loading />;
+  }
 
   return (
     <div
