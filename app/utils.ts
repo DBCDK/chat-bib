@@ -209,7 +209,9 @@ export function getMessageImages(message: RequestMessage): string[] {
   }
   const urls: string[] = [];
   for (const c of message.content) {
-    if (c.type === "image_url") {
+    // a picture from inside a file is left out because the message shows the
+    // file itself and the picture belongs to it
+    if (c.type === "image_url" && !c.image_url?.fromFile) {
       urls.push(c.image_url?.url ?? "");
     }
   }
@@ -225,7 +227,9 @@ export function getMessageImageNames(message: RequestMessage): string[] {
   }
   const names: string[] = [];
   for (const c of message.content) {
-    if (c.type === "image_url") {
+    // left out for the same reason as in getMessageImages so the names stay
+    // lined up with the pictures
+    if (c.type === "image_url" && !c.image_url?.fromFile) {
       names.push(c.image_url?.name ?? "");
     }
   }
@@ -290,25 +294,58 @@ export function getMessageContentForApi(
       }
       budget.remaining -= fileText.length;
     }
-    materialParts.push(`Uploadet materiale "${f.name}":\n${fileText}`);
+    // Say whether the file's pictures are in this message. They are only sent
+    // with the message the file was attached to, so a later message still has
+    // the [Billede N] marks in the text but not the pictures.
+    let note = "";
+    if (f.text.includes("[Billede ")) {
+      const sent =
+        keepImages &&
+        message.content.some(
+          (c) => c.image_url?.fromFile && c.image_url.fileId === f.id,
+        );
+      note = sent
+        ? "Billederne fra filen er vedhæftet for sig efter teksten og nummereret. [Billede N] i teksten viser, hvor billede N hører til.\n"
+        : "Billederne fra filen er ikke vedhæftet her, kun teksten.\n";
+    }
+    materialParts.push(`Uploadet materiale "${f.name}":\n${note}${fileText}`);
   }
   const materials = materialParts.join("\n\n");
   if (materials) {
     text = text ? `${text}\n\n${materials}` : materials;
   }
-  const images = keepImages
-    ? message.content
-      .filter((c) => c.type === "image_url")
-      // send only the image itself; the file name is just for the screen
-      .map((c) => ({
-        type: "image_url" as const,
+  // A picture from a file gets a "Billede N fra ..." line in front of it,
+  // matching the [Billede N] marker in that file's text (counted per file,
+  // so each file starts at 1). A user-picked picture needs no line, since
+  // no text refers to it.
+  const parts: MultimodalContent[] = [];
+  if (keepImages) {
+    const countPerFile = new Map<string, number>();
+    for (const c of message.content) {
+      if (c.type !== "image_url") continue;
+      if (c.image_url?.fromFile) {
+        const from = c.image_url.name ?? "";
+        // counted by the file's id, not its name, since two files can share
+        // a name
+        const key = c.image_url.fileId ?? from;
+        const number = (countPerFile.get(key) ?? 0) + 1;
+        countPerFile.set(key, number);
+        parts.push({
+          type: "text",
+          text: `Billede ${number} fra "${from}":`,
+        });
+      }
+      // send only the picture itself; the rest is just for the screen
+      parts.push({
+        type: "image_url",
         image_url: { url: c.image_url?.url ?? "" },
-      }))
-    : [];
-  if (images.length === 0) {
+      });
+    }
+  }
+  if (parts.length === 0) {
     return text;
   }
-  return [{ type: "text", text }, ...images];
+  return [{ type: "text", text }, ...parts];
 }
 
 // Builds the content for every message, newest first, so the newest file gets

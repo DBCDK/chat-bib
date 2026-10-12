@@ -140,6 +140,10 @@ export enum SearchSpeed {
   Slow = "slow",
 }
 
+// How many pictures the user can attach to one message. Pictures the app
+// finds inside a document are counted on their own and do not use this.
+export const MAX_ATTACHED_IMAGES = 10;
+
 export const CHAT_PAGE_SIZE = 15;
 export const MAX_RENDER_MSG_COUNT = 45;
 
