@@ -1563,7 +1563,9 @@ function _Chat() {
               className={`window-header-main-title ${styles["chat-body-main-title"]}`}
               onClickCapture={() => setIsEditingMessage(true)}
             >
-              {!session.topic ? DEFAULT_TOPIC : session.topic}
+              {env.SHOW_MASK_NAME_IN_HEADER
+                ? session.mask.name
+                : session.topic || DEFAULT_TOPIC}
             </div>
             <div className="window-header-sub-title">
               {Locale.Chat.SubTitle(session.messages.length)}

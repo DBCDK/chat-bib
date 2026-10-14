@@ -1,6 +1,6 @@
 import { BUILTIN_MASKS } from "../masks";
-import { getLang, Lang } from "../locales";
-import { DEFAULT_TOPIC, ChatMessage } from "./chat";
+import Locale, { getLang, Lang } from "../locales";
+import { ChatMessage } from "./chat";
 import { ModelConfig, useAppConfig } from "./config";
 import { StoreKey } from "../constant";
 import { nanoid } from "nanoid";
@@ -30,11 +30,14 @@ export const DEFAULT_MASK_STATE = {
 export type MaskState = typeof DEFAULT_MASK_STATE;
 
 export const DEFAULT_MASK_AVATAR = "gpt-bot";
+// what a new assistant is called until the user names it. a new chat has a
+// default name of its own
+export const DEFAULT_MASK_NAME = Locale.Store.DefaultMaskName;
 export const createEmptyMask = () =>
   ({
     id: nanoid(),
     avatar: DEFAULT_MASK_AVATAR,
-    name: DEFAULT_TOPIC,
+    name: DEFAULT_MASK_NAME,
     context: [{ role: "system", content: "" }],
     syncGlobalConfig: true, // use global config as default
     modelConfig: { ...useAppConfig.getState().modelConfig },
