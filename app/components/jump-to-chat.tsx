@@ -19,6 +19,8 @@ export function JumpToChat() {
     const params = new URLSearchParams(location.search);
     const name = params.get("name")?.trim() || undefined;
     const prompt = params.get("prompt")?.trim() || undefined;
+    // notes made from files by the person who shared this assistant
+    const material = params.get("material")?.trim() || undefined;
 
     const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
     const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
@@ -47,6 +49,9 @@ export function JumpToChat() {
             context: [
               createMessage({ role: MessageRole.System, content: prompt }),
             ],
+            materials: material
+              ? [{ name: "Delt materiale", text: material }]
+              : undefined,
           })
         : matchedMask;
 
