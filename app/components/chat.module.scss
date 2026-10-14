@@ -702,41 +702,37 @@
   margin-bottom: 40px;
 }
 
-// line things up from the top by default. This is what lines the attach/mic
-// icons up with a one-line text box (their height centers the icon on the line).
-.chat-input-row {
+// the text field with the attach (plus) button on its left. The button stays
+// at the bottom, next to the last line, when the text field grows.
+.chat-input-field {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
 }
-// used on the attach/mic buttons only while attached files are shown above the
-// text field, so the taller box doesn't push them up to the files - they stay
-// next to the text field.
-.chat-input-icon-pinned {
-  align-self: flex-end;
-}
-// the attach (plus) button, next to the mic button. Same icon-row + spacer
-// layout as the mic so the two icons line up.
+
+// the attach (plus) button inside the input box. The bottom margin centers it
+// on a one-line text field: (min-height 60px - 40px) / 2.
 .chat-input-attach {
-  float: left;
-  margin: 8px;
-  width: 44px;
-  height: 56px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: 0 0 10px 8px;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: var(--primary);
 }
 
-.chat-input-attach-icon {
-  height: 40px;
+// the mic button inside the input box, just left of the send button. Same
+// height and bottom as .chat-input-send, so the two line up.
+.chat-input-mic {
+  position: absolute;
+  right: 72px;
+  bottom: var(--chat-input-send-bottom, 24px);
+  height: 36px;
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.chat-input-attach-spacer {
-  height: 16px;
+  gap: 4px;
 }
 
 // highlight the input area while a file is dragged over it
@@ -868,8 +864,26 @@
 
   position: absolute;
   right: 22px;
-  bottom: 24px;
+  // the SkoleGPT theme sets the variable to center the button on one line
+  bottom: var(--chat-input-send-bottom, 24px);
   padding: 10px 12px;
+}
+
+// the send button's color: one color while the text field is empty and another
+// once something is typed. Only the SkoleGPT theme sets the variables; other
+// apps keep --primary in both states. Nested so it wins over IconButton's
+// .primary background.
+.chat-input-panel-inner .chat-input-send {
+  background-color: var(--chat-send-color, var(--primary));
+
+  &.chat-input-send-active {
+    background-color: var(--chat-send-active-color, var(--primary));
+  }
+
+  // the arrow; !important to override IconButton's white .primary icon
+  path {
+    fill: var(--chat-send-icon-color, white) !important;
+  }
 }
 
 @media only screen and (max-width: 600px) {
