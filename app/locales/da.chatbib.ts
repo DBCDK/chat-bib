@@ -343,6 +343,7 @@ const da = {
   },
   Store: {
     DefaultTopic: "Ny samtale",
+    DefaultMaskName: "Ny samtale",
     BotHello: "Hej! Hvordan kan jeg hjælpe dig i dag?",
     Error: "Noget gik galt, prøv venligst igen senere.",
     Prompt: {
