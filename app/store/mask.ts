@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { MODEL_NAMES } from "../dbc";
 import { env, SKOLEGPT_RETIRED_MODEL_ALIASES, SKOLEGPT_REPLACEMENT_MODEL } from "../utils/appsettings";
+import type { MaskMaterial } from "../utils/material";
 
 export type Mask = {
   id: string;
@@ -15,6 +16,10 @@ export type Mask = {
   name: string;
   hideContext?: boolean;
   context: ChatMessage[];
+  // Short notes made from files the user added. The files are not kept and
+  // only the notes are. That keeps the assistant small enough to be shared in
+  // a link. They get sent with every chat that uses this assistant.
+  materials?: MaskMaterial[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;
   lang: Lang;

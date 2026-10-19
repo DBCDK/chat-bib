@@ -48,7 +48,7 @@ async function renderPdfPage(page: any): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.7);
 }
 
-async function extractPdf(
+export async function extractPdf(
   file: File,
 ): Promise<{ text: string; preview: string }> {
   const pdfjs = await import("pdfjs-dist");
