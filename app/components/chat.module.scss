@@ -693,6 +693,96 @@
   margin-top: 6px;
 }
 
+// The box a failed answer gets, so it does not read as a normal one. Two
+// class names on purpose: .chat-message .chat-message-item above takes the
+// background and border off every answer and would win over a single name.
+.chat-message .chat-message-item-warning {
+  border-radius: 10px;
+  background-color: #fdf6e8;
+  border: 1px solid #e6d5ae;
+  color: #7c5e1e;
+  // room for the warning sign, which sits on top so nothing else moves
+  position: relative;
+  padding-left: 34px;
+
+  // the markdown part sets its own colour, so it has to be told otherwise
+  :global(.markdown-body) {
+    color: inherit;
+  }
+}
+
+.chat-message-warning-icon {
+  position: absolute;
+  left: 11px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+}
+
+// the little sign in the corner that opens what the server said
+.chat-message-error-info {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.chat-message-error-code {
+  margin-top: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+  // the server's answer comes as json over several lines
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.chat-message-error-code-label {
+  font-family: inherit;
+  font-weight: 600;
+}
+
+:global(.dark) .chat-message .chat-message-item-warning {
+  background-color: rgba(191, 138, 20, 0.14);
+  border-color: rgba(191, 138, 20, 0.4);
+  color: #ddbd77;
+}
+
+// the line saying we are asking again, with the dots under it
+.chat-message-retrying {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-style: italic;
+
+  // the dots come in the app colour, so take the colour of the box instead
+  svg circle {
+    fill: currentColor;
+  }
+}
+
 .chat-input-panel-container {
   position: absolute;
   bottom: 0px;

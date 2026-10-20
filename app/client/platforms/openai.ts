@@ -16,13 +16,15 @@ import {
   LLMModel,
   LLMUsage,
   MultimodalContent,
+  AbortedError,
+  RetryableError,
+  toStreamError,
 } from "../api";
 import Locale from "../../locales";
 import {
   EventStreamContentType,
   fetchEventSource,
 } from "@fortaine/fetch-event-source";
-import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
 import { foldContentsForApi, isVisionModel } from "@/app/utils";
@@ -181,15 +183,20 @@ export class ChatGPTApi implements LLMApi {
       };
 
       // make a fetch request
-      const requestTimeoutId = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT_MS,
-      );
+      // The wait running out and the stop button abort the same request, so
+      // note which one it was.
+      let ranOutOfTime = false;
+      const requestTimeoutId = setTimeout(() => {
+        ranOutOfTime = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
 
       if (shouldStream) {
         let responseText = "";
         let remainText = "";
         let finished = false;
+        // holds a failure sent inside the stream until the stream ends
+        let streamError: Error | undefined;
 
         // animate response to make it looks smooth
         function animateResponseText() {
@@ -197,7 +204,13 @@ export class ChatGPTApi implements LLMApi {
             responseText += remainText;
             console.log("[Response Animation] finished");
             if (responseText?.length === 0) {
-              options.onError?.(new Error("empty response from server"));
+              // Worth asking again, unless the user stopped or the wait ran out.
+              const emptyReason = controller.signal.aborted
+                ? ranOutOfTime
+                  ? new Error("empty response from server")
+                  : new AbortedError("stopped by user")
+                : new RetryableError("empty response from server");
+              options.onError?.(streamError ?? emptyReason);
             }
             return;
           }
@@ -247,22 +260,16 @@ export class ChatGPTApi implements LLMApi {
                 ?.startsWith(EventStreamContentType) ||
               res.status !== 200
             ) {
-              const responseTexts = [responseText];
-              let extraInfo = await res.clone().text();
+              // Report it as a fault. The server says why in json when it
+              // can, so read that the same way as a failure sent inside a
+              // stream. Otherwise a chat that is too long is not seen.
+              let body: any = null;
               try {
-                const resJson = await res.clone().json();
-                extraInfo = prettyObject(resJson);
-              } catch {}
-
-              if (res.status === 401) {
-                responseTexts.push(Locale.Error.Unauthorized);
+                body = await res.clone().json();
+              } catch {
+                body = { message: await res.clone().text() };
               }
-
-              if (extraInfo) {
-                responseTexts.push(extraInfo);
-              }
-
-              responseText = responseTexts.join("\n\n");
+              streamError = toStreamError(body?.error ?? body, res.status);
 
               return finish();
             }
@@ -274,6 +281,11 @@ export class ChatGPTApi implements LLMApi {
             const text = msg.data;
             try {
               const json = JSON.parse(text);
+              // Keep it until the stream ends, because [DONE] still follows.
+              if (json.error) {
+                streamError = toStreamError(json.error);
+                return;
+              }
               const choices = json.choices as Array<{
                 delta: { content: string };
               }>;
