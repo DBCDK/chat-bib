@@ -3,7 +3,7 @@ import { trimTopic, getMessageTextContent } from "../utils";
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
 import { ModelConfig, ModelType, useAppConfig } from "./config";
-import { createEmptyMask, Mask, useMaskStore } from "./mask";
+import { createEmptyMask, DEFAULT_MASK_NAME, Mask, useMaskStore } from "./mask";
 import { BUILTIN_MASKS } from "../masks";
 import {
   DEFAULT_INPUT_TEMPLATE,
@@ -89,6 +89,20 @@ export const BOT_HELLO: ChatMessage = createMessage({
   role: MessageRole.Assistant,
   content: BOT_HELLO_CONTENT,
 });
+
+// A chat's name is set to the first few words of the first user's prompt until a name is generated for the chat.
+function getFirstMessageTopic(session: ChatSession, maxLength = 50) {
+  const first = session.messages.find((m) => m.role === MessageRole.User);
+  const text = first
+    ? getMessageTextContent(first).replace(/\s+/g, " ").trim()
+    : "";
+  if (!env.SHOW_FIRST_MESSAGE_AS_TOPIC || !text) return DEFAULT_TOPIC;
+  if (text.length <= maxLength) return text;
+  // cut at the last whole word so a name never ends in half a word
+  const cut = text.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut) + "\u2026";
+}
 
 function getRequestContextPrompts(session: ChatSession) {
   return session.mask.context.filter(
@@ -660,8 +674,8 @@ export const useChatStore = createPersistStore(
         if (
           env.CLEANUP_EMPTY_SESSIONS &&
           sessions.length === 1 &&
-          session?.topic === "Nyoprettet Assistent" &&
-          session?.mask?.name === DEFAULT_TOPIC &&
+          session?.topic === DEFAULT_TOPIC &&
+          session?.mask?.name === DEFAULT_MASK_NAME &&
           session?.mask?.context?.[0]?.content === "" &&
           session.messages.length == 0
         ) {
@@ -737,6 +751,9 @@ export const useChatStore = createPersistStore(
             savedUserMessage,
             botMessage,
           ]);
+          if (session.topic === DEFAULT_TOPIC) {
+            session.topic = getFirstMessageTopic(session);
+          }
         });
 
         var api: ClientApi;
@@ -936,7 +953,8 @@ export const useChatStore = createPersistStore(
 
         if (
           config.enableAutoGenerateTitle &&
-          session.topic === DEFAULT_TOPIC &&
+          (session.topic === DEFAULT_TOPIC ||
+            session.topic === getFirstMessageTopic(session)) &&
           countMessages(messages) >= SUMMARIZE_MIN_LEN
         ) {
           const topicMessages = messages.concat(
