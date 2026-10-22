@@ -17,6 +17,7 @@ import { ErrorBoundary } from "./error";
 
 import { getISOLang, getLang } from "../locales";
 import { useAssistentFromUrl } from "../utils/assistent-from-url";
+import { useScrollbarOnScroll } from "../utils/scrollbar";
 
 import {
   BrowserRouter as Router,
@@ -242,6 +243,7 @@ export function Home() {
   useSwitchTheme();
   useLoadData();
   useHtmlLang();
+  useScrollbarOnScroll();
 
   useEffect(() => {
     useAccessStore.getState().fetch();
