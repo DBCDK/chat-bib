@@ -180,10 +180,38 @@
   justify-content: end;
 }
 
+// logo til venstre, titel til højre
+// (slås til med SIDEBAR_INLINE_LOGO i appsettings)
+.sidebar-header-inline {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  padding-top: 0;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+
+  .sidebar-title {
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+}
+
 .sidebar-logo {
   position: absolute;
   left: 0;
   bottom: 18px;
+}
+
+// logoet ved siden af titlen, uden baggrund
+.sidebar-logo-inline {
+  flex-shrink: 0;
+  display: flex;
+
+  img {
+    height: 44px; // samme højde som titel + undertekst
+    width: auto;
+  }
 }
 
 .sidebar-title {
@@ -223,12 +251,14 @@
 }
 
 .chat-item-selected {
-  border-color: var(--primary);
+  // SkoleGPT-temaet sætter variablen (Orange-500); andre apps bruger --primary
+  border-color: var(--chat-item-selected-color, var(--primary));
 }
 
 .chat-item-title {
   font-size: 14px;
-  font-weight: bolder;
+  // SkoleGPT-temaet sætter variablen (600, semibold); andre apps bruger bolder
+  font-weight: var(--chat-item-title-weight, bolder);
   display: block;
   width: calc(100% - 15px);
   overflow: hidden;
@@ -253,6 +283,13 @@
 
 .chat-item:hover > .chat-item-delete:hover {
   opacity: 1;
+}
+
+// Rød skraldespand (slås til med TRASH_DELETE_ICON i appsettings)
+.chat-item-delete-trash {
+  top: 2px;
+  right: 2px;
+  color: var(--danger-color);
 }
 
 .chat-item-info {
@@ -380,10 +417,26 @@
   direction: rtl;
 }
 
+// --button-* sættes kun i SkoleGPT-temaet; andre apps bruger fallback-værdierne
+// (samme udseende som før: --primary med hvid tekst, ingen farveskift ved hover)
 .sidebar .newChatButton {
-  background-color: var(--primary);
+  background-color: var(--button-color, var(--primary));
   width: 300px;
-  color: white;
+  color: var(--button-text-color, white);
+  &:hover {
+    background-color: var(
+      --button-hover-color,
+      var(--button-color, var(--primary))
+    );
+  }
+}
+
+// større, fed tekst (slås til med SIDEBAR_LARGE_BUTTONS i appsettings).
+// 19px fed tæller som "stor tekst" i WCAG (krav 3:1), så Grøn-100 på Orange-500
+// (ca. 3:1) er nok.
+.sidebar .newChatButton-large {
+  font-size: 19px;
+  font-weight: 700;
 }
 
 .sidebar-disclaimer {
