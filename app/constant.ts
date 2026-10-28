@@ -66,6 +66,10 @@ export const STORAGE_KEY = "chatgpt-next-web";
 
 export const REQUEST_TIMEOUT_MS = 60000;
 
+// How many times we ask again when nothing comes back, and the first wait.
+export const MAX_CHAT_RETRIES = 3;
+export const RETRY_DELAY_MS = 1000;
+
 export const EXPORT_MESSAGE_CLASS_NAME = "export-markdown";
 
 export enum ServiceProvider {
