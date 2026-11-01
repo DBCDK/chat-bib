@@ -554,7 +554,8 @@ const da = {
     },
   },
   Store: {
-    DefaultTopic: "Nyoprettet Assistent",
+    DefaultTopic: "Ny chat",
+    DefaultMaskName: "Nyoprettet Assistent",
     BotHello: "Hej! Hvordan kan jeg hjælpe dig i dag?",
     Error: "Noget gik galt. Prøv igen senere.",
     Prompt: {
