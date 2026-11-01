@@ -1,7 +1,5 @@
 
 - Make the smallest correct change.
-- Write comments in plain English. Explain the specific reason or behavior and avoid vague wording.
-- Keep comments brief. Skip comments that only repeat the code.
 - Read relevant code before editing.
 - Preserve existing behavior unless asked to change it.
 - Do not overwrite or discard user changes.
