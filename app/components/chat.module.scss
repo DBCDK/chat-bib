@@ -383,7 +383,9 @@
   flex: 1;
   overflow: auto;
   overflow-x: hidden;
-  padding: 10px;
+  // the SkoleGPT theme uses the input box's side margin (12px), so the
+  // messages line up with it
+  padding: 10px var(--chat-body-side-padding, 10px);
   position: relative;
   overscroll-behavior: none;
   display: flex;
@@ -403,7 +405,8 @@
   // display: block;
   // position: relative;
   width: 100%;
-  max-width: 860px;
+  // the SkoleGPT theme narrows it to the input box's width (836px)
+  max-width: var(--chat-messages-max-width, 860px);
   padding-bottom: 240px;
   // height: 100%
 }
@@ -702,41 +705,37 @@
   margin-bottom: 40px;
 }
 
-// line things up from the top by default. This is what lines the attach/mic
-// icons up with a one-line text box (their height centers the icon on the line).
-.chat-input-row {
+// the text field with the attach (plus) button on its left. The button stays
+// at the bottom, next to the last line, when the text field grows.
+.chat-input-field {
   display: flex;
-  align-items: flex-start;
-}
-// used on the attach/mic buttons only while attached files are shown above the
-// text field, so the taller box doesn't push them up to the files - they stay
-// next to the text field.
-.chat-input-icon-pinned {
-  align-self: flex-end;
-}
-// the attach (plus) button, next to the mic button. Same icon-row + spacer
-// layout as the mic so the two icons line up.
-.chat-input-attach {
-  float: left;
-  margin: 8px;
-  width: 44px;
-  height: 56px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  color: var(--primary);
+  align-items: flex-end;
 }
 
-.chat-input-attach-icon {
+// the attach (plus) button inside the input box. The bottom margin centers it
+// on a one-line text field: (min-height 60px - 40px) / 2.
+.chat-input-attach {
+  flex-shrink: 0;
+  width: 40px;
   height: 40px;
+  margin: 0 0 10px 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  color: var(--chat-input-icon-color, var(--primary));
 }
 
-.chat-input-attach-spacer {
-  height: 16px;
+// the mic button inside the input box, just left of the send button. Same
+// height and bottom as .chat-input-send, so the two line up.
+.chat-input-mic {
+  position: absolute;
+  right: 72px;
+  bottom: var(--chat-input-send-bottom, 24px);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 // highlight the input area while a file is dragged over it
@@ -829,7 +828,9 @@
   flex: 1;
   // the background is here so the file row and the text field look like one box;
   // both are see-through on top of it
-  background-color: var(--dark-gray);
+  background-color: var(--chat-input-bg, var(--dark-gray));
+  box-shadow: var(--chat-input-shadow, none);
+  border: var(--chat-input-border, none);
   border-radius: 10px;
   margin: 0 12px;
 }
@@ -839,7 +840,7 @@
 }
 
 .chat-input-panel-inner:has(.chat-input:focus) {
-  outline: 1px solid var(--primary);
+  outline: 1px solid var(--chat-input-focus-color, var(--primary));
 }
 
 .chat-input {
@@ -851,6 +852,7 @@
   background-color: transparent;
   color: var(--black);
   font-family: inherit;
+  line-height: var(--chat-input-line-height, normal);
   padding: var(--chat-input-padding);
   resize: none;
   outline: none;
@@ -868,8 +870,38 @@
 
   position: absolute;
   right: 22px;
-  bottom: 24px;
+  // the SkoleGPT theme sets the variable to center the button on one line
+  bottom: var(--chat-input-send-bottom, 24px);
   padding: 10px 12px;
+}
+
+// the send button's color: one color while the text field is empty and another
+// once something is typed. Only the SkoleGPT theme sets the variables; other
+// apps keep --primary in both states. Nested so it wins over IconButton's
+// .primary background.
+.chat-input-panel-inner .chat-input-send {
+  background-color: var(--chat-send-color, var(--primary));
+  opacity: var(--chat-send-idle-opacity, 1);
+
+  &.chat-input-send-active {
+    background-color: var(--chat-send-active-color, var(--primary));
+    opacity: 1;
+  }
+
+  // the arrow; !important to override IconButton's white .primary icon
+  path {
+    fill: var(--chat-send-icon-color, white) !important;
+  }
+}
+
+// "SkoleGPT kan tage fejl ..." under the chat input. The SkoleGPT theme sets
+// the variables; other apps keep the old size and color.
+.chat-disclaimer {
+  margin-top: -15px;
+  margin-bottom: var(--chat-disclaimer-margin-bottom, 5px);
+  text-align: center;
+  font-size: var(--chat-disclaimer-font-size, 10px);
+  color: var(--chat-disclaimer-color, #767671);
 }
 
 @media only screen and (max-width: 600px) {
