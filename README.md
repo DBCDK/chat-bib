@@ -82,10 +82,3 @@ Automatic rollback is not guaranteed: localStorage has a smaller quota, and the
 old migration may overwrite newer local data if only some stores migrated.
 The existing JSON backup contains chat/state data, not original attachment blobs;
 keep separate copies of files before using “Slet alle data”.
-
-Run the storage regression tests and production checks with:
-
-```bash
-npm run test:storage
-npm run build
-```

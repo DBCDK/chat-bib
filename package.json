@@ -11,7 +11,6 @@
     "build": "cross-env BUILD_MODE=standalone next build",
     "start": "next start",
     "lint": "next lint",
-    "test:storage": "node --test scripts/test-storage-migration.mjs scripts/test-file-store.mjs",
     "prompts": "node ./scripts/fetch-prompts.mjs",
     "prepare": "husky install",
     "prettier": "prettier --write 'app/**/*.{ts,tsx}'"
