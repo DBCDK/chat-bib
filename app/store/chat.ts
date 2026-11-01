@@ -27,6 +27,7 @@ import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
+import { clearChatStorage } from "../utils/idb-migration";
 import { collectModelsWithDefaultModel } from "../utils/model";
 import { useAccessStore } from "./access";
 import { MessageRole } from "../typing";
@@ -1037,9 +1038,17 @@ export const useChatStore = createPersistStore(
         set(() => ({ sessions }));
       },
 
-      clearAllData() {
-        localStorage.clear();
-        location.reload();
+      async clearAllData() {
+        try {
+          await clearChatStorage();
+          location.reload();
+        } catch {
+          showToast(
+            "Kunne ikke slette alle data, og intet bliver gemt nu. Genindlæs siden og prøv igen.",
+            { text: "Genindlæs", onClick: () => location.reload() },
+            60000,
+          );
+        }
       },
     };
 
