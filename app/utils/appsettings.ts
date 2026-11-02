@@ -69,6 +69,13 @@ const skolegpt: RuntimeEnv = {
   // short placeholder in the chat input; short keyboard shortcuts are shown
   // as the placeholder once the field is clicked
   INPUT_HINTS_ON_CLICK: "true",
+  // in the edit assistant window, download and make a copy sit in a "..."
+  // menu next to "Del" instead of being separate buttons
+  MASK_MORE_MENU: "true",
+  // edit assistant: icon, name and system prompt as fields with example
+  // placeholders, the advanced settings as a fold-out section instead of a
+  // checkbox, and a check mark on the save button
+  MASK_GUIDED_EDITOR: "true",
 };
 const chatdbc: RuntimeEnv = {
   APP: "chatdbc",

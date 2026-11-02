@@ -663,15 +663,22 @@ const da = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
+        `Byg din egen assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
     },
     Config: {
-      Avatar: "Assistent ikon",
+      Avatar: "Assistentens ikon",
+      AvatarHint: "Vælg ikon",
       Name: "Assistentens navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
         SubTitle: "Gældende for denne chat",
