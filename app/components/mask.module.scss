@@ -12,6 +12,23 @@
   }
 }
 
+// linjen der sendes med systemprompten, når der er uploadet filer, vist som
+// en label nederst inde i feltet
+.system-prompt-upload {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  padding: 6px 10px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background-color: var(--gray);
+  color: var(--black);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .guided-modal {
   --modal-title-font-size: 24px;
   --modal-title-font-weight: var(--chat-item-title-weight);
@@ -147,6 +164,57 @@
   max-width: 100% !important;
   width: 100%;
   text-align: left;
+}
+
+// upload-feltet: plus i midten, hjælpetekst og en grå note under
+.guided-upload-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 20px 10px;
+  box-sizing: border-box;
+  border: 1px dashed var(--primary);
+  border-radius: var(--guided-field-radius);
+  background: var(--white);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) .guided-upload-plus {
+    opacity: 1;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.guided-upload-plus {
+  width: 40px;
+  height: 40px;
+  padding: 7px;
+  box-sizing: border-box;
+  border: 1px dashed var(--primary);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+
+.guided-upload-hint {
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.guided-upload-note {
+  margin-top: -4px;
+  color: var(--dark-text);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: center;
 }
 
 // "Avancerede indstillinger" som fold-ud i stedet for et flueben

@@ -8,6 +8,8 @@ import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
 import PlusIcon from "../icons/plus.svg";
+import LoadingButtonIcon from "../icons/loading.svg";
+import AttachIcon from "../icons/attach.svg";
 import CloseIcon from "../icons/close.svg";
 import ConfirmBoldIcon from "../icons/confirm-bold.svg";
 import MoreIcon from "../icons/more.svg";
@@ -44,7 +46,9 @@ import {
   Popover,
   Select,
   showConfirm,
+  showToast,
 } from "./ui-lib";
+import { fileToAttachment, FILE_ACCEPT } from "../utils/attachment";
 import { Avatar, AvatarPicker } from "./emoji";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
 import { useNavigate } from "react-router-dom";
@@ -139,6 +143,13 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
   );
 }
 
+// Short label for an uploaded file, e.g. "PDF" or "TXT" (same as in the chat).
+function fileTypeLabel(file: { mime: string; name: string }): string {
+  if (file.mime === "application/pdf") return "PDF";
+  const ext = (file.name.split(".").pop() || "").toUpperCase();
+  return ext.slice(0, 4) || "FIL";
+}
+
 // The system prompt textarea with the eye button that hides the prompt in the
 // UI. Used by both the simple view and the SkoleGPT guided editor.
 function SystemPromptField(props: {
@@ -175,6 +186,11 @@ function SystemPromptField(props: {
     }
   };
 
+  // same check as getRequestContextPrompts, so the label shows only when the
+  // files are actually sent
+  const hasFiles =
+    !!env.MASK_GUIDED_EDITOR && (props.mask.files?.length ?? 0) > 0;
+
   return (
     <div className={chatStyle["context-prompt"]} style={{ marginBottom: 4 }}>
       <div className={chatStyle["context-prompt-row"]}>
@@ -188,6 +204,8 @@ function SystemPromptField(props: {
               width: "100%",
               boxSizing: "border-box",
               paddingRight: 32,
+              // room for the upload label at the bottom of the field
+              ...(hasFiles ? { paddingBottom: 40 } : {}),
               ...(systemPromptHidden ? { color: "#d0d0d0" } : {}),
             }}
             rows={5}
@@ -215,6 +233,13 @@ function SystemPromptField(props: {
             }
             className={styles["system-prompt-eye"]}
           />
+          {/* sent after the system prompt when there are uploaded files (see
+              getRequestContextPrompts), so it is shown as a label in the field */}
+          {hasFiles && (
+            <div className={styles["system-prompt-upload"]}>
+              {Locale.Mask.Config.UploadPrompt}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -250,6 +275,38 @@ export function MaskConfig(props: {
   const globalConfig = useAppConfig();
 
   const [showSimpleSettings, setShowSimpleSettings] = useState(true);
+
+  // files for the upload field: the same pdf/text files as the attach button
+  // in the chat; their text is read out once here (fileToAttachment)
+  const files = props.mask.files ?? [];
+  const [uploading, setUploading] = useState(false);
+
+  async function addFiles(picked: File[]) {
+    if (props.readonly || picked.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of picked) {
+        const attachment = await fileToAttachment(file);
+        props.updateMask((mask) => {
+          mask.files = [...(mask.files ?? []), attachment];
+        });
+      }
+    } catch (e: any) {
+      showToast(e?.message || "Kunne ikke uploade filen.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function pickFiles() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = FILE_ACCEPT;
+    fileInput.multiple = true;
+    fileInput.onchange = (event: any) =>
+      addFiles(Array.from(event.target.files || []));
+    fileInput.click();
+  }
 
   // SkoleGPT: icon, name and system prompt as fields with example
   // placeholders, and the advanced settings in a fold-out section instead of
@@ -323,6 +380,87 @@ export function MaskConfig(props: {
             readonly={props.readonly}
             placeholder={Locale.Mask.Config.SystemPromptPlaceholder}
           />
+        </div>
+
+        <div className={styles["guided-field"]}>
+          <div className={styles["guided-title"]}>
+            {Locale.Mask.Config.Upload}
+          </div>
+          {/* like the attach button in the chat: click or drop files here */}
+          <button
+            type="button"
+            className={styles["guided-upload-field"]}
+            disabled={props.readonly || uploading}
+            onClick={pickFiles}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              addFiles(Array.from(e.dataTransfer?.files || []));
+            }}
+          >
+            {uploading ? (
+              <LoadingButtonIcon className={styles["guided-upload-plus"]} />
+            ) : (
+              <AttachIcon className={styles["guided-upload-plus"]} />
+            )}
+            <span className={styles["guided-upload-hint"]}>
+              {Locale.Mask.Config.UploadHint}
+            </span>
+            <span className={styles["guided-upload-note"]}>
+              {Locale.Mask.Config.UploadNote}
+            </span>
+          </button>
+          {files.length > 0 && (
+            <div className={chatStyle["attach-list"]}>
+              {files.map((file, index) => (
+                <div
+                  className={chatStyle["attach-item"]}
+                  key={file.id ?? index}
+                >
+                  <div
+                    className={chatStyle["attach-item-file"]}
+                    style={{ cursor: "default" }}
+                    title={file.name}
+                  >
+                    {file.preview ? (
+                      <>
+                        <img
+                          className={chatStyle["attach-item-file-preview"]}
+                          src={file.preview}
+                          alt=""
+                        />
+                        <span className={chatStyle["attach-item-file-badge"]}>
+                          {fileTypeLabel(file)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className={chatStyle["attach-item-file-label"]}>
+                        {fileTypeLabel(file)}
+                      </span>
+                    )}
+                  </div>
+                  {!props.readonly && (
+                    <button
+                      type="button"
+                      className={chatStyle["attach-remove"]}
+                      title="Fjern"
+                      // the saved file is kept (no deleteFileBlob): chats
+                      // started from this assistant may still use it
+                      onClick={() =>
+                        props.updateMask((mask) => {
+                          mask.files = (mask.files ?? []).filter(
+                            (_, i) => i !== index,
+                          );
+                        })
+                      }
+                    >
+                      <PlusIcon />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <details className={styles["guided-advanced"]}>
