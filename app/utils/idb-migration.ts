@@ -1,27 +1,36 @@
 import type { StateStorage } from "zustand/middleware";
 import {
+  clear,
+  get,
+  keys,
+  promisifyRequest,
+  set,
+  type UseStore,
+} from "idb-keyval";
+import { createBrowserStore } from "./indexeddb-store";
+import {
   clearFileBlobs,
   setFileDeletionTime,
   stopFileSaves,
 } from "./file-store";
 
-const DB_NAME = "keyval-store";
-const STORE_NAME = "keyval";
-const SAVED_IN_IDB = "saved-in-indexeddb";
+let stateStore: UseStore | undefined;
+let legacyStore: UseStore | undefined;
+const db = () => (stateStore ??= createBrowserStore("chatbib-state", "keyval"));
+const legacyDb = () =>
+  (legacyStore ??= createBrowserStore("keyval-store", "keyval"));
+const SAVED_IN_IDB = "chatbib-saved-in-indexeddb:";
 const OLD_VERSION_FLAG = "idb-to-localstorage-migrated";
 const DELETED = "deleted";
 const LOCAL_DELETED = "chatbib-deleted";
 const DELETE_PENDING = "pending:";
-const TIMEOUT = 5000;
-let dbPromise: Promise<IDBDatabase | null> | undefined;
-let retryAfter = 0;
 let wiping = false;
-let started = false;
-let deletedAtStart: unknown;
-let localDeletedAtStart: string | null | undefined;
+let stateOpened = false;
+let deletedAtStart: string | null | undefined;
 const unread = new Set<string>();
 const failed = new Set<string>();
-const pending = new Map<string, Promise<unknown>>();
+const waiting = new Map<string, string | null>();
+const saving = new Map<string, Promise<void>>();
 
 // If saved data cannot be loaded, do not replace it with default values.
 export function blockSaving(name: string): void {
@@ -41,71 +50,31 @@ export function deletionPending(): boolean {
   }
 }
 
-function getDb(recreate = false): Promise<IDBDatabase | null> {
-  if (!dbPromise) {
-    if (Date.now() < retryAfter) return Promise.resolve(null);
-    const opening = new Promise<IDBDatabase | null>((resolve) => {
-      let settled = false;
-      const finish = (db: IDBDatabase | null) => {
-        if (settled) return db?.close();
-        settled = true;
-        clearTimeout(timer);
-        resolve(db);
-      };
-      const timer = setTimeout(() => finish(null), 3000);
-      try {
-        const request = window.indexedDB.open(DB_NAME);
-        request.onerror = () => finish(null);
-        request.onupgradeneeded = () => {
-          // Don't create an empty database while SAVED_IN_IDB is set. That would
-          // hide missing data on reload. Only delete-all may create a replacement.
-          try {
-            if (
-              settled ||
-              (!recreate && window.localStorage.getItem(SAVED_IN_IDB) != null)
-            ) {
-              request.transaction?.abort();
-              return;
-            }
-          } catch {
-            request.transaction?.abort();
-            return;
-          }
-          const db = request.result;
-          if (!db.objectStoreNames.contains(STORE_NAME))
-            db.createObjectStore(STORE_NAME);
-        };
-        request.onsuccess = () => {
-          const db = request.result;
-          db.onversionchange = () => {
-            db.close();
-            dbPromise = undefined;
-          };
-          finish(db);
-        };
-      } catch {
-        finish(null);
-      }
-    });
-    dbPromise = opening;
-    void opening.then((db) => {
-      if (!db && dbPromise === opening) {
-        dbPromise = undefined;
-        // Pause retries so each part of a streamed reply doesn't wait for
-        // another failed database open.
-        retryAfter = Date.now() + TIMEOUT;
-      }
-    });
-  }
-  return dbPromise;
+function stopAndReload(): void {
+  wiping = true;
+  stopFileSaves();
+  location.reload();
 }
 
-// Hold the lock through both the IndexedDB write and localStorage cleanup.
-// An old local copy could otherwise hide a newer save from another tab.
+function checkDeletion(): void {
+  if (wiping) throw new Error("Data was deleted");
+  const deleted = window.localStorage.getItem(LOCAL_DELETED);
+  if (deleted?.startsWith(DELETE_PENDING))
+    throw new Error("Browser data deletion is incomplete");
+  if (deletedAtStart === undefined) {
+    deletedAtStart = deleted;
+    setFileDeletionTime(deleted ?? undefined);
+  }
+  if (deleted !== deletedAtStart) {
+    stopAndReload();
+    throw new Error("Data was deleted");
+  }
+}
+
+// Keep the IndexedDB save and localStorage cleanup together across tabs.
+// Otherwise one tab could remove another tab's newer localStorage save.
 async function withStorageLock<T>(
-  name: string,
   run: (locked: boolean) => Promise<T>,
-  mode: "shared" | "exclusive" = "exclusive",
 ): Promise<T> {
   const locks = window.navigator?.locks;
   if (!locks) return run(false);
@@ -113,8 +82,8 @@ async function withStorageLock<T>(
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
     return await locks.request(
-      `chatbib-storage:${name}`,
-      { mode, signal: controller.signal },
+      "chatbib-storage",
+      { signal: controller.signal },
       () => {
         clearTimeout(timer);
         return run(true);
@@ -125,183 +94,59 @@ async function withStorageLock<T>(
   }
 }
 
-// Queue saves per store so a slow retry can't overwrite a newer update.
-function ordered<T>(
+// Check the deletion marker in the same transaction as the read or write.
+// A tab opened before deletion must not restore chats if it missed the reload.
+const guardedDb: UseStore = (mode, run) =>
+  db()(
+    mode,
+    (store) =>
+      new Promise((resolve, reject) => {
+        stateOpened = true;
+        const deleted = store.get(DELETED);
+        deleted.onerror = () => reject(deleted.error);
+        deleted.onsuccess = () => {
+          try {
+            checkDeletion();
+            if (
+              deleted.result !== undefined &&
+              deleted.result !== deletedAtStart
+            ) {
+              stopAndReload();
+              throw new Error("Data was deleted");
+            }
+            resolve(run(store));
+          } catch (error) {
+            store.transaction.abort();
+            reject(error);
+          }
+        };
+      }),
+  );
+
+async function saveToIdb(
   name: string,
-  run: (locked: boolean) => Promise<T>,
-): Promise<T> {
-  // Keep delete-all waiting until this operation, including localStorage
-  // changes, has finished. Take this shared lock before the store lock
-  // so different stores can still run together.
-  const locked = () =>
-    wiping
-      ? run(false)
-      : withStorageLock(
-          "delete-all",
-          () => withStorageLock(name, run),
-          "shared",
-        );
-  const next = (pending.get(name) ?? Promise.resolve()).then(locked, locked);
-  pending.set(name, next);
-  const clear = () => {
-    if (pending.get(name) === next) pending.delete(name);
-  };
-  void next.then(clear, clear);
-  return next;
-}
-
-function stopAndReload(): void {
-  wiping = true;
-  stopFileSaves();
-  location.reload();
-}
-
-// Remember the deletion marker from the first load, even if IndexedDB is
-// unavailable. If another tab deletes data, this tab must reload before saving.
-function checkLocalDeletion(): boolean {
-  if (wiping) return false;
-  const deleted = window.localStorage.getItem(LOCAL_DELETED);
-  if (deleted?.startsWith(DELETE_PENDING))
-    throw new Error("Browser data deletion is incomplete");
-  if (localDeletedAtStart === undefined) {
-    localDeletedAtStart = deleted;
-    // Give the file store this marker even if chats load from localStorage.
-    // Otherwise it could reject a new upload as coming from before that deletion.
-    if (!started) setFileDeletionTime(deleted ?? undefined);
-  }
-  if (deleted === localDeletedAtStart) return true;
-  stopAndReload();
-  return false;
-}
-
-function deletedSince(deleted: unknown): boolean {
-  if (!started) {
-    started = true;
-    deletedAtStart = deleted;
-    setFileDeletionTime(deleted);
-  }
-  if (deleted === deletedAtStart) return false;
-  stopAndReload();
-  return true;
-}
-
-async function read(db: IDBDatabase, name: string): Promise<string | null> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readonly");
-    const store = tx.objectStore(STORE_NAME);
-    const deleted = store.get(DELETED);
-    const value = store.get(name);
-    const timer = setTimeout(() => {
-      try {
-        tx.abort();
-      } catch {
-        /* Transaction already finished. */
-      }
-      reject(new Error("IndexedDB read timed out"));
-    }, TIMEOUT);
-    tx.onerror = tx.onabort = () => {
-      clearTimeout(timer);
-      reject(tx.error ?? new Error("IndexedDB read failed"));
-    };
-    tx.oncomplete = () => {
-      clearTimeout(timer);
-      if (deletedSince(deleted.result))
-        return reject(new Error("Data was deleted"));
-      try {
-        resolve(
-          value.result == null
-            ? null
-            : typeof value.result === "string"
-              ? value.result
-              : JSON.stringify(value.result),
-        );
-      } catch (error) {
-        reject(error);
-      }
-    };
-  });
-}
-
-async function write(
-  run: (store: IDBObjectStore) => void,
-  { retry = true, recreate = false } = {},
-): Promise<boolean> {
-  const db = await getDb(recreate);
-  if (!db) return false;
-  try {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    return await new Promise<boolean>((resolve) => {
-      const timer = setTimeout(() => {
-        try {
-          tx.abort();
-        } catch {
-          /* Transaction already finished. */
-        }
-        resolve(false);
-      }, TIMEOUT);
-      const finish = (ok: boolean) => {
-        clearTimeout(timer);
-        resolve(ok);
-      };
-      tx.oncomplete = () => finish(true);
-      tx.onerror = tx.onabort = () => finish(false);
-      try {
-        run(tx.objectStore(STORE_NAME));
-      } catch {
-        tx.abort();
-        finish(false);
-      }
-    });
-  } catch {
-    // The browser may have closed the connection. Retry with a new one.
-    dbPromise = undefined;
-    return retry ? write(run, { retry: false, recreate }) : false;
-  }
-}
-
-const change =
-  (name: string, value: string | null) => (store: IDBObjectStore) => {
-    const deleted = store.get(DELETED);
-    deleted.onsuccess = () => {
-      try {
-        if (!checkLocalDeletion() || deletedSince(deleted.result))
-          store.transaction.abort();
-        else if (value === null) store.delete(name);
-        else store.put(value, name);
-      } catch {
-        store.transaction.abort();
-      }
-    };
-  };
-
-let marked = false;
-function prepareSave(): void {
-  if (!marked) {
-    // Save this flag before writing new data to IndexedDB. If localStorage
-    // is full, stop the migration. Otherwise an older localStorage copy
-    // could replace newer IndexedDB data the next time the page loads.
-    if (window.localStorage.getItem(SAVED_IN_IDB) === null)
-      window.localStorage.setItem(SAVED_IN_IDB, "1");
-    marked = true;
-  }
-}
-
-function afterSave(
-  name: string,
-  localCopy: string | null,
+  value: string | null,
   locked: boolean,
-): void {
-  // Allow an older app version to copy data back from IndexedDB only after
-  // this save succeeds, so it cannot copy old data after a failed migration.
-  window.localStorage.removeItem(OLD_VERSION_FLAG);
-  // Another tab's localStorage write may become visible while IndexedDB saves.
-  // With the store lock held, that copy is older than this save and can be
-  // removed. Without the lock, remove only the copy we read before saving.
-  if (
-    locked ||
-    (localCopy !== null && window.localStorage.getItem(name) === localCopy)
-  )
-    window.localStorage.removeItem(name);
+): Promise<boolean> {
+  try {
+    checkDeletion();
+    const local = window.localStorage.getItem(name);
+    // Save the marker first so later loads know to expect data in IndexedDB.
+    // If this fails, skip the database write and keep using localStorage.
+    if (window.localStorage.getItem(SAVED_IN_IDB + name) === null)
+      window.localStorage.setItem(SAVED_IN_IDB + name, "1");
+    await set(name, value, guardedDb);
+    checkDeletion();
+    // Without a lock, only remove the local copy we read before this save.
+    if (
+      locked ||
+      (local !== null && window.localStorage.getItem(name) === local)
+    )
+      window.localStorage.removeItem(name);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 let warned = false;
@@ -309,7 +154,7 @@ function warnSaveFailure(error: unknown): void {
   console.error("Could not save browser data", error);
   if (warned) return;
   warned = true;
-  // Load ui-lib here to avoid the store -> UI -> locale -> store import loop.
+  // Load the toast code here because its imports lead back to this store.
   void import("../components/ui-lib")
     .then(({ showToast }) =>
       showToast(
@@ -321,73 +166,119 @@ function warnSaveFailure(error: unknown): void {
     .catch(console.error);
 }
 
+async function flush(name: string): Promise<void> {
+  try {
+    while (waiting.has(name) && !wiping) {
+      await withStorageLock(async (locked) => {
+        const value = waiting.get(name);
+        waiting.delete(name);
+        if (
+          value === undefined ||
+          wiping ||
+          unread.has(name) ||
+          failed.has(name)
+        )
+          return;
+        checkDeletion();
+        if (!(await saveToIdb(name, value, locked)) && !waiting.has(name)) {
+          checkDeletion();
+          window.localStorage.setItem(name, value ?? "null");
+        }
+      });
+    }
+  } finally {
+    saving.delete(name);
+  }
+}
+
+function queueSave(name: string, value: string | null): Promise<void> {
+  if (wiping || unread.has(name) || failed.has(name)) return Promise.resolve();
+  // A streamed reply can change the store before the previous save finishes.
+  // Keep only the latest waiting update and save it after the current one.
+  waiting.set(name, value);
+  if (!saving.has(name)) {
+    const job = Promise.resolve().then(() => flush(name));
+    saving.set(name, job);
+  }
+  return saving.get(name)!;
+}
+
 export const migrationAwareStorage: StateStorage = {
   getItem(name: string): Promise<string | null> {
     unread.add(name);
-    return ordered(name, async (locked) => {
-      if (!checkLocalDeletion()) throw new Error("Data was deleted");
-      const db = await getDb();
-      const saved = db ? await read(db, name) : null;
-      if (!checkLocalDeletion()) throw new Error("Data was deleted");
-      // Older app versions and failed IndexedDB writes save to localStorage.
-      // If it cannot be read, stop loading: the IndexedDB copy may be older.
+    return withStorageLock(async (locked) => {
+      checkDeletion();
+      // Failed IndexedDB saves and older app versions can leave newer data in
+      // localStorage. If it cannot be read, the IndexedDB copy may be too old.
       const local = window.localStorage.getItem(name);
-      if (local != null) {
-        if (db) {
-          prepareSave();
-          if (await write(change(name, local))) afterSave(name, local, locked);
-        }
-        if (wiping) throw new Error("Data was deleted");
+      if (local !== null) {
+        await saveToIdb(name, local, locked);
+        checkDeletion();
         unread.delete(name);
         return local;
       }
-      if (!db && window.localStorage.getItem(SAVED_IN_IDB) != null)
-        throw new Error("IndexedDB did not open");
+      const savedBefore =
+        window.localStorage.getItem(SAVED_IN_IDB + name) !== null;
+      const oldDraft =
+        window.localStorage.getItem("saved-in-indexeddb") !== null;
+      let value: string | null | undefined;
+      let unavailable = false;
+      try {
+        value = await get(name, guardedDb);
+      } catch (error) {
+        // A read error does not mean the database is empty. Try older storage only
+        // if this tab has not opened the new database and no saved data marker exists.
+        if (stateOpened || savedBefore) throw error;
+        unavailable = true;
+      }
+      if (value === undefined && savedBefore)
+        throw new Error("Saved browser data is missing");
+      // NextChat kept its old database after moving data to localStorage.
+      // Read it only if that move never finished, or the previous adapter
+      // stored current data there.
+      if (
+        value === undefined &&
+        (oldDraft || window.localStorage.getItem(OLD_VERSION_FLAG) === null)
+      ) {
+        let legacy: unknown;
+        let legacyOpened = false;
+        try {
+          legacy = await get(name, (mode, run) =>
+            legacyDb()(mode, (store) => {
+              legacyOpened = true;
+              return run(store);
+            }),
+          );
+          // The old marker covers the whole database. One saved value may be missing,
+          // but an empty database could mean saved chats have been lost.
+          if (legacy == null && oldDraft && !(await keys(legacyDb())).length)
+            throw new Error("Previously saved browser data is missing");
+        } catch (error) {
+          // If both databases cannot open on first run, use localStorage.
+          if (legacyOpened || !unavailable || oldDraft) throw error;
+        }
+        if (legacy != null) {
+          const imported =
+            typeof legacy === "string" ? legacy : JSON.stringify(legacy);
+          value = imported;
+          if (!(await saveToIdb(name, imported, locked))) {
+            checkDeletion();
+            window.localStorage.setItem(name, imported);
+          }
+        }
+      }
+      checkDeletion();
       unread.delete(name);
-      return saved;
+      return value ?? null;
     });
   },
   setItem(name: string, value: string): Promise<void> {
-    if (wiping || unread.has(name)) return Promise.resolve();
-    return ordered(name, async (locked) => {
-      if (wiping || unread.has(name)) return;
-      let local: string | null;
-      try {
-        if (!checkLocalDeletion()) return;
-        local = window.localStorage.getItem(name);
-      } catch (error) {
-        warnSaveFailure(error);
-        return;
-      }
-      try {
-        if (await getDb()) {
-          prepareSave();
-          if (await write(change(name, value))) {
-            afterSave(name, local, locked);
-            return;
-          }
-        }
-      } catch {
-        // If saving a flag or removing the local copy fails, try to save this
-        // latest value in localStorage below. An older copy would win on reload.
-      }
-      if (wiping) return;
-      try {
-        if (!checkLocalDeletion()) return;
-        window.localStorage.setItem(name, value);
-      } catch (error) {
-        warnSaveFailure(error);
-      }
-    }).catch(warnSaveFailure);
+    return queueSave(name, value).catch(warnSaveFailure);
   },
   removeItem(name: string): Promise<void> {
-    return ordered(name, async () => {
-      if (wiping || unread.has(name)) return;
-      if (!(await write(change(name, null))) && window.indexedDB)
-        throw new Error("Saved data could not be removed");
-      if (!checkLocalDeletion()) return;
-      window.localStorage.removeItem(name);
-    });
+    // Queue removal with saves so an earlier save cannot restore the data.
+    // Store null so the next load does not import the old value again.
+    return queueSave(name, null).catch(warnSaveFailure);
   },
 };
 
@@ -397,50 +288,46 @@ const wipeChannel =
     : null;
 if (wipeChannel) wipeChannel.onmessage = stopAndReload;
 
-// Each IndexedDB save checks the deletion marker in its transaction. Old tabs
-// can't write deleted data back to IndexedDB even if they miss the notification.
 export async function clearChatStorage(): Promise<void> {
   wiping = true;
+  waiting.clear();
   stopFileSaves();
-  await Promise.allSettled(pending.values());
-  await withStorageLock("delete-all", async () => {
+  await Promise.allSettled(saving.values());
+  await withStorageLock(async () => {
     const deletedAt = `${Date.now()}-${Math.random()}`;
     const previousDeletion = window.localStorage.getItem(LOCAL_DELETED);
-    // Mark deletion as unfinished before removing data. If it stops partway
-    // through, the next load must show the recovery screen because some
-    // attached files may already be gone.
+    // Mark deletion as unfinished before removing data. If it stops halfway,
+    // the next load must show the recovery screen because files may be missing.
     window.localStorage.setItem(LOCAL_DELETED, DELETE_PENDING + deletedAt);
     try {
       await clearFileBlobs(deletedAt);
     } catch (error) {
-      // This attempt has not changed the files or chats. Restore the previous
-      // marker, including any earlier unfinished deletion that still needs a retry.
+      // The files may already be deleted even though we did not get the result.
+      // Keep the pending marker so the user can retry from the recovery screen.
+      if (error instanceof Error && error.name === "TimeoutError") throw error;
+      // The files and chats are still intact. Restore the previous marker.
       if (previousDeletion === null)
         window.localStorage.removeItem(LOCAL_DELETED);
       else window.localStorage.setItem(LOCAL_DELETED, previousDeletion);
       throw error;
     }
-    dbPromise = undefined;
-    retryAfter = 0;
-    const stateDeleted =
-      !window.indexedDB ||
-      (await write(
-        (store) => {
-          store.clear();
-          store.put(deletedAt, DELETED);
-        },
-        { recreate: true },
-      ));
-    if (!stateDeleted)
-      throw new Error("Browser data was not completely deleted");
-    // Keep localStorage data until the chat database has been cleared.
-    // If removing localStorage data fails, leave deletion marked as unfinished.
+    if (window.indexedDB) {
+      // Earlier versions copied these chats without removing the old records.
+      await clear(legacyDb());
+      await db()("readwrite", (store) => {
+        store.clear();
+        store.put(deletedAt, DELETED);
+        return promisifyRequest(store.transaction);
+      });
+    }
     const keys = Array.from({ length: window.localStorage.length }, (_, i) =>
       window.localStorage.key(i),
     );
     for (const key of keys)
       if (key !== null && key !== LOCAL_DELETED)
         window.localStorage.removeItem(key);
+    // Do not import old data after deleting everything, even if IndexedDB was unavailable.
+    window.localStorage.setItem(OLD_VERSION_FLAG, "1");
     window.localStorage.setItem(LOCAL_DELETED, deletedAt);
     wipeChannel?.postMessage("deleted");
   });

@@ -24,7 +24,8 @@ type SetStoreState<T> = (
   replace?: boolean | undefined,
 ) => void;
 
-// Wait for saved data, or it could overwrite a new chat or settings change.
+// Wait for saved data before making changes. Loading it later could erase
+// a new chat or a settings change.
 export function hydrated(store: {
   persist: {
     hasHydrated(): boolean;
@@ -53,8 +54,8 @@ export function createPersistStore<T extends object, M>(
     persistOptions.storage = createJSONStorage(() => migrationAwareStorage);
   }
 
-  // Zustand sends load and migrate errors to the returned callback.
-  // Log them and block saves so defaults can't overwrite saved data.
+  // Zustand reports errors from loading saved data or updating its format here.
+  // Stop saving so default values cannot replace data that failed to load.
   const options = persistOptions as any;
   const storeOnRehydrate = options.onRehydrateStorage;
   // eslint-disable-next-line no-param-reassign
