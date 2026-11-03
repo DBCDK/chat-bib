@@ -155,8 +155,9 @@
     background-color: var(--modal-header-bg, transparent);
 
     .modal-title {
-      font-weight: bolder;
+      font-weight: var(--modal-title-font-weight, bolder);
       font-size: var(--modal-title-font-size, 16px);
+      line-height: var(--modal-title-line-height, normal);
     }
 
     .modal-header-actions {

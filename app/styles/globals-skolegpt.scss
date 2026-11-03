@@ -67,7 +67,6 @@
   --chat-input-bg: #ffffff; // Hvid, baggrund i chat-input
   --chat-input-icon-color: #181816; // Sort-900, plus og mikrofon
   --modal-header-bg: #eef4e4; // Grøn-100, toppen af pop-up-vinduer
-  --modal-title-font-size: 20px; // titlen i toppen, fx "Byg din egen assistent"
   --modal-footer-bg: #eef4e4; // Grøn-100, bunden af pop-up-vinduer
   // ingen streg mellem top/bund og indholdet
   --modal-header-border: none;
@@ -76,7 +75,7 @@
   // (ligner "Ny chat"), samme tekst- og knapstørrelse på begge
   --save-button-border: none;
   --save-button-font-weight: 400;
-  --save-button-icon-scale: 0.75; // 16px -> 12px, fluebenet passer til teksten
+  --save-button-icon-scale: 0.875;
   --save-button-min-width: 160px; // bredere knap, indholdet står i midten
   --save-button-min-height: 40px; // mere luft over og under teksten
   --save-button-font-size: 14px;

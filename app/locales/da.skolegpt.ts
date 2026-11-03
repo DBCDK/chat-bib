@@ -678,6 +678,11 @@ const da = {
       SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
       SystemPromptPlaceholder:
         "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Upload: "Upload materiale (Valgfri)",
+      UploadHint: "Tilføj filer (PDF, Word eller billeder)",
+      UploadNote: "Dataene bruges kun til denne assistent",
+      // added after the system prompt when the assistant has uploaded files
+      UploadPrompt: "Svar ud fra det uploadede materiale",
       Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",

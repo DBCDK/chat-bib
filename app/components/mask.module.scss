@@ -12,11 +12,37 @@
   }
 }
 
+// linjen der sendes med systemprompten, når der er uploadet filer, vist som
+// en label nederst inde i feltet
+.system-prompt-upload {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  padding: 6px 10px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  background-color: var(--gray);
+  color: var(--black);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.guided-modal {
+  --modal-title-font-size: 24px;
+  --modal-title-font-weight: var(--chat-item-title-weight);
+  --modal-title-line-height: 1.25;
+
+  > div {
+    overflow: hidden;
+  }
+}
+
 // rediger-assistent med eksempler i felterne (MASK_GUIDED_EDITOR, kun SkoleGPT)
 .guided-editor {
-  // fælles højde for ikon- og navnefeltet (ikonet er 30px + luft)
   --guided-field-height: 44px;
-
+  --guided-field-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -47,8 +73,9 @@
 
   input[type="text"],
   textarea {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 400;
+    border-radius: var(--guided-field-radius);
   }
 
   // navnefeltet får samme højde som ikon-feltet
@@ -76,11 +103,11 @@
   padding: 0 10px;
   box-sizing: border-box;
   border: var(--border-in-light);
-  border-radius: 10px;
+  border-radius: var(--guided-field-radius);
   background: var(--white);
   color: var(--black);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px; // som teksten i navnefeltet
   text-align: left;
   cursor: pointer;
 
@@ -113,11 +140,62 @@
   text-align: left;
 }
 
+// upload-feltet: plus i midten, hjælpetekst og en grå note under
+.guided-upload-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 20px 10px;
+  box-sizing: border-box;
+  border: 1px dashed var(--primary);
+  border-radius: var(--guided-field-radius);
+  background: var(--white);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) .guided-upload-plus {
+    opacity: 1;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.guided-upload-plus {
+  width: 40px;
+  height: 40px;
+  padding: 7px;
+  box-sizing: border-box;
+  border: 1px dashed var(--primary);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+
+.guided-upload-hint {
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.guided-upload-note {
+  margin-top: -4px;
+  color: var(--dark-text);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: center;
+}
+
 // "Avancerede indstillinger" som fold-ud i stedet for et flueben
 .guided-advanced {
   summary {
     cursor: pointer;
-    font-size: 16px; // som felttitlerne
+    font-size: 16px;
     font-weight: 600;
     padding: 8px 0;
   }

@@ -6,6 +6,7 @@ import { StoreKey } from "../constant";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
 import { MODEL_NAMES } from "../dbc";
+import { FileAttachment } from "../client/api";
 import { env, SKOLEGPT_RETIRED_MODEL_ALIASES, SKOLEGPT_REPLACEMENT_MODEL } from "../utils/appsettings";
 
 export type Mask = {
@@ -16,6 +17,9 @@ export type Mask = {
   hideContext?: boolean;
   hideSystemPrompt?: boolean;
   context: ChatMessage[];
+  // files uploaded in the edit assistant window; their text is sent with the
+  // system prompt in every request (see getRequestContextPrompts)
+  files?: FileAttachment[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;
   lang: Lang;
