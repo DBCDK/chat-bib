@@ -764,11 +764,13 @@ export const useChatStore = createPersistStore(
         // ask again a few times before telling the user.
         let attempt = 0;
 
-        // The user can delete or resend the answer while we wait.
+        // The user can delete the question or resend the answer while we wait.
         const stillInChat = () =>
-          !!get()
-            .sessions.find((s) => s.id === session.id)
-            ?.messages.some((m) => m.id === botMessage.id);
+          [userMessage.id, botMessage.id].every((id) =>
+            get()
+              .sessions.find((s) => s.id === session.id)
+              ?.messages.some((m) => m.id === id),
+          );
 
         // Put the answer back in a finished state and redraw the chat.
         const settle = () => {
@@ -780,15 +782,14 @@ export const useChatStore = createPersistStore(
           });
         };
 
-        // Take the empty answer out again. One left behind is turned into a
-        // fault later, when the page tidies up old messages.
+        // Take the empty answer out of the chat it was asked in. The user may
+        // have gone to another chat or deleted this one and pressed undo.
         const dropEmptyAnswer = () => {
           if (botMessage.content.length > 0) return;
-          get().updateCurrentSession((session) => {
-            session.messages = session.messages.filter(
-              (m) => m.id !== botMessage.id,
-            );
-          });
+          session.messages = session.messages.filter(
+            (m) => m.id !== botMessage.id,
+          );
+          set(() => ({ sessions: get().sessions }));
         };
 
         const tryAgainLater = () => {
@@ -799,7 +800,15 @@ export const useChatStore = createPersistStore(
           botMessage.retrying = true;
 
           // Wait longer each time. Asking straight away lands in the same queue.
-          const timer = setTimeout(() => send(), RETRY_DELAY_MS * attempt);
+          // The question may be deleted while we wait so look again first.
+          const timer = setTimeout(() => {
+            if (stillInChat()) {
+              send();
+            } else {
+              dropEmptyAnswer();
+              settle();
+            }
+          }, RETRY_DELAY_MS * attempt);
 
           // Keeps the stop button working while we wait.
           const waiting = new AbortController();
@@ -816,8 +825,9 @@ export const useChatStore = createPersistStore(
         };
 
         const onChatError = (error: Error) => {
-          // The user pressed stop. Keep what came through and say nothing.
-          if (error instanceof AbortedError) {
+          // The user pressed stop or the question is gone. Keep what came
+          // through and say nothing.
+          if (error instanceof AbortedError || !stillInChat()) {
             dropEmptyAnswer();
             settle();
             return;
@@ -828,8 +838,7 @@ export const useChatStore = createPersistStore(
           if (
             error instanceof RetryableError &&
             attempt < MAX_CHAT_RETRIES &&
-            botMessage.content.length === 0 &&
-            stillInChat()
+            botMessage.content.length === 0
           ) {
             console.warn("[Chat] no answer, trying again ", error.message);
             tryAgainLater();

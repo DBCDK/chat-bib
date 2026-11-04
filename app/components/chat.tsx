@@ -1091,8 +1091,13 @@ function _Chat() {
     chatStore.updateCurrentSession((session) => {
       const stopTiming = Date.now() - REQUEST_TIMEOUT_MS;
       session.messages.forEach((m) => {
-        // A try only runs while the page is open, so this one was cut off.
         if (m.retrying) {
+          // Still trying in the background after the user went to another
+          // chat and came back. Leave it alone.
+          const key = ChatControllerPool.key(session.id, m.id);
+          if (ChatControllerPool.controllers[key]) return;
+
+          // A try only runs while the page is open, so this one was cut off.
           m.retrying = false;
           m.streaming = false;
           m.isError = true;
