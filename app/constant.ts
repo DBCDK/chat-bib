@@ -64,7 +64,7 @@ export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
 
 export const STORAGE_KEY = "chatgpt-next-web";
 
-export const REQUEST_TIMEOUT_MS = 60000;
+export const REQUEST_TIMEOUT_MS = 3 * 60 * 1000;
 
 // How many times we ask again when nothing comes back, and the first wait.
 export const MAX_CHAT_RETRIES = 3;

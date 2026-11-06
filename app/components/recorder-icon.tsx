@@ -8,9 +8,8 @@ const MAX_RECORDING_MS = 30_000;
 
 export function RecorderIcon(props: {
   onTranscribed: (text: string) => void;
-  // keep the button at the bottom (next to the text field) instead of the top;
-  // used when attached files make the input box taller
-  pinned?: boolean;
+  // placement is set by the parent (inside the chat input box)
+  className?: string;
 }) {
   const recorderRef = React.useRef<Recorder | null>(null);
   const stopTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
@@ -58,7 +57,10 @@ export function RecorderIcon(props: {
     stopTimeoutRef.current = setTimeout(stop, MAX_RECORDING_MS);
   };
 
-  const onClick = () => {
+  const onClick = (e: React.MouseEvent) => {
+    // the button sits inside the chat input's <label>; don't let the click
+    // also focus the text field (that would open the keyboard on mobile)
+    e.preventDefault();
     if (isTranscribing) return;
     if (isRecording) {
       void stop();
@@ -68,27 +70,17 @@ export function RecorderIcon(props: {
   };
 
   return (
-    <div
-      style={{
-        float: "left",
-        margin: 8,
-        width: 44,
-        height: 56,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        alignSelf: props.pinned ? "flex-end" : undefined,
-        lineHeight: 1,
-      }}
-    >
+    <div className={props.className}>
+      {isRecording && (
+        <span style={{ fontSize: "11px" }}>{`${seconds.toFixed(1)}s`}</span>
+      )}
       <div
         style={{
-          width: 44,
-          height: 40,
+          width: 36,
+          height: 36,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: "26px",
           cursor: isTranscribing ? "default" : "pointer",
         }}
         onClick={onClick}
@@ -102,19 +94,16 @@ export function RecorderIcon(props: {
         }
       >
         {isTranscribing ? (
-          <LoadingButtonIcon style={{ width: 26, height: 26 }} />
+          <LoadingButtonIcon style={{ width: 24, height: 24 }} />
         ) : (
           <MicrophoneSttIcon
             style={{
-              width: 26,
-              height: 26,
+              width: 24,
+              height: 24,
               color: isRecording ? "red" : "var(--primary)",
             }}
           />
         )}
-      </div>
-      <div style={{ fontSize: "11px", height: 16, lineHeight: "16px" }}>
-        {isRecording ? `${seconds.toFixed(1)}s` : ""}
       </div>
     </div>
   );

@@ -1,5 +1,17 @@
 @import "../styles/animation.scss";
 
+.system-prompt-eye {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: transparent !important;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
 .share-button-anchor {
   position: relative;
   display: inline-block;
