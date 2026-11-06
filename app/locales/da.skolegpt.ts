@@ -76,6 +76,21 @@ const da = {
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
+    // shown when no answer came back
+    NoResponse: {
+      // the moving dots are drawn after this line, so it ends without a period
+      Retrying: "Der kom ikke noget svar. Prøver igen",
+      Failed: "Der kom ikke noget svar. Prøv igen eller start en ny chat.",
+      // asking again sends the same too long text
+      TooLong:
+        "Beskeden eller chatten er for lang. Prøv at gøre beskeden kortere eller start en ny chat.",
+      // the request never got as far as the server
+      Offline:
+        "Du ser ud til at være offline. Tjek din forbindelse og prøv igen.",
+      // tooltip on the sign in the corner
+      ShowInfo: "Vis mere information",
+      InfoLabel: "Fejlbesked:",
+    },
     Input: (submitKey: string) => {
       let inputHints = `${submitKey} for at sende`;
       if (submitKey === String(SubmitKey.Enter)) {

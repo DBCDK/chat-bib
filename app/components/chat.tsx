@@ -33,6 +33,9 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import PlusIcon from "../icons/plus.svg";
+import WarningIcon from "../icons/warning.svg";
+import RetryIcon from "../icons/retry.svg";
+import InfoIcon from "../icons/info.svg";
 import AttachIcon from "../icons/attach.svg";
 import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
@@ -109,7 +112,6 @@ import { Avatar } from "./emoji";
 import { ContextPrompts, MaskAvatar, MaskConfig } from "./mask";
 import { useMaskStore } from "../store/mask";
 import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
-import { prettyObject } from "../utils/format";
 import { ExportMessageModal } from "./exporter";
 
 import { FeedbackModal } from "./feedback";
@@ -724,6 +726,31 @@ function fileTypeLabel(file: { mime: string; name: string }): string {
   return ext.slice(0, 4) || "FIL";
 }
 
+// Opens what the server said, so it can go in a fault report.
+function ErrorInfo(props: { info: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className={styles["chat-message-error-info"]}
+        title={Locale.Chat.NoResponse.ShowInfo}
+        aria-label={Locale.Chat.NoResponse.ShowInfo}
+        onClick={() => setOpen(!open)}
+      >
+        <InfoIcon />
+      </button>
+      {open && (
+        <div className={styles["chat-message-error-code"]}>
+          <span className={styles["chat-message-error-code-label"]}>
+            {Locale.Chat.NoResponse.InfoLabel}
+          </span>{" "}
+          {props.info}
+        </div>
+      )}
+    </>
+  );
+}
+
 function _Chat() {
   type RenderMessage = ChatMessage & { preview?: boolean };
 
@@ -1080,6 +1107,19 @@ function _Chat() {
     chatStore.updateCurrentSession((session) => {
       const stopTiming = Date.now() - REQUEST_TIMEOUT_MS;
       session.messages.forEach((m) => {
+        if (m.retrying) {
+          // Still trying in the background after the user went to another
+          // chat and came back. Leave it alone.
+          const key = ChatControllerPool.key(session.id, m.id);
+          if (ChatControllerPool.controllers[key]) return;
+
+          // A try only runs while the page is open, so this one was cut off.
+          m.retrying = false;
+          m.streaming = false;
+          m.isError = true;
+          m.content = Locale.Chat.NoResponse.Failed;
+        }
+
         // check if should stop all stale messages
         if (m.isError || new Date(m.date).getTime() < stopTiming) {
           if (m.streaming) {
@@ -1088,10 +1128,7 @@ function _Chat() {
 
           if (m.content.length === 0) {
             m.isError = true;
-            m.content = prettyObject({
-              error: true,
-              message: "empty response",
-            });
+            m.content = Locale.Chat.NoResponse.Failed;
           }
         }
       });
@@ -1196,8 +1233,9 @@ function _Chat() {
     const textContent = getMessageTextContent(userMessage);
     const images = getMessageImages(userMessage);
     const imageNames = getMessageImageNames(userMessage);
+    // Without the files the model answers about a document it never got.
     chatStore
-      .onUserInput(textContent, images, undefined, imageNames)
+      .onUserInput(textContent, images, getMessageFiles(userMessage), imageNames)
       .then(() => setIsLoading(false));
     inputRef.current?.focus();
   };
@@ -1881,6 +1919,9 @@ function _Chat() {
                 !(message.preview || message.content.length === 0) &&
                 !isContext;
               const showTyping = message.preview || message.streaming;
+              // when the answer should wear the box that says it went wrong
+              const showNoAnswer =
+                (message.retrying || message.isError) && !isUser;
               // the files/images to show under this message (read them once)
               const msgImages = getMessageImages(message);
               const msgImageNames = getMessageImageNames(message);
@@ -1981,13 +2022,32 @@ function _Chat() {
                           </div>
                         )}
                       </div>
-                      <div className={styles["chat-message-item"]}>
+                      <div
+                        className={
+                          styles["chat-message-item"] +
+                          (showNoAnswer
+                            ? " " + styles["chat-message-item-warning"]
+                            : "")
+                        }
+                      >
+                        {showNoAnswer && (
+                          <WarningIcon
+                            className={styles["chat-message-warning-icon"]}
+                          />
+                        )}
+                        {message.retrying && (
+                          <div className={styles["chat-message-retrying"]}>
+                            {Locale.Chat.NoResponse.Retrying}
+                            <LoadingIcon />
+                          </div>
+                        )}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
                             (message.preview || message.streaming) &&
                             message.content.length === 0 &&
-                            !isUser
+                            !isUser &&
+                            !message.retrying
                           }
                           // onContextMenu={(e) => onRightClick(e, message)}
                           onDoubleClickCapture={() => {
@@ -1998,6 +2058,9 @@ function _Chat() {
                           parentRef={scrollRef}
                           defaultShow={i >= messages.length - 6}
                         />
+                        {message.errorInfo && (
+                          <ErrorInfo info={message.errorInfo} />
+                        )}
                         {msgImages.length == 1 && (
                           <img
                             className={styles["chat-message-item-image"]}
@@ -2063,6 +2126,23 @@ function _Chat() {
                           </div>
                         )}
                       </div>
+
+                      {message.isError && !isUser && (
+                        <div className={styles["chat-message-tools"]}>
+                          <IconButton
+                            text={Locale.Chat.Actions.Retry}
+                            icon={<RetryIcon />}
+                            bordered
+                            onClick={() => onResend(message)}
+                          />
+                          <IconButton
+                            text={Locale.Home.NewChat}
+                            icon={<PlusIcon />}
+                            bordered
+                            onClick={() => chatStore.newSession()}
+                          />
+                        </div>
+                      )}
 
                       {env.ENABLE_TTSASR && !isUser && (
                         <div className={styles["chat-message-tools"]}>
