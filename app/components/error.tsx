@@ -4,8 +4,9 @@ import GithubIcon from "../icons/github.svg";
 import ResetIcon from "../icons/reload.svg";
 import { ISSUE_URL } from "../constant";
 import Locale from "../locales";
-import { showConfirm } from "./ui-lib";
+import { showConfirm, showToast } from "./ui-lib";
 import { exportLocalAppState } from "../utils/sync";
+import { useChatStore } from "../store/chat";
 
 interface IErrorBoundaryState {
   hasError: boolean;
@@ -24,13 +25,16 @@ export class ErrorBoundary extends React.Component<any, IErrorBoundaryState> {
     this.setState({ hasError: true, error, info });
   }
 
-  clearAndSaveData() {
+  async clearAndSaveData() {
     try {
-      exportLocalAppState();
-    } finally {
-      localStorage.clear();
-      location.reload();
+      await exportLocalAppState();
+    } catch {
+      showToast(
+        "Sikkerhedskopien kunne ikke gemmes. Dine data er ikke slettet.",
+      );
+      return;
     }
+    await useChatStore.getState().clearAllData();
   }
 
   render() {

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { combine, persist, createJSONStorage } from "zustand/middleware";
 import { Updater } from "../typing";
 import { deepClone } from "./clone";
-import { migrationAwareStorage } from "./idb-migration";
+import { migrationAwareStorage, blockSaving } from "./idb-migration";
 
 type SecondParam<T> = T extends (
   _f: infer _F,
@@ -24,6 +24,23 @@ type SetStoreState<T> = (
   replace?: boolean | undefined,
 ) => void;
 
+// Wait for saved data before making changes. Loading it later could erase
+// a new chat or a settings change.
+export function hydrated(store: {
+  persist: {
+    hasHydrated(): boolean;
+    onFinishHydration(fn: () => void): () => void;
+  };
+}): Promise<void> {
+  return new Promise((resolve) => {
+    if (store.persist.hasHydrated()) return resolve();
+    const stop = store.persist.onFinishHydration(() => {
+      stop();
+      resolve();
+    });
+  });
+}
+
 export function createPersistStore<T extends object, M>(
   state: T,
   methods: (
@@ -33,17 +50,12 @@ export function createPersistStore<T extends object, M>(
   persistOptions: SecondParam<typeof persist<T & M & MakeUpdater<T>>>,
 ) {
   // eslint-disable-next-line no-param-reassign
-  if (typeof window !== "undefined" && window.localStorage) {
+  if (typeof window !== "undefined") {
     persistOptions.storage = createJSONStorage(() => migrationAwareStorage);
   }
 
-  // Make hydration failures visible. Zustand runs hydration as a promise chain
-  // and hands any rejection — including anything thrown by `migrate` — to the
-  // callback returned by `onRehydrateStorage`. When a store does not define
-  // one that callback is `undefined`, so the error is discarded without ever
-  // reaching the console: the store silently falls back to its defaults and
-  // then overwrites the persisted data on the next write. Wrap whatever the
-  // store already declared instead of replacing it.
+  // Zustand reports errors from loading saved data or updating its format here.
+  // Stop saving so default values cannot replace data that failed to load.
   const options = persistOptions as any;
   const storeOnRehydrate = options.onRehydrateStorage;
   // eslint-disable-next-line no-param-reassign
@@ -51,9 +63,10 @@ export function createPersistStore<T extends object, M>(
     const storeCallback = storeOnRehydrate?.(preHydrationState);
     return (hydratedState: any, error?: unknown) => {
       if (error) {
+        blockSaving(options.name);
         console.error(
           `[store:${options.name}] rehydration failed — persisted data was NOT loaded, ` +
-            `the store is running on defaults and may overwrite it`,
+            `the store is running on defaults and is not saved until a reload`,
           error,
         );
       }
