@@ -413,12 +413,26 @@ const da = {
         `Rediger promptskabelon ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Klon",
+      Save: "Gem og luk",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
     },
     Config: {
       Avatar: "Bot-avatar",
+      // AvatarHint, the placeholders, SystemPrompt, Upload and Advanced are
+      // only shown with MASK_GUIDED_EDITOR (SkoleGPT)
+      AvatarHint: "Vælg ikon",
       Name: "Bot-navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Upload: "Upload materiale",
+      UploadHint: "Tilføj filer (PDF, Word eller billeder)",
+      UploadNote: "Dataene bruges kun til denne assistent",
+      // added after the system prompt when the assistant has uploaded files
+      UploadPrompt: "Svar ud fra det uploadede materiale.",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug global konfiguration",
         SubTitle: "Brug global konfiguration i denne chat",

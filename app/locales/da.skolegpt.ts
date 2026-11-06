@@ -679,15 +679,27 @@ const da = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
+        `Byg din egen assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
     },
     Config: {
-      Avatar: "Assistent ikon",
+      Avatar: "Assistentens ikon",
+      AvatarHint: "Vælg ikon",
       Name: "Assistentens navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Upload: "Upload materiale (Valgfri)",
+      UploadHint: "Tilføj filer (PDF, Word eller billeder)",
+      UploadNote: "Dataene bruges kun til denne assistent",
+      // added after the system prompt when the assistant has uploaded files
+      UploadPrompt: "Svar ud fra det uploadede materiale",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
         SubTitle: "Gældende for denne chat",
