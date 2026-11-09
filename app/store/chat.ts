@@ -634,7 +634,9 @@ export const useChatStore = createPersistStore(
         get().selectSession(limit(i + delta));
       },
 
-      deleteSession(index: number) {
+      // Pass silent when the app removes an empty chat on its own. The user
+      // did not delete anything so they should not be told a chat was deleted.
+      deleteSession(index: number, silent = false) {
         const deletingLastSession = get().sessions.length === 1;
         const deletedSession = get().sessions.at(index);
 
@@ -663,16 +665,18 @@ export const useChatStore = createPersistStore(
           get().newSession();
         }
 
-        showToast(
-          Locale.Home.DeleteToast,
-          {
-            text: Locale.Home.Revert,
-            onClick() {
-              set(() => restoreState);
+        if (!silent) {
+          showToast(
+            Locale.Home.DeleteToast,
+            {
+              text: Locale.Home.Revert,
+              onClick() {
+                set(() => restoreState);
+              },
             },
-          },
-          5000,
-        );
+            5000,
+          );
+        }
       },
 
       currentSession() {
@@ -694,7 +698,7 @@ export const useChatStore = createPersistStore(
           session?.mask?.context?.[0]?.content === "" &&
           session.messages.length == 0
         ) {
-          get().deleteSession(index);
+          get().deleteSession(index, true);
         }
 
         return session;
@@ -1183,7 +1187,7 @@ export const useChatStore = createPersistStore(
         let mask = chatStore.sessions[0].mask;
         if (mask.avatar == "gpt-bot" && mask.context.length == 0) {
           chatStore.newSession();
-          chatStore.deleteSession(1);
+          chatStore.deleteSession(1, true);
         }
       }
     }
