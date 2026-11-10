@@ -24,7 +24,6 @@ import QrIcon from "../icons/qr.svg";
 import {
   DEFAULT_MASK_AVATAR,
   isSystemPromptHidden,
-  encodeHiddenPrompt,
   Mask,
   useMaskStore,
 } from "../store/mask";
@@ -76,6 +75,11 @@ import {
 import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
 import { env } from "../utils/appsettings";
+import {
+  buildAssistantParamLink,
+  ShareAssistantModal,
+  ShareView,
+} from "./share-assistant";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -83,27 +87,6 @@ function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
   const [removed] = result.splice(startIndex, 1);
   result.splice(endIndex, 0, removed);
   return result;
-}
-
-// Build an app link with the assistant name and optional system prompt.
-// URLSearchParams does the URL encoding.
-function buildAssistantParamLink(
-  mask: Mask,
-  path: string,
-  hideSystemPrompt: boolean,
-): string {
-  const systemPrompt = mask.context?.[0]
-    ? getMessageTextContent(mask.context[0]).trim()
-    : "";
-  const url = new URL(path, location.origin);
-  url.searchParams.set("name", mask.name);
-  if (systemPrompt && hideSystemPrompt) {
-    url.searchParams.set("p", encodeHiddenPrompt(systemPrompt));
-  } else if (systemPrompt) {
-    url.searchParams.set("prompt", systemPrompt);
-  }
-  if (hideSystemPrompt) url.searchParams.set("h", "1");
-  return url.toString();
 }
 
 export function buildSkoletubeShareLink(
@@ -907,7 +890,8 @@ export function ContextPrompts(props: {
 
 // The three share options shown in the "Del" popover: SkoleTube, a copyable
 // link, and a QR code of that same link. Uses the existing link builders.
-function ShareMenu(props: { mask: Mask }) {
+// With onShare (SkoleGPT), the link and QR options open "Del assistent".
+function ShareMenu(props: { mask: Mask; onShare?: (view: ShareView) => void }) {
   const [showQr, setShowQr] = useState(false);
   const globalConfig = useAppConfig();
   const systemPromptHidden = isSystemPromptHidden(
@@ -940,14 +924,18 @@ function ShareMenu(props: { mask: Mask }) {
       </div>
       <div
         className={`${styles["share-menu-item"]} clickable`}
-        onClick={() => copyToClipboard(shareLink)}
+        onClick={() =>
+          props.onShare ? props.onShare("link") : copyToClipboard(shareLink)
+        }
       >
         <CopyIcon />
         <span>{Locale.Mask.EditModal.ShareLink}</span>
       </div>
       <div
         className={`${styles["share-menu-item"]} clickable`}
-        onClick={() => setShowQr((v) => !v)}
+        onClick={() =>
+          props.onShare ? props.onShare("qr") : setShowQr((v) => !v)
+        }
       >
         <QrIcon />
         <span>Del via QR</span>
@@ -1040,6 +1028,7 @@ function MoreButton(props: { onDownload: () => void; onClone: () => void }) {
 // Wraps the "Del" button and anchors the ShareMenu directly below it.
 function ShareButton(props: { mask: Mask }) {
   const { open, setOpen, anchorRef } = useFooterMenu();
+  const [shareView, setShareView] = useState<ShareView>();
 
   return (
     <div ref={anchorRef} className={styles["share-button-anchor"]}>
@@ -1052,8 +1041,25 @@ function ShareButton(props: { mask: Mask }) {
       />
       {open && (
         <div className={styles["share-menu-popup"]}>
-          <ShareMenu mask={props.mask} />
+          <ShareMenu
+            mask={props.mask}
+            onShare={
+              env.MASK_GUIDED_EDITOR
+                ? (view) => {
+                    setOpen(false);
+                    setShareView(view);
+                  }
+                : undefined
+            }
+          />
         </div>
+      )}
+      {shareView && (
+        <ShareAssistantModal
+          mask={props.mask}
+          view={shareView}
+          onClose={() => setShareView(undefined)}
+        />
       )}
     </div>
   );

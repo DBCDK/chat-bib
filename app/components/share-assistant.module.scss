@@ -1,0 +1,70 @@
+// "Del assistent" (kun SkoleGPT, se share-assistant.tsx)
+.note {
+  margin: 0;
+  color: var(--dark-text);
+  font-size: 14px;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: var(--border-in-light);
+  border-radius: var(--guided-field-radius);
+}
+
+.summary-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.link {
+  max-height: 4.65em;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--dark-gray);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-all;
+}
+
+// QR-visningen: linket på én linje under koden
+.link-short {
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.qr-code {
+  padding: 16px;
+  border: var(--border-in-light);
+  border-radius: 14px;
+  background: #ffffff;
+  line-height: 0;
+}
+
+.qr-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+// kopier-ikonet har sin farve (stroke) i selve svg-filen; her bliver det
+// hvidt som teksten på den orange knap. Ikke udfyldt, kun streger.
+:global(.modal-mask) .copy-button svg path {
+  fill: none !important;
+  stroke: var(--button-text-color, #ffffff) !important;
+}

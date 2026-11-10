@@ -401,6 +401,22 @@ const da = {
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
     },
+    // the "Del assistent" popup, only with MASK_GUIDED_EDITOR (SkoleGPT)
+    Share: {
+      Title: "Del assistent",
+      Note: "Det du retter her, gælder kun det delte link. Din gemte assistent ændres ikke.",
+      Name: "Navn",
+      SystemPrompt: "Systemprompt",
+      Summaries: "Resuméer af materialet",
+      SummariesNote: "Eleverne får kun resuméerne, ikke filerne.",
+      Link: "Link",
+      CopyLink: "Kopier link",
+      ShowQr: "Vis QR-kode",
+      EditContent: "Ret indhold",
+      QrNote:
+        "Eleverne scanner koden med telefonens kamera og kommer direkte til assistenten.",
+      QrTooLong: "Linket er for langt til en QR-kode. Gør resuméerne kortere.",
+    },
     Config: {
       Avatar: "Bot-avatar",
       // AvatarHint, the placeholders, SystemPrompt, Upload and Advanced are
