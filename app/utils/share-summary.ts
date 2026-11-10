@@ -99,11 +99,17 @@ export async function decodeFileSummaries(
   }
 }
 
+const SUMMARY_SUFFIX = " (resumé)";
+
 // A shared summary becomes a text file on the assistant (Mask.files), so it
 // is sent with the system prompt like the files uploaded in the builder.
+// An assistant opened from a link can be shared again; its file names
+// already end with the suffix.
 export function summaryToFile(summary: FileSummary): FileAttachment {
   return {
-    name: `${summary.name} (resumé)`,
+    name: summary.name.endsWith(SUMMARY_SUFFIX)
+      ? summary.name
+      : summary.name + SUMMARY_SUFFIX,
     mime: "text/plain",
     text: summary.summary,
   };
