@@ -36,7 +36,7 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { MultimodalContent, ROLES } from "../client/api";
+import { FileAttachment, MultimodalContent, ROLES } from "../client/api";
 import {
   Input,
   List,
@@ -80,6 +80,7 @@ import {
   ShareAssistantModal,
   ShareView,
 } from "./share-assistant";
+import { isSummaryFile } from "../utils/share-summary";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -127,7 +128,9 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
 }
 
 // Short label for an uploaded file, e.g. "PDF" or "TXT" (same as in the chat).
-function fileTypeLabel(file: { mime: string; name: string }): string {
+// A summary from a shared link is "RES", so it isn't taken for the file.
+function fileTypeLabel(file: FileAttachment): string {
+  if (isSummaryFile(file)) return "RES";
   if (file.mime === "application/pdf") return "PDF";
   const ext = (file.name.split(".").pop() || "").toUpperCase();
   return ext.slice(0, 4) || "FIL";

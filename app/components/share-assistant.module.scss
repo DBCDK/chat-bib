@@ -14,9 +14,35 @@
   border-radius: var(--guided-field-radius);
 }
 
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// "Lav nyt resumé" som en lille grå knap
+.summary-header .new-summary {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background-color: var(--dark-gray);
+
+  &:hover:not([disabled]) {
+    filter: brightness(0.95);
+  }
+
+  div {
+    font-size: 13px;
+  }
+}
+
 .summary-name {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .link {
