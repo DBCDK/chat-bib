@@ -713,6 +713,10 @@ const da = {
       UploadNote: "Dataene bruges kun til denne assistent",
       // added after the system prompt when the assistant has uploaded files
       UploadPrompt: "Svar ud fra det uploadede materiale",
+      // summaries from a shared link (share-summary.ts)
+      SummariesNote:
+        "Assistenten svarer ud fra resuméerne. Du kan rette i dem her.",
+      RemoveSummary: "Fjern resumé",
       Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
