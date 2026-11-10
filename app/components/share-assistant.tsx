@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 import { IconButton } from "./button";
 import { Input, Modal } from "./ui-lib";
@@ -7,15 +7,117 @@ import styles from "./share-assistant.module.scss";
 import CopyIcon from "../icons/copy.svg";
 import EditIcon from "../icons/edit.svg";
 import QrIcon from "../icons/qr.svg";
+import RefreshIcon from "../icons/refresh.svg";
+import LoadingButtonIcon from "../icons/loading.svg";
 import Locale from "../locales";
 import { encodeHiddenPrompt, isSystemPromptHidden, Mask } from "../store/mask";
 import { createMessage, useAppConfig } from "../store";
+import { ClientApi, FileAttachment } from "../client/api";
 import { MessageRole } from "../typing";
-import { Path } from "../constant";
+import { ModelProvider, Path } from "../constant";
 import { copyToClipboard, getMessageTextContent } from "../utils";
 import { encodeFileSummaries, FileSummary } from "../utils/share-summary";
 
 export type ShareView = "link" | "qr";
+
+type SummaryField = FileSummary & { status: "loading" | "done" | "error" };
+
+// Asks the model for a short summary of one uploaded file. The file goes in
+// as a file part, so the client adds its text the same way as in the chat.
+// An empty answer means the request failed (see the client's onFinish).
+function summarizeFile(
+  file: FileAttachment,
+  model: string,
+  onController: (controller: AbortController) => void,
+): Promise<string> {
+  const api = new ClientApi(
+    model.startsWith("dbc") ? ModelProvider.DBC : ModelProvider.GPT,
+  );
+  return new Promise((resolve, reject) => {
+    api.llm.chat({
+      messages: [
+        createMessage({
+          role: MessageRole.System,
+          content: Locale.Mask.Share.SummaryPrompt,
+        }),
+        createMessage({
+          role: MessageRole.User,
+          content: [{ type: "file", file }],
+        }),
+      ],
+      config: { model, stream: false },
+      onFinish: (message) =>
+        message.trim()
+          ? resolve(message.trim())
+          : reject(new Error("Empty summary")),
+      onError: reject,
+      onController,
+    });
+  });
+}
+
+// Summaries of the assistant's files. The model makes them one file at a
+// time when the popup opens; the teacher can edit them or make a new one.
+// Closing the popup stops the requests.
+function useFileSummaries(mask: Mask) {
+  const files = mask.files ?? [];
+  const [summaries, setSummaries] = useState<SummaryField[]>(() =>
+    files.map((file) => ({
+      name: file.name,
+      summary: "",
+      // without the file's text there is nothing to summarize
+      status: file.text ? "loading" : "error",
+    })),
+  );
+  const runRef = useRef({
+    cancelled: false,
+    controllers: [] as AbortController[],
+  });
+
+  const update = (index: number, change: Partial<SummaryField>) =>
+    setSummaries((list) =>
+      list.map((s, i) => (i === index ? { ...s, ...change } : s)),
+    );
+
+  const summarize = async (index: number, run = runRef.current) => {
+    update(index, { summary: "", status: "loading" });
+    try {
+      const summary = await summarizeFile(
+        files[index],
+        mask.modelConfig.model,
+        (controller) => run.controllers.push(controller),
+      );
+      if (!run.cancelled) update(index, { summary, status: "done" });
+    } catch {
+      if (!run.cancelled) update(index, { status: "error" });
+    }
+  };
+
+  // Each run has its own cancelled flag, so a stopped request can't change
+  // the fields of a newer run (React runs effects twice in development).
+  useEffect(() => {
+    const run = { cancelled: false, controllers: [] as AbortController[] };
+    runRef.current = run;
+    (async () => {
+      for (let i = 0; i < files.length && !run.cancelled; i++) {
+        if (files[i].text) await summarize(i, run);
+      }
+    })();
+    return () => {
+      run.cancelled = true;
+      run.controllers.forEach((controller) => controller.abort());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return {
+    summaries,
+    canSummarize: (index: number) => !!files[index]?.text,
+    updateSummary: (index: number, summary: string) =>
+      update(index, { summary }),
+    summarize: (index: number) => summarize(index),
+  };
+}
 
 // react-qr-code can't make a code from a much longer link (the QR limit is
 // 2953 characters)
@@ -104,10 +206,11 @@ export function ShareAssistantModal(props: {
   const [prompt, setPrompt] = useState(() =>
     mask.context?.[0] ? getMessageTextContent(mask.context[0]) : "",
   );
-  const [summaries, setSummaries] = useState<FileSummary[]>(() =>
-    (mask.files ?? []).map((file) => ({ name: file.name, summary: "" })),
-  );
+  const fileSummaries = useFileSummaries(mask);
+  const { summaries } = fileSummaries;
   const link = useShareLink(mask, name, prompt, summaries);
+  // the link is only ready once every summary is made
+  const summarizing = summaries.some((s) => s.status === "loading");
 
   // The edit window behind also closes on Escape. Catch it first so Escape
   // only closes this popup.
@@ -153,7 +256,7 @@ export function ShareAssistantModal(props: {
             bordered
             className={`${maskStyles["save-button"]} ${styles["copy-button"]}`}
             text={Locale.Mask.Share.CopyLink}
-            disabled={!link}
+            disabled={!link || summarizing}
             onClick={() => copyToClipboard(link)}
           />,
         ]}
@@ -162,14 +265,17 @@ export function ShareAssistantModal(props: {
           <ShareLinkView
             name={name}
             prompt={prompt}
-            summaries={summaries}
             link={link}
             onNameChange={setName}
             onPromptChange={setPrompt}
-            onSummariesChange={setSummaries}
+            {...fileSummaries}
           />
         ) : (
-          <ShareQrView name={name.trim() || mask.name} link={link} />
+          <ShareQrView
+            name={name.trim() || mask.name}
+            link={summarizing ? "" : link}
+            summarizing={summarizing}
+          />
         )}
       </Modal>
     </div>
@@ -180,16 +286,23 @@ export function ShareAssistantModal(props: {
 function ShareLinkView(props: {
   name: string;
   prompt: string;
-  summaries: FileSummary[];
   link: string;
   onNameChange: (name: string) => void;
   onPromptChange: (prompt: string) => void;
-  onSummariesChange: (summaries: FileSummary[]) => void;
+  summaries: SummaryField[];
+  canSummarize: (index: number) => boolean;
+  updateSummary: (index: number, summary: string) => void;
+  summarize: (index: number) => void;
 }) {
-  const updateSummary = (index: number, summary: string) =>
-    props.onSummariesChange(
-      props.summaries.map((s, i) => (i === index ? { ...s, summary } : s)),
-    );
+  const placeholder = (summary: SummaryField, index: number) => {
+    if (summary.status === "loading") return Locale.Mask.Share.Summarizing;
+    if (summary.status === "error") {
+      return props.canSummarize(index)
+        ? Locale.Mask.Share.SummaryFailed
+        : Locale.Mask.Share.NoFileText;
+    }
+    return "";
+  };
 
   return (
     <div className={maskStyles["guided-editor"]}>
@@ -225,14 +338,34 @@ function ShareLinkView(props: {
           </div>
           <p className={styles["note"]}>{Locale.Mask.Share.SummariesNote}</p>
           {props.summaries.map((summary, i) => (
-            <label key={i} className={styles["summary"]}>
-              <span className={styles["summary-name"]}>{summary.name}</span>
+            <div key={i} className={styles["summary"]}>
+              <div className={styles["summary-header"]}>
+                <span className={styles["summary-name"]}>{summary.name}</span>
+                {props.canSummarize(i) && (
+                  <IconButton
+                    icon={
+                      summary.status === "loading" ? (
+                        <LoadingButtonIcon />
+                      ) : (
+                        <RefreshIcon />
+                      )
+                    }
+                    text={Locale.Mask.Share.NewSummary}
+                    className={styles["new-summary"]}
+                    disabled={summary.status === "loading"}
+                    onClick={() => props.summarize(i)}
+                  />
+                )}
+              </div>
               <Input
+                aria-label={summary.name}
                 value={summary.summary}
                 rows={4}
-                onChange={(e) => updateSummary(i, e.currentTarget.value)}
+                placeholder={placeholder(summary, i)}
+                disabled={summary.status === "loading"}
+                onChange={(e) => props.updateSummary(i, e.currentTarget.value)}
               />
-            </label>
+            </div>
           ))}
         </div>
       )}
@@ -248,10 +381,16 @@ function ShareLinkView(props: {
 }
 
 // The link as a QR code for the students to scan
-function ShareQrView(props: { name: string; link: string }) {
+function ShareQrView(props: {
+  name: string;
+  link: string;
+  summarizing: boolean;
+}) {
   return (
     <div className={styles["qr"]}>
-      {props.link.length > MAX_QR_LINK_LENGTH ? (
+      {props.summarizing ? (
+        <p className={styles["note"]}>{Locale.Mask.Share.Summarizing}</p>
+      ) : props.link.length > MAX_QR_LINK_LENGTH ? (
         <p className={styles["note"]}>{Locale.Mask.Share.QrTooLong}</p>
       ) : (
         props.link && (
@@ -262,9 +401,11 @@ function ShareQrView(props: { name: string; link: string }) {
       )}
       <div className={styles["qr-name"]}>{props.name}</div>
       <p className={styles["note"]}>{Locale.Mask.Share.QrNote}</p>
-      <div className={`${styles["link"]} ${styles["link-short"]}`}>
-        {props.link}
-      </div>
+      {props.link && (
+        <div className={`${styles["link"]} ${styles["link-short"]}`}>
+          {props.link}
+        </div>
+      )}
     </div>
   );
 }

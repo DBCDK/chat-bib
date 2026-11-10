@@ -422,6 +422,14 @@ const da = {
       QrNote:
         "Eleverne scanner koden med telefonens kamera og kommer direkte til assistenten.",
       QrTooLong: "Linket er for langt til en QR-kode. Gør resuméerne kortere.",
+      // sent to the model with the file's text to make a summary
+      SummaryPrompt:
+        "Lav et kort resumé af materialet. Resuméet bruges af en assistent, der hjælper elever ud fra materialet, så tag de vigtigste fakta, begreber og navne med. Skriv højst 600 tegn på samme sprog som materialet, som almindelig tekst uden overskrifter, punktopstillinger eller indledning.",
+      Summarizing: "Laver resumé …",
+      SummaryFailed:
+        "Resuméet kunne ikke laves. Skriv det selv, eller prøv igen.",
+      NoFileText: "Filens tekst kunne ikke læses. Skriv resuméet selv.",
+      NewSummary: "Lav nyt resumé",
     },
     Config: {
       Avatar: "Bot-avatar",

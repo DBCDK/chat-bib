@@ -13,7 +13,10 @@ const MAX_DECODED_BYTES = 100_000;
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   bytes.forEach((b) => (binary += String.fromCharCode(b)));
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 // No return type on purpose: newer TypeScript then keeps the bytes typed as
@@ -99,20 +102,27 @@ export async function decodeFileSummaries(
   }
 }
 
-const SUMMARY_SUFFIX = " (resumé)";
+const SUMMARY_PREFIX = "Resumé af ";
 
 // A shared summary becomes a text file on the assistant (Mask.files), so it
 // is sent with the system prompt like the files uploaded in the builder.
-// An assistant opened from a link can be shared again; its file names
-// already end with the suffix.
+// "fotosyntese.pdf" becomes "Resumé af fotosyntese.pdf": only the summary is
+// in the link, not the file. An assistant opened from a link can be shared
+// again; its names already have the prefix.
 export function summaryToFile(summary: FileSummary): FileAttachment {
   return {
-    name: summary.name.endsWith(SUMMARY_SUFFIX)
+    name: summary.name.startsWith(SUMMARY_PREFIX)
       ? summary.name
-      : summary.name + SUMMARY_SUFFIX,
+      : SUMMARY_PREFIX + summary.name,
     mime: "text/plain",
     text: summary.summary,
   };
+}
+
+// A summary from a shared link, not an uploaded file: uploaded files always
+// have an id (the file is kept in IndexedDB), summaries don't.
+export function isSummaryFile(file: FileAttachment): boolean {
+  return !file.id && file.name.startsWith(SUMMARY_PREFIX);
 }
 
 export function isSameFiles(
