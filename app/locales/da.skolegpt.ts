@@ -679,15 +679,55 @@ const da = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
+        `Byg din egen assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
     },
+    // the "Del assistent" popup (share-assistant.tsx)
+    Share: {
+      Title: "Del assistent",
+      Note: "Det du retter her, gælder kun det delte link. Din gemte assistent ændres ikke.",
+      Name: "Navn",
+      SystemPrompt: "Systemprompt",
+      Summaries: "Resuméer af materialet",
+      SummariesNote: "Eleverne får kun resuméerne, ikke filerne.",
+      Link: "Link",
+      CopyLink: "Kopier link",
+      ShowQr: "Vis QR-kode",
+      EditContent: "Ret indhold",
+      QrNote:
+        "Eleverne scanner koden med telefonens kamera og kommer direkte til assistenten.",
+      QrTooLong: "Linket er for langt til en QR-kode. Gør resuméerne kortere.",
+      // sent to the model with the file's text to make a summary
+      SummaryPrompt:
+        "Lav et kort resumé af materialet. Resuméet bruges af en assistent, der hjælper elever ud fra materialet, så tag de vigtigste fakta, begreber og navne med. Skriv højst 600 tegn på samme sprog som materialet, som almindelig tekst uden overskrifter, punktopstillinger eller indledning.",
+      Summarizing: "Laver resumé …",
+      SummaryFailed:
+        "Resuméet kunne ikke laves. Skriv det selv, eller prøv igen.",
+      NoFileText: "Filens tekst kunne ikke læses. Skriv resuméet selv.",
+      NewSummary: "Lav nyt resumé",
+    },
     Config: {
-      Avatar: "Assistent ikon",
+      Avatar: "Assistentens ikon",
+      AvatarHint: "Vælg ikon",
       Name: "Assistentens navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Upload: "Upload materiale (Valgfri)",
+      UploadHint: "Tilføj filer (PDF, Word eller billeder)",
+      UploadNote: "Dataene bruges kun til denne assistent",
+      // added after the system prompt when the assistant has uploaded files
+      UploadPrompt: "Svar ud fra det uploadede materiale",
+      // summaries from a shared link (share-summary.ts)
+      SummariesNote:
+        "Assistenten svarer ud fra resuméerne. Du kan rette i dem her.",
+      RemoveSummary: "Fjern resumé",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
         SubTitle: "Gældende for denne chat",

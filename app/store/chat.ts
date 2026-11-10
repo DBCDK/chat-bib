@@ -120,11 +120,38 @@ function getFirstMessageTopic(session: ChatSession, maxLength = 50) {
 }
 
 function getRequestContextPrompts(session: ChatSession) {
-  return session.mask.context.filter(
+  const prompts = session.mask.context.filter(
     (message) =>
       message.role !== MessageRole.Assistant ||
       getMessageTextContent(message).trim() !== BOT_HELLO_CONTENT,
   );
+  // uploads are part of the assistant builder (MASK_GUIDED_EDITOR, only
+  // SkoleGPT); other apps ignore files on an imported mask
+  const files = env.MASK_GUIDED_EDITOR ? session.mask.files ?? [] : [];
+  if (files.length === 0) return prompts;
+
+  // files uploaded in the edit assistant window go with the system prompt,
+  // after a line telling the model to use them (shown as a label in the
+  // system prompt field). The clients turn the files into text
+  // (getMessageContentForApi), so the system prompt is still plain text.
+  const fileParts: MultimodalContent[] = files.map((file) => ({
+    type: "file",
+    file,
+  }));
+  const [first, ...rest] = prompts;
+  const hasSystemPrompt = first?.role === MessageRole.System;
+  const text = [
+    hasSystemPrompt ? getMessageTextContent(first) : "",
+    Locale.Mask.Config.UploadPrompt,
+  ]
+    .filter((part) => part.trim() !== "")
+    .join("\n\n");
+  const systemPrompt = createMessage({
+    ...(hasSystemPrompt ? first : {}),
+    role: MessageRole.System,
+    content: [{ type: "text", text }, ...fileParts],
+  });
+  return [systemPrompt, ...(hasSystemPrompt ? rest : prompts)];
 }
 
 function createEmptySession(): ChatSession {

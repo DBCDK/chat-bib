@@ -7,6 +7,12 @@ import { BUILTIN_MASK_STORE } from "../masks";
 import { MessageRole } from "../typing";
 import { createMessage } from "../store/chat";
 import { showToast } from "./ui-lib";
+import { FileAttachment } from "../client/api";
+import {
+  decodeFileSummaries,
+  isSameFiles,
+  summaryToFile,
+} from "../utils/share-summary";
 
 export function JumpToChat() {
   const location = useLocation();
@@ -37,41 +43,83 @@ export function JumpToChat() {
       return;
     }
 
-    const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
-    const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
+    // `files`: summaries of the sharer's uploaded files, from the `s` param
+    const openChat = (files?: FileAttachment[]) => {
+      const builtinMasks = Object.values(BUILTIN_MASK_STORE.masks) as Mask[];
+      const allMasks: Mask[] = [...maskStore.getAll(), ...builtinMasks];
 
-    const findMatchedMask = (): Mask | undefined => {
-      if (!name) return undefined;
-      if (!prompt) return allMasks.find((m) => m?.name === name);
+      const hasPrompt = (mask: Mask, text: string) =>
+        mask.context?.length === 1 &&
+        mask.context[0]?.role === MessageRole.System &&
+        (mask.context[0]?.content as string | undefined)?.trim() ===
+          text.trim();
 
-      return allMasks.find(
-        (mask) =>
-          !!mask &&
-          mask.name === name &&
-          (prompt === undefined ||
-            (mask.context?.length === 1 &&
-              mask.context[0]?.role === MessageRole.System &&
-              (mask.context[0]?.content as string | undefined)?.trim() ===
-                prompt.trim())),
-      );
+      const findMatchedMask = (): Mask | undefined => {
+        if (!name) return undefined;
+        // With summaries, only the same name, prompt and summaries is the same
+        // assistant (opening the link again reuses it)
+        if (files) {
+          return allMasks.find(
+            (mask) =>
+              !!mask &&
+              mask.name === name &&
+              hasPrompt(mask, prompt ?? "") &&
+              isSameFiles(mask.files, files),
+          );
+        }
+        if (!prompt) return allMasks.find((m) => m?.name === name);
+
+        return allMasks.find(
+          (mask) => !!mask && mask.name === name && hasPrompt(mask, prompt),
+        );
+      };
+
+      const matchedMask = findMatchedMask();
+      const maskToUse =
+        name && (prompt || files) && !matchedMask
+          ? maskStore.create({
+              name,
+              context: [
+                createMessage({
+                  role: MessageRole.System,
+                  content: prompt ?? "",
+                }),
+              ],
+              files,
+              hideSystemPrompt,
+            })
+          : hideSystemPrompt && matchedMask
+            ? { ...matchedMask, builtin: false, hideSystemPrompt: true }
+            : matchedMask;
+
+      chatStore.newSession(maskToUse);
+      setShouldNavigate(true);
     };
 
-    const matchedMask = findMatchedMask();
-    const maskToUse =
-      name && prompt && !matchedMask
-        ? maskStore.create({
-            name,
-            context: [
-              createMessage({ role: MessageRole.System, content: prompt }),
-            ],
-            hideSystemPrompt,
-          })
-        : hideSystemPrompt && matchedMask
-          ? { ...matchedMask, builtin: false, hideSystemPrompt: true }
-          : matchedMask;
+    const encodedSummaries = params.get("s");
+    if (encodedSummaries === null) {
+      openChat();
+      return;
+    }
 
-    chatStore.newSession(maskToUse);
-    setShouldNavigate(true);
+    // Unpacking the summaries is async; a newer run of this effect cancels
+    // the older one.
+    let cancelled = false;
+    decodeFileSummaries(encodedSummaries).then((summaries) => {
+      if (cancelled) return;
+      // Same as a broken `p`: don't open the assistant without its material,
+      // just open a normal new chat.
+      if (!summaries) {
+        showToast("Linket er ugyldigt. Materialet kunne ikke åbnes.");
+        chatStore.newSession();
+        setShouldNavigate(true);
+        return;
+      }
+      openChat(summaries.map(summaryToFile));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [location.search, chatStore, maskStore]);
 
   if (!shouldNavigate) return null;
