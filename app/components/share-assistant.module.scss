@@ -37,6 +37,18 @@
   }
 }
 
+// "Fjern resumé": rød skraldespand som i samtalelisten
+// (chat-item-delete-trash i home.module.scss)
+.summary-header .remove-summary {
+  flex-shrink: 0;
+  color: var(--danger-color);
+
+  // også rød i mørk tilstand, som "no-dark" i samtalelisten
+  svg {
+    filter: none !important;
+  }
+}
+
 .summary-name {
   flex: 1;
   min-width: 0;

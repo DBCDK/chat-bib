@@ -14,6 +14,7 @@ import CloseIcon from "../icons/close.svg";
 import ConfirmBoldIcon from "../icons/confirm-bold.svg";
 import MoreIcon from "../icons/more.svg";
 import DeleteIcon from "../icons/delete.svg";
+import TrashIcon from "../icons/trash.svg";
 import EyeIcon from "../icons/eye.svg";
 import EyeOffIcon from "../icons/eye-off.svg";
 import CopyIcon from "../icons/copy.svg";
@@ -36,7 +37,7 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { FileAttachment, MultimodalContent, ROLES } from "../client/api";
+import { MultimodalContent, ROLES } from "../client/api";
 import {
   Input,
   List,
@@ -80,6 +81,7 @@ import {
   ShareAssistantModal,
   ShareView,
 } from "./share-assistant";
+import shareStyles from "./share-assistant.module.scss";
 import { isSummaryFile } from "../utils/share-summary";
 
 // drag and drop helper function
@@ -128,9 +130,7 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
 }
 
 // Short label for an uploaded file, e.g. "PDF" or "TXT" (same as in the chat).
-// A summary from a shared link is "RES", so it isn't taken for the file.
-function fileTypeLabel(file: FileAttachment): string {
-  if (isSummaryFile(file)) return "RES";
+function fileTypeLabel(file: { mime: string; name: string }): string {
   if (file.mime === "application/pdf") return "PDF";
   const ext = (file.name.split(".").pop() || "").toUpperCase();
   return ext.slice(0, 4) || "FIL";
@@ -266,6 +266,25 @@ export function MaskConfig(props: {
   // in the chat; their text is read out once here (fileToAttachment)
   const files = props.mask.files ?? [];
   const [uploading, setUploading] = useState(false);
+  // summaries from a shared link are shown as text in their own section;
+  // the index is the file's place in mask.files
+  const indexedFiles = files.map((file, index) => ({ file, index }));
+  const uploadedFiles = indexedFiles.filter(({ file }) => !isSummaryFile(file));
+  const summaryFiles = indexedFiles.filter(({ file }) => isSummaryFile(file));
+
+  function removeFile(index: number) {
+    props.updateMask((mask) => {
+      mask.files = (mask.files ?? []).filter((_, i) => i !== index);
+    });
+  }
+
+  function updateFileText(index: number, text: string) {
+    props.updateMask((mask) => {
+      mask.files = (mask.files ?? []).map((file, i) =>
+        i === index ? { ...file, text } : file,
+      );
+    });
+  }
 
   async function addFiles(picked: File[]) {
     if (props.readonly || picked.length === 0) return;
@@ -396,9 +415,9 @@ export function MaskConfig(props: {
               {Locale.Mask.Config.UploadNote}
             </span>
           </button>
-          {files.length > 0 && (
+          {uploadedFiles.length > 0 && (
             <div className={chatStyle["attach-list"]}>
-              {files.map((file, index) => (
+              {uploadedFiles.map(({ file, index }) => (
                 <div
                   className={chatStyle["attach-item"]}
                   key={file.id ?? index}
@@ -432,13 +451,7 @@ export function MaskConfig(props: {
                       title="Fjern"
                       // the saved file is kept (no deleteFileBlob): chats
                       // started from this assistant may still use it
-                      onClick={() =>
-                        props.updateMask((mask) => {
-                          mask.files = (mask.files ?? []).filter(
-                            (_, i) => i !== index,
-                          );
-                        })
-                      }
+                      onClick={() => removeFile(index)}
                     >
                       <PlusIcon />
                     </button>
@@ -448,6 +461,42 @@ export function MaskConfig(props: {
             </div>
           )}
         </div>
+
+        {summaryFiles.length > 0 && (
+          <div className={styles["guided-field"]}>
+            <div className={styles["guided-title"]}>
+              {Locale.Mask.Share.Summaries}
+            </div>
+            <p className={shareStyles["note"]}>
+              {Locale.Mask.Config.SummariesNote}
+            </p>
+            {summaryFiles.map(({ file, index }) => (
+              <div key={index} className={shareStyles["summary"]}>
+                <div className={shareStyles["summary-header"]}>
+                  <span className={shareStyles["summary-name"]}>
+                    {file.name}
+                  </span>
+                  {!props.readonly && (
+                    <IconButton
+                      // same trash can as deleting a chat in the sidebar
+                      icon={<TrashIcon />}
+                      className={shareStyles["remove-summary"]}
+                      title={Locale.Mask.Config.RemoveSummary}
+                      onClick={() => removeFile(index)}
+                    />
+                  )}
+                </div>
+                <Input
+                  aria-label={file.name}
+                  value={file.text ?? ""}
+                  rows={4}
+                  disabled={props.readonly}
+                  onChange={(e) => updateFileText(index, e.currentTarget.value)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         <details className={styles["guided-advanced"]}>
           <summary>{Locale.Mask.Config.Advanced}</summary>
