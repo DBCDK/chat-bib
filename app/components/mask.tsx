@@ -20,6 +20,7 @@ import CopyIcon from "../icons/copy.svg";
 import DragIcon from "../icons/drag.svg";
 import ShareIcon from "../icons/share.svg";
 import QrIcon from "../icons/qr.svg";
+import WarningIcon from "../icons/warning.svg";
 
 import {
   DEFAULT_MASK_AVATAR,
@@ -410,6 +411,10 @@ export function MaskConfig(props: {
               {Locale.Mask.Config.UploadNote}
             </span>
           </button>
+          <div className={styles["guided-upload-warning"]}>
+            <WarningIcon />
+            <span>{Locale.Mask.Config.UploadWarning}</span>
+          </div>
           {files.length > 0 && (
             <div className={chatStyle["attach-list"]}>
               {files.map((file, index) => (

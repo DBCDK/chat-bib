@@ -420,6 +420,8 @@ const da = {
       Upload: "Upload materiale",
       UploadHint: "Tilføj filer (PDF, Word eller billeder)",
       UploadNote: "Dataene bruges kun til denne assistent",
+      UploadWarning:
+        "Upload ikke dokumenter med personoplysninger, fx navne eller CPR-numre.",
       // added after the system prompt when the assistant has uploaded files
       UploadPrompt: "Svar ud fra det uploadede materiale.",
       Advanced: "Avancerede indstillinger",

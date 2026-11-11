@@ -217,6 +217,26 @@
   text-align: center;
 }
 
+// advarsel under upload-feltet: ingen personoplysninger i filerne
+.guided-upload-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--guided-field-radius);
+  background-color: var(--warning-bg, #fcefde); // Orange-100
+  color: var(--black);
+  font-size: 14px;
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: var(--button-color); // Orange-500
+  }
+}
+
 // "Avancerede indstillinger" som fold-ud i stedet for et flueben
 .guided-advanced {
   summary {
