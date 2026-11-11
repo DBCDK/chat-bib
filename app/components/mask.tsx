@@ -3,7 +3,7 @@ import { ErrorBoundary } from "./error";
 
 import styles from "./mask.module.scss";
 
-import DownloadIcon from "../icons/download.svg";
+import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
@@ -879,7 +879,7 @@ function MoreButton(props: { onDownload: () => void; onClone: () => void }) {
                 props.onDownload();
               }}
             >
-              <DownloadIcon />
+              <ExportIcon />
               <span>{Locale.Mask.EditModal.Download}</span>
             </div>
             <div
@@ -1114,7 +1114,7 @@ export function MaskPage() {
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 bordered
                 onClick={downloadAll}
                 text={Locale.UI.Export}
@@ -1278,7 +1278,7 @@ export function MaskPage() {
                 ? []
                 : [
                     <IconButton
-                      icon={<DownloadIcon />}
+                      icon={<ExportIcon />}
                       text={Locale.Mask.EditModal.Download}
                       key="export"
                       bordered

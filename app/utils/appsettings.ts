@@ -66,6 +66,12 @@ const skolegpt: RuntimeEnv = {
   // attaching files/images is only for SkoleGPT. leave this out of the other
   // apps so their chat stays the same.
   ENABLE_ATTACHMENTS: "true",
+  // the top of a chat shows the name of the assistant. the name of the chat
+  // itself is still shown in the sidebar
+  SHOW_MASK_NAME_IN_HEADER: "true",
+  // a new chat is listed by the start of its first question until it gets a
+  // real name
+  SHOW_FIRST_MESSAGE_AS_TOPIC: "true",
   // short placeholder in the chat input; short keyboard shortcuts are shown
   // as the placeholder once the field is clicked
   INPUT_HINTS_ON_CLICK: "true",
