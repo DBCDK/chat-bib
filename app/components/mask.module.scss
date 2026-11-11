@@ -22,13 +22,39 @@
   }
 }
 
-// rediger-assistent med eksempler i felterne (MASK_GUIDED_EDITOR, kun SkoleGPT)
+.unsaved-modal > div {
+  max-width: 520px;
+  text-align: center;
+
+  // toppen: titlen i midten, X'et bliver i højre side
+  > div:first-child {
+    position: relative;
+    justify-content: center;
+
+    > div:last-child {
+      position: absolute;
+      right: var(--modal-padding);
+    }
+  }
+
+  // bunden: knapperne i midten
+  > div:last-child {
+    justify-content: center;
+  }
+}
+
 .guided-editor {
   --guided-field-height: 44px;
   --guided-field-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+
+  input[type="text"]:focus,
+  textarea:focus {
+    border-color: var(--button-color);
+    outline: none;
+  }
 }
 
 .guided-row {
@@ -306,7 +332,8 @@
   min-height: var(--save-button-min-height, auto);
   justify-content: center;
 
-  div + div {
+  // the text, also on a button without an icon ("Gem ikke")
+  div:last-child {
     font-size: var(--save-button-font-size, inherit);
   }
 

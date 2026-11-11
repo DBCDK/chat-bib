@@ -703,7 +703,7 @@ export function ContextPrompts(props: {
                   <Draggable
                     draggableId={c.id || i.toString()}
                     index={i}
-                    key={c.id}
+                    key={c.id || i.toString()}
                   >
                     {(provided) => (
                       <div
@@ -921,6 +921,60 @@ function ShareButton(props: { mask: Mask }) {
   );
 }
 
+// "Gem ændringer?" when the edit window is closed with unsaved changes
+// (SkoleGPT). Not showConfirm: closing this popup must keep the edit window
+// open, and it is rendered inside the edit window, so clicks here don't count
+// as clicks outside it.
+function UnsavedChangesModal(props: {
+  onSave: () => void;
+  onDiscard: () => void;
+  onClose: () => void;
+}) {
+  const { onClose } = props;
+
+  // The edit window behind also closes on Escape. Catch it first so Escape
+  // only closes this popup.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`modal-mask ${styles["guided-modal"]} ${styles["unsaved-modal"]}`}
+    >
+      <Modal
+        title={Locale.Mask.EditModal.UnsavedTitle}
+        onClose={onClose}
+        actions={[
+          <IconButton
+            key="discard"
+            bordered
+            className={styles["share-button"]}
+            text={Locale.Mask.EditModal.Discard}
+            onClick={props.onDiscard}
+          />,
+          <IconButton
+            key="save"
+            icon={<ConfirmBoldIcon />}
+            bordered
+            className={styles["save-button"]}
+            text={Locale.Mask.EditModal.SaveChanges}
+            onClick={props.onSave}
+          />,
+        ]}
+      >
+        <p>{Locale.Mask.EditModal.UnsavedText}</p>
+      </Modal>
+    </div>
+  );
+}
+
 export function MaskPage() {
   const navigate = useNavigate();
 
@@ -962,7 +1016,56 @@ export function MaskPage() {
   const [editingMaskId, setEditingMaskId] = useState<string | undefined>();
   const editingMask =
     maskStore.get(editingMaskId) ?? BUILTIN_MASK_STORE.get(editingMaskId);
-  const closeMaskModal = () => setEditingMaskId(undefined);
+  // Changes are saved to the store while typing. The mask as it was when the
+  // edit window opened is kept here, so "Gem ikke" can undo them.
+  const savedMaskRef = useRef<Mask>();
+  useEffect(() => {
+    const mask = editingMaskId
+      ? useMaskStore.getState().get(editingMaskId)
+      : undefined;
+    savedMaskRef.current = mask && structuredClone(mask);
+  }, [editingMaskId]);
+
+  // a ref too, as the Modal keeps the first onClose it gets
+  const [confirmingClose, setConfirmingCloseState] = useState(false);
+  const confirmingCloseRef = useRef(false);
+  const setConfirmingClose = (open: boolean) => {
+    confirmingCloseRef.current = open;
+    setConfirmingCloseState(open);
+  };
+
+  const closeMaskModal = () => {
+    setConfirmingClose(false);
+    setEditingMaskId(undefined);
+  };
+
+  // X, Escape and a click outside: SkoleGPT asks first if there are changes
+  const requestCloseMaskModal = () => {
+    if (confirmingCloseRef.current) return;
+    const saved = savedMaskRef.current;
+    const current = saved && useMaskStore.getState().get(saved.id);
+    if (
+      !env.MASK_GUIDED_EDITOR ||
+      !current ||
+      JSON.stringify(current) === JSON.stringify(saved)
+    ) {
+      closeMaskModal();
+      return;
+    }
+    setConfirmingClose(true);
+  };
+
+  const discardMaskChanges = () => {
+    const saved = savedMaskRef.current;
+    if (saved) {
+      maskStore.updateMask(saved.id, (mask) => {
+        // also removes fields that were added while editing
+        for (const key of Object.keys(mask)) delete (mask as any)[key];
+        Object.assign(mask, saved);
+      });
+    }
+    closeMaskModal();
+  };
   const downloadMask = (mask: Mask) =>
     downloadAs(JSON.stringify(mask), `${mask.name}.json`);
   const cloneMask = (mask: Mask) => {
@@ -1159,7 +1262,7 @@ export function MaskPage() {
         >
           <Modal
             title={Locale.Mask.EditModal.Title(editingMask?.builtin)}
-            onClose={closeMaskModal}
+            onClose={requestCloseMaskModal}
             // the "..." menu goes in the footer slot so it sits at the far
             // left, apart from the buttons on the right
             footer={
@@ -1207,6 +1310,13 @@ export function MaskPage() {
               }
               readonly={editingMask.builtin}
             />
+            {confirmingClose && (
+              <UnsavedChangesModal
+                onSave={closeMaskModal}
+                onDiscard={discardMaskChanges}
+                onClose={() => setConfirmingClose(false)}
+              />
+            )}
           </Modal>
         </div>
       )}

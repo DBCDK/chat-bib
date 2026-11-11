@@ -400,6 +400,12 @@ const da = {
       Save: "Gem og luk",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
+      // only with MASK_GUIDED_EDITOR (SkoleGPT): asked when the window is
+      // closed with X, Escape or a click outside and there are changes
+      UnsavedTitle: "Gem ændringer?",
+      UnsavedText: "Du har ændringer, der ikke er gemt. Vil du gemme dem?",
+      Discard: "Gem ikke",
+      SaveChanges: "Gem ændringer",
     },
     Config: {
       Avatar: "Bot-avatar",

@@ -669,6 +669,12 @@ const da = {
       Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
+      // asked when the window is closed with X, Escape or a click outside
+      // and there are changes
+      UnsavedTitle: "Gem ændringer?",
+      UnsavedText: "Du har ændringer, der ikke er gemt. Vil du gemme dem?",
+      Discard: "Gem ikke",
+      SaveChanges: "Gem ændringer",
     },
     Config: {
       Avatar: "Assistentens ikon",
