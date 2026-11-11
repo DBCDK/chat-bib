@@ -3,14 +3,13 @@ import { ErrorBoundary } from "./error";
 
 import styles from "./mask.module.scss";
 
-import DownloadIcon from "../icons/download.svg";
+import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
 import PlusIcon from "../icons/plus.svg";
 import CloseIcon from "../icons/close.svg";
 import ConfirmBoldIcon from "../icons/confirm-bold.svg";
-import MoreIcon from "../icons/more.svg";
 import DeleteIcon from "../icons/delete.svg";
 import EyeIcon from "../icons/eye.svg";
 import EyeOffIcon from "../icons/eye-off.svg";
@@ -767,9 +766,10 @@ export function ContextPrompts(props: {
   );
 }
 
-// The three share options shown in the "Del" popover: SkoleTube, a copyable
-// link, and a QR code of that same link. Uses the existing link builders.
-function ShareMenu(props: { mask: Mask }) {
+// The share options shown in the "Del" popover: SkoleTube, a copyable link,
+// a QR code of that same link and, with MASK_COPY_BUTTON, download as a file.
+// Uses the existing link builders.
+function ShareMenu(props: { mask: Mask; onDownload?: () => void }) {
   const [showQr, setShowQr] = useState(false);
   const globalConfig = useAppConfig();
   const systemPromptHidden = isSystemPromptHidden(
@@ -814,6 +814,15 @@ function ShareMenu(props: { mask: Mask }) {
         <QrIcon />
         <span>Del via QR</span>
       </div>
+      {props.onDownload && (
+        <div
+          className={`${styles["share-menu-item"]} ${styles["download-menu-item"]} clickable`}
+          onClick={props.onDownload}
+        >
+          <ExportIcon />
+          <span>{Locale.Mask.EditModal.Download}</span>
+        </div>
+      )}
       {showQr && (
         <div
           style={{
@@ -850,38 +859,28 @@ function useFooterMenu() {
   return { open, setOpen, anchorRef };
 }
 
-// The "..." button next to "Del" with the less used actions: download the
-// assistant as a file and make a copy of it. The menu closes after a choice.
-function MoreButton(props: { onDownload: () => void; onClone: () => void }) {
+// The copy button at the left of the footer: opens a small menu with "Opret
+// kopi" (download is in the "Del" menu). The menu closes after a choice.
+function CopyButton(props: { onClone: () => void }) {
   const { open, setOpen, anchorRef } = useFooterMenu();
 
   return (
     <div
       ref={anchorRef}
-      className={`${styles["share-button-anchor"]} ${styles["more-button-anchor"]}`}
+      className={`${styles["share-button-anchor"]} ${styles["copy-button-anchor"]}`}
     >
       <IconButton
-        icon={<MoreIcon />}
+        icon={<CopyIcon />}
         bordered
-        className={`${styles["share-button"]} ${styles["more-button"]}`}
-        title="Flere handlinger"
+        className={`${styles["share-button"]} ${styles["copy-button"]}`}
+        title={Locale.Mask.EditModal.Clone}
         onClick={() => setOpen((v) => !v)}
       />
       {open && (
         <div
-          className={`${styles["share-menu-popup"]} ${styles["more-menu-popup"]}`}
+          className={`${styles["share-menu-popup"]} ${styles["copy-menu-popup"]}`}
         >
           <div className={styles["share-menu"]}>
-            <div
-              className={`${styles["share-menu-item"]} ${styles["download-menu-item"]} clickable`}
-              onClick={() => {
-                setOpen(false);
-                props.onDownload();
-              }}
-            >
-              <DownloadIcon />
-              <span>{Locale.Mask.EditModal.Download}</span>
-            </div>
             <div
               className={`${styles["share-menu-item"]} clickable`}
               onClick={() => {
@@ -899,9 +898,10 @@ function MoreButton(props: { onDownload: () => void; onClone: () => void }) {
   );
 }
 
-// Wraps the "Del" button and anchors the ShareMenu directly below it.
-function ShareButton(props: { mask: Mask }) {
+// Wraps the "Del" button and anchors the ShareMenu directly above it.
+function ShareButton(props: { mask: Mask; onDownload?: () => void }) {
   const { open, setOpen, anchorRef } = useFooterMenu();
+  const { onDownload } = props;
 
   return (
     <div ref={anchorRef} className={styles["share-button-anchor"]}>
@@ -914,7 +914,17 @@ function ShareButton(props: { mask: Mask }) {
       />
       {open && (
         <div className={styles["share-menu-popup"]}>
-          <ShareMenu mask={props.mask} />
+          <ShareMenu
+            mask={props.mask}
+            // the menu closes after a download, like the copy menu
+            onDownload={
+              onDownload &&
+              (() => {
+                setOpen(false);
+                onDownload();
+              })
+            }
+          />
         </div>
       )}
     </div>
@@ -1066,6 +1076,7 @@ export function MaskPage() {
     }
     closeMaskModal();
   };
+
   const downloadMask = (mask: Mask) =>
     downloadAs(JSON.stringify(mask), `${mask.name}.json`);
   const cloneMask = (mask: Mask) => {
@@ -1114,7 +1125,7 @@ export function MaskPage() {
           <div className="window-actions">
             <div className="window-action-button">
               <IconButton
-                icon={<DownloadIcon />}
+                icon={<ExportIcon />}
                 bordered
                 onClick={downloadAll}
                 text={Locale.UI.Export}
@@ -1263,22 +1274,19 @@ export function MaskPage() {
           <Modal
             title={Locale.Mask.EditModal.Title(editingMask?.builtin)}
             onClose={requestCloseMaskModal}
-            // the "..." menu goes in the footer slot so it sits at the far
+            // the copy button goes in the footer slot so it sits at the far
             // left, apart from the buttons on the right
             footer={
-              env.MASK_MORE_MENU && (
-                <MoreButton
-                  onDownload={() => downloadMask(editingMask)}
-                  onClone={() => cloneMask(editingMask)}
-                />
+              env.MASK_COPY_BUTTON && (
+                <CopyButton onClone={() => cloneMask(editingMask)} />
               )
             }
             actions={[
-              ...(env.MASK_MORE_MENU
+              ...(env.MASK_COPY_BUTTON
                 ? []
                 : [
                     <IconButton
-                      icon={<DownloadIcon />}
+                      icon={<ExportIcon />}
                       text={Locale.Mask.EditModal.Download}
                       key="export"
                       bordered
@@ -1292,10 +1300,21 @@ export function MaskPage() {
                       onClick={() => cloneMask(editingMask)}
                     />,
                   ]),
-              <ShareButton key="share" mask={editingMask} />,
+              <ShareButton
+                key="share"
+                mask={editingMask}
+                // without MASK_COPY_BUTTON, download is a button of its own
+                onDownload={
+                  env.MASK_COPY_BUTTON
+                    ? () => downloadMask(editingMask)
+                    : undefined
+                }
+              />,
               <IconButton
                 key="close"
-                icon={env.MASK_GUIDED_EDITOR ? <ConfirmBoldIcon /> : <CloseIcon />}
+                icon={
+                  env.MASK_GUIDED_EDITOR ? <ConfirmBoldIcon /> : <CloseIcon />
+                }
                 bordered
                 className={styles["save-button"]}
                 text={Locale.Mask.EditModal.Save}

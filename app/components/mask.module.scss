@@ -176,11 +176,12 @@
   animation: slide-in ease 0.3s;
 }
 
-.more-button-anchor {
+.copy-button-anchor {
   margin-right: auto;
 }
 
-.more-menu-popup {
+// the copy button sits at the left, so its menu opens to the right
+.copy-menu-popup {
   left: 0;
   right: auto;
 }
@@ -346,7 +347,8 @@
   background-color: var(--white);
 }
 
-:global(.modal-mask) .more-button {
+// square, as it has only an icon
+:global(.modal-mask) .copy-button {
   min-width: var(--save-button-min-height, auto);
 }
 

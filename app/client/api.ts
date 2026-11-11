@@ -65,6 +65,35 @@ export interface ChatOptions {
   conversationIdOverride?: string;
 }
 
+// A failure that is worth sending the message again for.
+export class RetryableError extends Error {}
+
+// The user pressed stop. There is nothing to tell them.
+export class AbortedError extends Error {}
+
+// Too much text for the model. Only a new chat helps.
+export class TooLongError extends Error {}
+
+const RETRYABLE_ERROR_TYPES = ["upstream_error", "server_error", "timeout"];
+
+// The server puts failures inside a normal stream, like
+// {"error":{"message":"...","type":"upstream_error","code":"request_failed"}}
+export function toStreamError(error: any, httpStatus = 0) {
+  // the whole thing, so we can see the type and the code and not just the text
+  const message = error
+    ? JSON.stringify(error, null, 2)
+    : "unknown error from server";
+  // the server names the field it could not fit
+  if (error?.param === "input_tokens") {
+    return new TooLongError(message);
+  }
+  const canRetry =
+    RETRYABLE_ERROR_TYPES.includes(error?.type) ||
+    Number(error?.code) >= 500 ||
+    httpStatus >= 500;
+  return canRetry ? new RetryableError(message) : new Error(message);
+}
+
 export interface LLMUsage {
   used: number;
   total: number;
