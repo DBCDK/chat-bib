@@ -32,6 +32,10 @@ pipeline {
             branchFilterType: "All",
             includeBranchesSpec: "*",
         )
+		upstream(
+			upstreamProjects: 'Docker-base-node,Docker-base-node-bump-trigger', 
+			threshold: hudson.model.Result.SUCCESS
+		)
     }
     environment {
         DOCKER_TAG = "${imageLabel}"
