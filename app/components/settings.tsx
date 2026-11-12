@@ -241,7 +241,7 @@ function DangerItems() {
           text={Locale.Settings.Danger.Clear.Action}
           onClick={async () => {
             if (await showConfirm(Locale.Settings.Danger.Clear.Confirm)) {
-              chatStore.clearAllData();
+              await chatStore.clearAllData();
             }
           }}
           type="danger"
