@@ -12,6 +12,157 @@
   }
 }
 
+.guided-modal {
+  --modal-title-font-size: 24px;
+  --modal-title-font-weight: var(--chat-item-title-weight);
+  --modal-title-line-height: 1.25;
+
+  > div {
+    overflow: hidden;
+  }
+}
+
+.unsaved-modal > div {
+  max-width: 520px;
+  text-align: center;
+
+  // toppen: titlen i midten, X'et bliver i højre side
+  > div:first-child {
+    position: relative;
+    justify-content: center;
+
+    > div:last-child {
+      position: absolute;
+      right: var(--modal-padding);
+    }
+  }
+
+  // bunden: knapperne i midten
+  > div:last-child {
+    justify-content: center;
+  }
+}
+
+.guided-editor {
+  --guided-field-height: 44px;
+  --guided-field-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  input[type="text"]:focus,
+  textarea:focus {
+    border-color: var(--button-color);
+    outline: none;
+  }
+}
+
+.guided-row {
+  display: flex;
+  gap: 20px;
+
+  > .guided-field {
+    flex: 0 0 auto;
+  }
+
+  > .guided-field:last-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media only screen and (max-width: 600px) {
+    flex-direction: column;
+  }
+}
+
+.guided-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  input[type="text"],
+  textarea {
+    font-size: 16px;
+    font-weight: 400;
+    border-radius: var(--guided-field-radius);
+  }
+
+  // navnefeltet får samme højde som ikon-feltet
+  input[type="text"] {
+    min-height: var(--guided-field-height);
+  }
+}
+
+.guided-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+// 8px luft fra titlen ned til feltet (4px gap + 4px)
+.guided-title + * {
+  margin-top: 4px;
+}
+
+.guided-avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--guided-field-height);
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: var(--border-in-light);
+  border-radius: var(--guided-field-radius);
+  background: var(--white);
+  color: var(--black);
+  font-family: inherit;
+  font-size: 16px; // som teksten i navnefeltet
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--primary);
+  }
+}
+
+// grå som pladsholderteksten i navnefeltet
+.guided-avatar-hint {
+  flex: 1;
+  color: var(--dark-text);
+}
+
+.guided-avatar-plus {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  opacity: 0.5;
+}
+
+.guided-avatar-field:hover .guided-avatar-plus {
+  opacity: 1;
+}
+
+.guided-name-input {
+  // de globale tekstfelter er højst 50% brede; navnet får hele bredden
+  max-width: 100% !important;
+  width: 100%;
+  text-align: left;
+}
+
+// "Avancerede indstillinger" som fold-ud i stedet for et flueben
+.guided-advanced {
+  summary {
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px 0;
+  }
+
+  &[open] summary {
+    margin-bottom: 8px;
+  }
+}
+
 .share-button-anchor {
   position: relative;
   display: inline-block;
@@ -23,6 +174,19 @@
   right: 0;
   z-index: 10;
   animation: slide-in ease 0.3s;
+}
+
+.more-button-anchor {
+  margin-right: auto;
+}
+
+.more-menu-popup {
+  left: 0;
+  right: auto;
+}
+
+.download-menu-item path {
+  stroke: var(--black) !important;
 }
 
 .share-menu {
@@ -158,5 +322,47 @@
         }
       }
     }
+  }
+}
+
+:global(.modal-mask) .save-button,
+:global(.modal-mask) .share-button {
+  font-weight: var(--save-button-font-weight, normal);
+  min-width: var(--save-button-min-width, auto);
+  min-height: var(--save-button-min-height, auto);
+  justify-content: center;
+
+  // the text, also on a button without an icon ("Gem ikke")
+  div:last-child {
+    font-size: var(--save-button-font-size, inherit);
+  }
+
+  svg {
+    transform: scale(var(--save-button-icon-scale, 1));
+  }
+}
+
+:global(.modal-mask) .share-button {
+  background-color: var(--white);
+}
+
+:global(.modal-mask) .more-button {
+  min-width: var(--save-button-min-height, auto);
+}
+
+:global(.modal-mask) .save-button {
+  background-color: var(--button-color, var(--white));
+  color: var(--button-text-color, var(--black));
+  border: var(--save-button-border, var(--border-in-light));
+
+  &:hover {
+    background-color: var(
+      --button-hover-color,
+      var(--button-color, var(--white))
+    );
+  }
+
+  path {
+    fill: var(--button-text-color, #333) !important;
   }
 }
