@@ -66,12 +66,16 @@ export async function deleteFileBlob(id: string): Promise<void> {
 
 export async function clearFileBlobs(
   deletedAt: string | number,
+  superseded: () => boolean = () => false,
 ): Promise<void> {
   wiping = true;
   if (!window.indexedDB) return;
   try {
     await files()("readwrite", (store) => {
       const finished = promisifyRequest(store.transaction);
+      // Check inside the transaction so a delayed deletion cannot remove newer
+      // files or replace the newer deletion marker.
+      if (superseded()) return finished;
       try {
         store.clear();
         store.put(deletedAt, DELETED);

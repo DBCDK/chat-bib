@@ -296,37 +296,51 @@ export async function clearChatStorage(): Promise<void> {
   await withStorageLock(async () => {
     const deletedAt = `${Date.now()}-${Math.random()}`;
     const previousDeletion = window.localStorage.getItem(LOCAL_DELETED);
+    const pending = DELETE_PENDING + deletedAt;
+    // Without Web Locks, another tab may delete data while this tab is waiting.
+    // Stop if our marker changed. This does not lock the final localStorage cleanup.
+    const superseded = () =>
+      window.localStorage.getItem(LOCAL_DELETED) !== pending;
     // Mark deletion as unfinished before removing data. If it stops halfway,
     // the next load must show the recovery screen because files may be missing.
-    window.localStorage.setItem(LOCAL_DELETED, DELETE_PENDING + deletedAt);
+    window.localStorage.setItem(LOCAL_DELETED, pending);
     try {
-      await clearFileBlobs(deletedAt);
+      await clearFileBlobs(deletedAt, superseded);
     } catch (error) {
-      // The files may already be deleted even though we did not get the result.
-      // Keep the pending marker so the user can retry from the recovery screen.
+      // If opening the database times out, keep deletion pending for a retry.
       if (error instanceof Error && error.name === "TimeoutError") throw error;
+      // Another deletion took over. Leave its marker in place.
+      if (superseded()) return;
       // The files and chats are still intact. Restore the previous marker.
       if (previousDeletion === null)
         window.localStorage.removeItem(LOCAL_DELETED);
       else window.localStorage.setItem(LOCAL_DELETED, previousDeletion);
       throw error;
     }
-    if (window.indexedDB) {
-      // Earlier versions copied these chats without removing the old records.
-      await clear(legacyDb());
-      await db()("readwrite", (store) => {
-        store.clear();
-        store.put(deletedAt, DELETED);
-        return promisifyRequest(store.transaction);
-      });
+    if (superseded()) return;
+    if (!window.indexedDB) {
+      // Without the API, we cannot clear IndexedDB or check whether it is empty.
+      // Keep deletion pending so the user can retry when IndexedDB is available.
+      throw new Error("Browser data could not be deleted");
     }
+    // Earlier versions copied these chats without removing the old records.
+    await clear(legacyDb());
+    if (superseded()) return;
+    await db()("readwrite", (store) => {
+      // Check inside the transaction so a delayed deletion cannot remove newer chats.
+      if (superseded()) return promisifyRequest(store.transaction);
+      store.clear();
+      store.put(deletedAt, DELETED);
+      return promisifyRequest(store.transaction);
+    });
+    if (superseded()) return;
     const keys = Array.from({ length: window.localStorage.length }, (_, i) =>
       window.localStorage.key(i),
     );
     for (const key of keys)
       if (key !== null && key !== LOCAL_DELETED)
         window.localStorage.removeItem(key);
-    // Do not import old data after deleting everything, even if IndexedDB was unavailable.
+    // Do not import old data after deleting everything.
     window.localStorage.setItem(OLD_VERSION_FLAG, "1");
     window.localStorage.setItem(LOCAL_DELETED, deletedAt);
     wipeChannel?.postMessage("deleted");
