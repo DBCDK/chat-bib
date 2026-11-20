@@ -1,8 +1,6 @@
 import { IconButton } from "./button";
 import { ErrorBoundary } from "./error";
-
 import styles from "./mask.module.scss";
-
 import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
@@ -20,6 +18,7 @@ import QrIcon from "../icons/qr.svg";
 
 import {
   DEFAULT_MASK_AVATAR,
+  DEFAULT_MASK_NAME,
   isSystemPromptHidden,
   encodeHiddenPrompt,
   Mask,
@@ -28,7 +27,6 @@ import {
 import {
   ChatMessage,
   createMessage,
-  DEFAULT_TOPIC,
   ModelConfig,
   ModelType,
   useAppConfig,
@@ -301,11 +299,13 @@ export function MaskConfig(props: {
               // a new assistant is named "Nyoprettet Assistent"; show the field
               // empty so the example is visible, and fall back to that name when
               // the field is emptied so the assistant never ends up without one
-              value={props.mask.name === DEFAULT_TOPIC ? "" : props.mask.name}
+              value={
+                props.mask.name === DEFAULT_MASK_NAME ? "" : props.mask.name
+              }
               onInput={(e) => {
                 const name = e.currentTarget.value;
                 props.updateMask((mask) => {
-                  mask.name = name.trim() === "" ? DEFAULT_TOPIC : name;
+                  mask.name = name.trim() === "" ? DEFAULT_MASK_NAME : name;
                 });
               }}
             ></input>
@@ -327,13 +327,21 @@ export function MaskConfig(props: {
         <details className={styles["guided-advanced"]}>
           <summary>{Locale.Mask.Config.Advanced}</summary>
           {/* the prompts with a role (system, user, assistant), as in the
-              advanced view of the other apps */}
+              advanced view of the other apps. The system prompt has its own
+              field above, so the list starts after it */}
           <ContextPrompts
-            context={props.mask.context}
+            context={props.mask.context.slice(1)}
             updateContext={(updater) => {
-              const context = props.mask.context.slice();
-              updater(context);
-              props.updateMask((mask) => (mask.context = context));
+              const [systemPrompt, ...rest] = props.mask.context;
+              updater(rest);
+              props.updateMask(
+                (mask) =>
+                  (mask.context = [
+                    systemPrompt ??
+                      createMessage({ role: MessageRole.System, content: "" }),
+                    ...rest,
+                  ]),
+              );
             }}
           />
           <List>
