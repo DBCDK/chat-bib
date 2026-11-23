@@ -1,13 +1,13 @@
 import { IconButton } from "./button";
 import { ErrorBoundary } from "./error";
-
 import styles from "./mask.module.scss";
-
 import ExportIcon from "../icons/export.svg";
 import UploadIcon from "../icons/upload.svg";
 import EditIcon from "../icons/edit.svg";
 import AddIcon from "../icons/add.svg";
+import PlusIcon from "../icons/plus.svg";
 import CloseIcon from "../icons/close.svg";
+import ConfirmBoldIcon from "../icons/confirm-bold.svg";
 import DeleteIcon from "../icons/delete.svg";
 import EyeIcon from "../icons/eye.svg";
 import EyeOffIcon from "../icons/eye-off.svg";
@@ -18,6 +18,7 @@ import QrIcon from "../icons/qr.svg";
 
 import {
   DEFAULT_MASK_AVATAR,
+  DEFAULT_MASK_NAME,
   isSystemPromptHidden,
   encodeHiddenPrompt,
   Mask,
@@ -67,6 +68,7 @@ import {
 } from "@hello-pangea/dnd";
 import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
+import { env } from "../utils/appsettings";
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -134,6 +136,88 @@ export function MaskAvatar(props: { avatar: string; model?: ModelType }) {
   );
 }
 
+// The system prompt textarea with the eye button that hides the prompt in the
+// UI. Used by both the simple view and the SkoleGPT guided editor.
+function SystemPromptField(props: {
+  mask: Mask;
+  updateMask: Updater<Mask>;
+  readonly?: boolean;
+  placeholder?: string;
+}) {
+  const globalConfig = useAppConfig();
+
+  // readonly (builtin) masks can't be saved to directly, so their hidden
+  // state is tracked separately in the app config by mask id instead.
+  const hiddenBuiltinMaskIds = globalConfig.hiddenSystemPromptMaskIds ?? [];
+  const systemPromptHidden = isSystemPromptHidden(
+    props.mask,
+    hiddenBuiltinMaskIds,
+  );
+
+  const toggleSystemPromptHidden = () => {
+    if (props.readonly) {
+      globalConfig.update((c) => {
+        const ids = new Set(c.hiddenSystemPromptMaskIds ?? []);
+        if (ids.has(props.mask.id)) {
+          ids.delete(props.mask.id);
+        } else {
+          ids.add(props.mask.id);
+        }
+        c.hiddenSystemPromptMaskIds = Array.from(ids);
+      });
+    } else {
+      props.updateMask((mask) => {
+        mask.hideSystemPrompt = !systemPromptHidden;
+      });
+    }
+  };
+
+  return (
+    <div className={chatStyle["context-prompt"]} style={{ marginBottom: 4 }}>
+      <div className={chatStyle["context-prompt-row"]}>
+        <div style={{ position: "relative", flex: 1, maxWidth: "100%" }}>
+          <Input
+            value={(props.mask.context?.[0]?.content as string) || ""}
+            placeholder={props.placeholder}
+            type="text"
+            className={chatStyle["context-content"]}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              paddingRight: 32,
+              ...(systemPromptHidden ? { color: "#d0d0d0" } : {}),
+            }}
+            rows={5}
+            onInput={(e) =>
+              props.updateMask((mask) => {
+                // keeps the other prompts (ContextPrompts in the advanced
+                // settings)
+                mask.context = [
+                  {
+                    ...(mask.context[0] || {}),
+                    role: MessageRole.System,
+                    content: e.currentTarget.value,
+                  },
+                  ...mask.context.slice(1),
+                ];
+              })
+            }
+          />
+          <IconButton
+            icon={systemPromptHidden ? <EyeOffIcon /> : <EyeIcon />}
+            onClick={toggleSystemPromptHidden}
+            size={2}
+            title={
+              systemPromptHidden ? "Vis systemprompt" : "Skjul systemprompt"
+            }
+            className={styles["system-prompt-eye"]}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MaskConfig(props: {
   mask: Mask;
   updateMask: Updater<Mask>;
@@ -163,75 +247,141 @@ export function MaskConfig(props: {
   const globalConfig = useAppConfig();
 
   const [showSimpleSettings, setShowSimpleSettings] = useState(true);
-  if (showSimpleSettings) {
-    // readonly (builtin) masks can't be saved to directly, so their hidden
-    // state is tracked separately in the app config by mask id instead.
-    const hiddenBuiltinMaskIds = globalConfig.hiddenSystemPromptMaskIds ?? [];
-    const systemPromptHidden = isSystemPromptHidden(
-      props.mask,
-      hiddenBuiltinMaskIds,
+
+  // SkoleGPT: icon, name and system prompt as fields with example
+  // placeholders, and the advanced settings in a fold-out section instead of
+  // a checkbox that switches the whole view
+  if (env.MASK_GUIDED_EDITOR) {
+    return (
+      <div className={styles["guided-editor"]}>
+        <div className={styles["guided-row"]}>
+          <div className={styles["guided-field"]}>
+            <div className={styles["guided-title"]}>
+              {Locale.Mask.Config.Avatar}
+            </div>
+            <Popover
+              content={
+                <AvatarPicker
+                  onEmojiClick={(emoji) => {
+                    props.updateMask((mask) => (mask.avatar = emoji));
+                    setShowPicker(false);
+                  }}
+                ></AvatarPicker>
+              }
+              open={showPicker}
+              onClose={() => setShowPicker(false)}
+            >
+              <button
+                type="button"
+                className={styles["guided-avatar-field"]}
+                onClick={() => setShowPicker(true)}
+              >
+                <MaskAvatar
+                  avatar={props.mask.avatar}
+                  model={props.mask.modelConfig.model}
+                />
+                <span className={styles["guided-avatar-hint"]}>
+                  {Locale.Mask.Config.AvatarHint}
+                </span>
+                <PlusIcon className={styles["guided-avatar-plus"]} />
+              </button>
+            </Popover>
+          </div>
+
+          <label className={styles["guided-field"]}>
+            <div className={styles["guided-title"]}>
+              {Locale.Mask.Config.Name}
+            </div>
+            <input
+              type="text"
+              className={styles["guided-name-input"]}
+              placeholder={Locale.Mask.Config.NamePlaceholder}
+              // a new assistant is named "Nyoprettet Assistent"; show the field
+              // empty so the example is visible, and fall back to that name when
+              // the field is emptied so the assistant never ends up without one
+              value={
+                props.mask.name === DEFAULT_MASK_NAME ? "" : props.mask.name
+              }
+              onInput={(e) => {
+                const name = e.currentTarget.value;
+                props.updateMask((mask) => {
+                  mask.name = name.trim() === "" ? DEFAULT_MASK_NAME : name;
+                });
+              }}
+            ></input>
+          </label>
+        </div>
+
+        <div className={styles["guided-field"]}>
+          <div className={styles["guided-title"]}>
+            {Locale.Mask.Config.SystemPrompt}
+          </div>
+          <SystemPromptField
+            mask={props.mask}
+            updateMask={props.updateMask}
+            readonly={props.readonly}
+            placeholder={Locale.Mask.Config.SystemPromptPlaceholder}
+          />
+        </div>
+
+        <details className={styles["guided-advanced"]}>
+          <summary>{Locale.Mask.Config.Advanced}</summary>
+          {/* the prompts with a role (system, user, assistant), as in the
+              advanced view of the other apps. The system prompt has its own
+              field above, so the list starts after it */}
+          <ContextPrompts
+            context={props.mask.context.slice(1)}
+            updateContext={(updater) => {
+              const [systemPrompt, ...rest] = props.mask.context;
+              updater(rest);
+              props.updateMask(
+                (mask) =>
+                  (mask.context = [
+                    systemPrompt ??
+                      createMessage({ role: MessageRole.System, content: "" }),
+                    ...rest,
+                  ]),
+              );
+            }}
+          />
+          <List>
+            <ListItem
+              title={Locale.Mask.Config.HideContext.Title}
+              subTitle={Locale.Mask.Config.HideContext.SubTitle}
+            >
+              <input
+                aria-label={Locale.Mask.Config.HideContext.Title}
+                type="checkbox"
+                checked={props.mask.hideContext}
+                onChange={(e) => {
+                  props.updateMask((mask) => {
+                    mask.hideContext = e.currentTarget.checked;
+                  });
+                }}
+              ></input>
+            </ListItem>
+          </List>
+          <List>
+            <ModelConfigList
+              modelConfig={{ ...props.mask.modelConfig }}
+              updateConfig={updateConfig}
+            />
+            {props.extraListItems}
+          </List>
+        </details>
+      </div>
     );
+  }
 
-    const toggleSystemPromptHidden = () => {
-      if (props.readonly) {
-        globalConfig.update((c) => {
-          const ids = new Set(c.hiddenSystemPromptMaskIds ?? []);
-          if (ids.has(props.mask.id)) {
-            ids.delete(props.mask.id);
-          } else {
-            ids.add(props.mask.id);
-          }
-          c.hiddenSystemPromptMaskIds = Array.from(ids);
-        });
-      } else {
-        props.updateMask((mask) => {
-          mask.hideSystemPrompt = !systemPromptHidden;
-        });
-      }
-    };
-
+  if (showSimpleSettings) {
     return (
       <>
         <div style={{ fontSize: 14, marginBottom: 8 }}>Systemprompt:</div>
-        <div
-          className={chatStyle["context-prompt"]}
-          style={{ marginBottom: 4 }}
-        >
-          <div className={chatStyle["context-prompt-row"]}>
-            <div style={{ position: "relative", flex: 1, maxWidth: "100%" }}>
-              <Input
-                value={(props.mask.context?.[0]?.content as string) || ""}
-                type="text"
-                className={chatStyle["context-content"]}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  paddingRight: 32,
-                  ...(systemPromptHidden ? { color: "#d0d0d0" } : {}),
-                }}
-                rows={5}
-                onInput={(e) =>
-                  props.updateMask((mask) => {
-                    mask.context = [
-                      {
-                        ...(mask.context[0] || {}),
-                        role: MessageRole.System,
-                        content: e.currentTarget.value,
-                      },
-                    ];
-                  })
-                }
-              />
-              <IconButton
-                icon={systemPromptHidden ? <EyeOffIcon /> : <EyeIcon />}
-                onClick={toggleSystemPromptHidden}
-                size={2}
-                title={systemPromptHidden ? "Vis systemprompt" : "Skjul systemprompt"}
-                className={styles["system-prompt-eye"]}
-              />
-            </div>
-          </div>
-        </div>
+        <SystemPromptField
+          mask={props.mask}
+          updateMask={props.updateMask}
+          readonly={props.readonly}
+        />
         <List>
           <ListItem title="Vis avancerede indstillinger">
             <input
@@ -560,7 +710,7 @@ export function ContextPrompts(props: {
                   <Draggable
                     draggableId={c.id || i.toString()}
                     index={i}
-                    key={c.id}
+                    key={c.id || i.toString()}
                   >
                     {(provided) => (
                       <div
@@ -624,9 +774,10 @@ export function ContextPrompts(props: {
   );
 }
 
-// The three share options shown in the "Del" popover: SkoleTube, a copyable
-// link, and a QR code of that same link. Uses the existing link builders.
-function ShareMenu(props: { mask: Mask }) {
+// The share options shown in the "Del" popover: SkoleTube, a copyable link,
+// a QR code of that same link and, with MASK_COPY_BUTTON, download as a file.
+// Uses the existing link builders.
+function ShareMenu(props: { mask: Mask; onDownload?: () => void }) {
   const [showQr, setShowQr] = useState(false);
   const globalConfig = useAppConfig();
   const systemPromptHidden = isSystemPromptHidden(
@@ -671,6 +822,15 @@ function ShareMenu(props: { mask: Mask }) {
         <QrIcon />
         <span>Del via QR</span>
       </div>
+      {props.onDownload && (
+        <div
+          className={`${styles["share-menu-item"]} ${styles["download-menu-item"]} clickable`}
+          onClick={props.onDownload}
+        >
+          <ExportIcon />
+          <span>{Locale.Mask.EditModal.Download}</span>
+        </div>
+      )}
       {showQr && (
         <div
           style={{
@@ -686,10 +846,10 @@ function ShareMenu(props: { mask: Mask }) {
   );
 }
 
-// Wraps the "Del" button and anchors the ShareMenu directly below it,
-// closing when you click anywhere outside (same pattern as Modal's
-// click-outside handling).
-function ShareButton(props: { mask: Mask }) {
+// Open state for a footer button with a small menu anchored to it, closing
+// when you click anywhere outside (same pattern as Modal's click-outside
+// handling).
+function useFooterMenu() {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
@@ -704,19 +864,131 @@ function ShareButton(props: { mask: Mask }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
+  return { open, setOpen, anchorRef };
+}
+
+// The copy button at the left of the footer: opens a small menu with "Opret
+// kopi" (download is in the "Del" menu). The menu closes after a choice.
+function CopyButton(props: { onClone: () => void }) {
+  const { open, setOpen, anchorRef } = useFooterMenu();
+
+  return (
+    <div
+      ref={anchorRef}
+      className={`${styles["share-button-anchor"]} ${styles["copy-button-anchor"]}`}
+    >
+      <IconButton
+        icon={<CopyIcon />}
+        bordered
+        className={`${styles["share-button"]} ${styles["copy-button"]}`}
+        title={Locale.Mask.EditModal.Clone}
+        onClick={() => setOpen((v) => !v)}
+      />
+      {open && (
+        <div
+          className={`${styles["share-menu-popup"]} ${styles["copy-menu-popup"]}`}
+        >
+          <div className={styles["share-menu"]}>
+            <div
+              className={`${styles["share-menu-item"]} clickable`}
+              onClick={() => {
+                setOpen(false);
+                props.onClone();
+              }}
+            >
+              <CopyIcon />
+              <span>{Locale.Mask.EditModal.Clone}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Wraps the "Del" button and anchors the ShareMenu directly above it.
+function ShareButton(props: { mask: Mask; onDownload?: () => void }) {
+  const { open, setOpen, anchorRef } = useFooterMenu();
+  const { onDownload } = props;
+
   return (
     <div ref={anchorRef} className={styles["share-button-anchor"]}>
       <IconButton
         icon={<ShareIcon />}
         bordered
+        className={styles["share-button"]}
         text="Del"
         onClick={() => setOpen((v) => !v)}
       />
       {open && (
         <div className={styles["share-menu-popup"]}>
-          <ShareMenu mask={props.mask} />
+          <ShareMenu
+            mask={props.mask}
+            // the menu closes after a download, like the copy menu
+            onDownload={
+              onDownload &&
+              (() => {
+                setOpen(false);
+                onDownload();
+              })
+            }
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+// "Gem ændringer?" when the edit window is closed with unsaved changes
+// (SkoleGPT). Not showConfirm: closing this popup must keep the edit window
+// open, and it is rendered inside the edit window, so clicks here don't count
+// as clicks outside it.
+function UnsavedChangesModal(props: {
+  onSave: () => void;
+  onDiscard: () => void;
+  onClose: () => void;
+}) {
+  const { onClose } = props;
+
+  // The edit window behind also closes on Escape. Catch it first so Escape
+  // only closes this popup.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`modal-mask ${styles["guided-modal"]} ${styles["unsaved-modal"]}`}
+    >
+      <Modal
+        title={Locale.Mask.EditModal.UnsavedTitle}
+        onClose={onClose}
+        actions={[
+          <IconButton
+            key="discard"
+            bordered
+            className={styles["share-button"]}
+            text={Locale.Mask.EditModal.Discard}
+            onClick={props.onDiscard}
+          />,
+          <IconButton
+            key="save"
+            icon={<ConfirmBoldIcon />}
+            bordered
+            className={styles["save-button"]}
+            text={Locale.Mask.EditModal.SaveChanges}
+            onClick={props.onSave}
+          />,
+        ]}
+      >
+        <p>{Locale.Mask.EditModal.UnsavedText}</p>
+      </Modal>
     </div>
   );
 }
@@ -762,7 +1034,64 @@ export function MaskPage() {
   const [editingMaskId, setEditingMaskId] = useState<string | undefined>();
   const editingMask =
     maskStore.get(editingMaskId) ?? BUILTIN_MASK_STORE.get(editingMaskId);
-  const closeMaskModal = () => setEditingMaskId(undefined);
+  // Changes are saved to the store while typing. The mask as it was when the
+  // edit window opened is kept here, so "Gem ikke" can undo them.
+  const savedMaskRef = useRef<Mask>();
+  useEffect(() => {
+    const mask = editingMaskId
+      ? useMaskStore.getState().get(editingMaskId)
+      : undefined;
+    savedMaskRef.current = mask && structuredClone(mask);
+  }, [editingMaskId]);
+
+  // a ref too, as the Modal keeps the first onClose it gets
+  const [confirmingClose, setConfirmingCloseState] = useState(false);
+  const confirmingCloseRef = useRef(false);
+  const setConfirmingClose = (open: boolean) => {
+    confirmingCloseRef.current = open;
+    setConfirmingCloseState(open);
+  };
+
+  const closeMaskModal = () => {
+    setConfirmingClose(false);
+    setEditingMaskId(undefined);
+  };
+
+  // X, Escape and a click outside: SkoleGPT asks first if there are changes
+  const requestCloseMaskModal = () => {
+    if (confirmingCloseRef.current) return;
+    const saved = savedMaskRef.current;
+    const current = saved && useMaskStore.getState().get(saved.id);
+    if (
+      !env.MASK_GUIDED_EDITOR ||
+      !current ||
+      JSON.stringify(current) === JSON.stringify(saved)
+    ) {
+      closeMaskModal();
+      return;
+    }
+    setConfirmingClose(true);
+  };
+
+  const discardMaskChanges = () => {
+    const saved = savedMaskRef.current;
+    if (saved) {
+      maskStore.updateMask(saved.id, (mask) => {
+        // also removes fields that were added while editing
+        for (const key of Object.keys(mask)) delete (mask as any)[key];
+        Object.assign(mask, saved);
+      });
+    }
+    closeMaskModal();
+  };
+
+  const downloadMask = (mask: Mask) =>
+    downloadAs(JSON.stringify(mask), `${mask.name}.json`);
+  const cloneMask = (mask: Mask) => {
+    navigate(Path.Masks);
+    maskStore.create(mask);
+    setEditingMaskId(undefined);
+  };
 
   const downloadAll = () => {
     downloadAs(JSON.stringify(masks.filter((v) => !v.builtin)), FileName.Masks);
@@ -784,7 +1113,7 @@ export function MaskPage() {
         if (importMasks.name) {
           maskStore.create(importMasks);
         }
-      } catch { }
+      } catch {}
     });
   };
 
@@ -943,40 +1272,60 @@ export function MaskPage() {
       </div>
 
       {editingMask && (
-        <div className="modal-mask">
+        <div
+          className={
+            env.MASK_GUIDED_EDITOR
+              ? `modal-mask ${styles["guided-modal"]}`
+              : "modal-mask"
+          }
+        >
           <Modal
             title={Locale.Mask.EditModal.Title(editingMask?.builtin)}
-            onClose={closeMaskModal}
+            onClose={requestCloseMaskModal}
+            // the copy button goes in the footer slot so it sits at the far
+            // left, apart from the buttons on the right
+            footer={
+              env.MASK_COPY_BUTTON && (
+                <CopyButton onClone={() => cloneMask(editingMask)} />
+              )
+            }
             actions={[
-              <IconButton
-                icon={<ExportIcon />}
-                text={Locale.Mask.EditModal.Download}
-                key="export"
-                bordered
-                onClick={() =>
-                  downloadAs(
-                    JSON.stringify(editingMask),
-                    `${editingMask.name}.json`,
-                  )
+              ...(env.MASK_COPY_BUTTON
+                ? []
+                : [
+                    <IconButton
+                      icon={<ExportIcon />}
+                      text={Locale.Mask.EditModal.Download}
+                      key="export"
+                      bordered
+                      onClick={() => downloadMask(editingMask)}
+                    />,
+                    <IconButton
+                      key="copy"
+                      icon={<CopyIcon />}
+                      bordered
+                      text={Locale.Mask.EditModal.Clone}
+                      onClick={() => cloneMask(editingMask)}
+                    />,
+                  ]),
+              <ShareButton
+                key="share"
+                mask={editingMask}
+                // without MASK_COPY_BUTTON, download is a button of its own
+                onDownload={
+                  env.MASK_COPY_BUTTON
+                    ? () => downloadMask(editingMask)
+                    : undefined
                 }
               />,
               <IconButton
-                key="copy"
-                icon={<CopyIcon />}
-                bordered
-                text={Locale.Mask.EditModal.Clone}
-                onClick={() => {
-                  navigate(Path.Masks);
-                  maskStore.create(editingMask);
-                  setEditingMaskId(undefined);
-                }}
-              />,
-              <ShareButton key="share" mask={editingMask} />,
-              <IconButton
                 key="close"
-                icon={<CloseIcon />}
+                icon={
+                  env.MASK_GUIDED_EDITOR ? <ConfirmBoldIcon /> : <CloseIcon />
+                }
                 bordered
-                text={"Gem og luk"}
+                className={styles["save-button"]}
+                text={Locale.Mask.EditModal.Save}
                 onClick={closeMaskModal}
               />,
             ]}
@@ -988,6 +1337,13 @@ export function MaskPage() {
               }
               readonly={editingMask.builtin}
             />
+            {confirmingClose && (
+              <UnsavedChangesModal
+                onSave={closeMaskModal}
+                onDiscard={discardMaskChanges}
+                onClose={() => setConfirmingClose(false)}
+              />
+            )}
           </Modal>
         </div>
       )}

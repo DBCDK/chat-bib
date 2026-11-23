@@ -66,6 +66,19 @@
   --card-color: #f2f1ef; // Sort-100
   --chat-input-bg: #ffffff; // Hvid, baggrund i chat-input
   --chat-input-icon-color: #181816; // Sort-900, plus og mikrofon
+  --modal-header-bg: #eef4e4; // Grøn-100, toppen af pop-up-vinduer
+  --modal-footer-bg: #eef4e4; // Grøn-100, bunden af pop-up-vinduer
+  // ingen streg mellem top/bund og indholdet
+  --modal-header-border: none;
+  --modal-footer-border: none;
+  // "Gem assistent" og "Del" i rediger-assistent: ingen kant på gem-knappen
+  // (ligner "Ny chat"), samme tekst- og knapstørrelse på begge
+  --save-button-border: none;
+  --save-button-font-weight: 400;
+  --save-button-icon-scale: 0.875;
+  --save-button-min-width: 160px; // bredere knap, indholdet står i midten
+  --save-button-min-height: 40px; // mere luft over og under teksten
+  --save-button-font-size: 14px;
   /* shadow */
   --shadow: 50px 50px 100px 10px rgb(0, 0, 0, 0.1);
   --card-shadow: 0px 2px 4px 0px rgb(0, 0, 0, 0.05);
@@ -109,6 +122,9 @@
   --chat-input-shadow: none;
   --chat-input-border: none;
   --chat-input-focus-color: var(--primary);
+  // ingen grøn top og bund i pop-up-vinduer i mørk tilstand
+  --modal-header-bg: transparent;
+  --modal-footer-bg: transparent;
 
   --border-in-light: 1px solid rgba(255, 255, 255, 0.192);
 

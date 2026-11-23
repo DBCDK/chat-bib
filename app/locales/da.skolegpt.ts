@@ -679,15 +679,28 @@ const da = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
+        `Byg din egen assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
+      // asked when the window is closed with X, Escape or a click outside
+      // and there are changes
+      UnsavedTitle: "Gem ændringer?",
+      UnsavedText: "Du har ændringer, der ikke er gemt. Vil du gemme dem?",
+      Discard: "Gem ikke",
+      SaveChanges: "Gem ændringer",
     },
     Config: {
-      Avatar: "Assistent ikon",
+      Avatar: "Assistentens ikon",
+      AvatarHint: "Vælg ikon",
       Name: "Assistentens navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
         SubTitle: "Gældende for denne chat",

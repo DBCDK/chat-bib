@@ -151,11 +151,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: var(--border-in-light);
+    border-bottom: var(--modal-header-border, var(--border-in-light));
+    background-color: var(--modal-header-bg, transparent);
 
     .modal-title {
-      font-weight: bolder;
-      font-size: 16px;
+      font-weight: var(--modal-title-font-weight, bolder);
+      font-size: var(--modal-title-font-size, 16px);
+      line-height: var(--modal-title-line-height, normal);
     }
 
     .modal-header-actions {
@@ -185,8 +187,9 @@
     padding: var(--modal-padding);
     display: flex;
     justify-content: flex-end;
-    border-top: var(--border-in-light);
+    border-top: var(--modal-footer-border, var(--border-in-light));
     box-shadow: var(--shadow);
+    background-color: var(--modal-footer-bg, transparent);
 
     .modal-actions {
       display: flex;
