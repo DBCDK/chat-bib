@@ -88,7 +88,7 @@ import {
   FILE_ACCEPT,
   DOCX_MIME,
 } from "../utils/attachment";
-import { loadFileBlob, deleteFileBlob } from "../utils/file-store";
+import { loadFileBlob, loadFileImages, deleteFileBlob } from "../utils/file-store";
 
 import dynamic from "next/dynamic";
 
@@ -785,6 +785,30 @@ function ErrorInfo(props: { info: string }) {
   );
 }
 
+// Shows a Word file's text and puts each saved picture back where its
+// "[Billede N]" mark is. A mark whose picture was not saved stays as text.
+function DocxView(props: { text: string; images: string[] }) {
+  const parts = props.text.split(/(\[Billede \d+\])/g);
+  return (
+    <>
+      {parts.map((part, index) => {
+        const match = /^\[Billede (\d+)\]$/.exec(part);
+        const image = match ? props.images[Number(match[1]) - 1] : undefined;
+        return image ? (
+          <img
+            key={index}
+            className={styles["attachment-viewer-docx-image"]}
+            src={image}
+            alt=""
+          />
+        ) : (
+          <span key={index}>{part}</span>
+        );
+      })}
+    </>
+  );
+}
+
 function _Chat() {
   type RenderMessage = ChatMessage & { preview?: boolean };
 
@@ -950,11 +974,25 @@ function _Chat() {
   // PDF. Both are set together. So the sandbox setting of one file is never
   // used with the link of another.
   const [viewer, setViewer] = useState({ url: "", isPdf: false });
+  // The saved pictures of the open Word file, read back so they can be put
+  // where their marks are in the text.
+  const [viewerDocxImages, setViewerDocxImages] = useState<string[]>([]);
   useEffect(() => {
     setViewer({ url: "", isPdf: false });
-    // a Word file is shown as its text so the saved file is not needed
-    if (!viewerAttachment || viewerAttachment.mime === DOCX_MIME) return;
+    setViewerDocxImages([]);
+    if (!viewerAttachment) return;
     const { url, id, mime } = viewerAttachment;
+    // a Word file is shown as its text with its saved pictures put back in
+    if (mime === DOCX_MIME) {
+      if (!id) return;
+      let cancelled = false;
+      loadFileImages(id).then((images) => {
+        if (!cancelled) setViewerDocxImages(images ?? []);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     // only open data and blob links. Never a link to another site
     if (url && !/^(data|blob):/.test(url)) return;
     // a picture is shown with <img> and that cannot run code
@@ -2436,35 +2474,6 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
-            <div className={styles["chat-input-row"]}>
-              {canAttach && (
-                <div
-                  className={`${styles["chat-input-attach"]} ${
-                    hasAttachments ? styles["chat-input-icon-pinned"] : ""
-                  }`}
-                  onClick={uploading ? undefined : uploadImage}
-                  role="button"
-                  aria-label="Vedhæft fil"
-                  title={Locale.Chat.InputActions.UploadImage}
-                >
-                  <div className={styles["chat-input-attach-icon"]}>
-                    {uploading ? (
-                      <LoadingButtonIcon style={{ width: 25, height: 25 }} />
-                    ) : (
-                      <PlusIcon style={{ width: 25, height: 25 }} />
-                    )}
-                  </div>
-                  <div className={styles["chat-input-attach-spacer"]} />
-                </div>
-              )}
-              {env.ENABLE_TTSASR && (
-                <RecorderIcon
-                  onTranscribed={onInput}
-                  className={
-                    hasAttachments ? styles["chat-input-icon-pinned"] : undefined
-                  }
-                />
-              )}
               <label
                 className={`${styles["chat-input-panel-inner"]} ${
                   hasAttachments ? styles["chat-input-panel-inner-attach"] : ""
@@ -2593,51 +2602,80 @@ function _Chat() {
                       )}
                   </div>
                 )}
-                <textarea
-                  id="chat-input"
-                  ref={inputRef}
-                  className={styles["chat-input"]}
-                  placeholder={Locale.Chat.Input(submitKey)}
-                  onInput={(e) => onInput(e.currentTarget.value)}
-                  value={userInput}
-                  onKeyDown={onInputKeyDown}
-                  onFocus={() => {
-                    if (
-                      !(
-                        session.multiLlmChildren &&
-                        session.multiLlmChildren.length > 0
-                      )
-                    ) {
-                      scrollToBottom();
-                    }
-                  }}
-                  onClick={() => {
-                    if (
-                      !(
-                        session.multiLlmChildren &&
-                        session.multiLlmChildren.length > 0
-                      )
-                    ) {
-                      scrollToBottom();
-                    }
-                  }}
-                  onPaste={handlePaste}
-                  rows={inputRows}
-                  autoFocus={autoFocus}
-                  style={{
-                    fontSize: config.fontSize,
-                  }}
-                />
+                <div className={styles["chat-input-field"]}>
+                  {canAttach && (
+                    <div
+                      className={styles["chat-input-attach"]}
+                      onClick={(e) => {
+                        // the button sits inside the input's label, so stop the
+                        // click from also focusing the text field
+                        e.preventDefault();
+                        if (!uploading) uploadImage();
+                      }}
+                      role="button"
+                      aria-label="Vedhæft fil"
+                      title={Locale.Chat.InputActions.UploadImage}
+                    >
+                      {uploading ? (
+                        <LoadingButtonIcon style={{ width: 24, height: 24 }} />
+                      ) : (
+                        <AttachIcon style={{ width: 24, height: 24 }} />
+                      )}
+                    </div>
+                  )}
+                  <textarea
+                    id="chat-input"
+                    ref={inputRef}
+                    className={styles["chat-input"]}
+                    placeholder={Locale.Chat.Input(submitKey)}
+                    onInput={(e) => onInput(e.currentTarget.value)}
+                    value={userInput}
+                    onKeyDown={onInputKeyDown}
+                    onFocus={() => {
+                      if (
+                        !(
+                          session.multiLlmChildren &&
+                          session.multiLlmChildren.length > 0
+                        )
+                      ) {
+                        scrollToBottom();
+                      }
+                    }}
+                    onClick={() => {
+                      if (
+                        !(
+                          session.multiLlmChildren &&
+                          session.multiLlmChildren.length > 0
+                        )
+                      ) {
+                        scrollToBottom();
+                      }
+                    }}
+                    onPaste={handlePaste}
+                    rows={inputRows}
+                    autoFocus={autoFocus}
+                    style={{
+                      fontSize: config.fontSize,
+                    }}
+                  />
+                </div>
+                {env.ENABLE_TTSASR && (
+                  <RecorderIcon
+                    onTranscribed={onInput}
+                    className={styles["chat-input-mic"]}
+                  />
+                )}
                 <IconButton
                   icon={<SendArrowIcon />}
-                  className={styles["chat-input-send"]}
+                  className={`${styles["chat-input-send"]} ${
+                    userInput.trim() ? styles["chat-input-send-active"] : ""
+                  }`}
                   type="primary"
                   onClick={() => {
                     doSubmit(userInput);
                   }}
                 />
               </label>
-            </div>
           </div>
         </div>
       )}
@@ -2671,14 +2709,20 @@ function _Chat() {
             onClose={() => setViewerAttachment(null)}
           >
             <div className={styles["attachment-viewer"]}>
-              {/* A browser cannot show a Word file. So the viewer shows the
-                  text that was read from it for the model. Drawing the real
-                  file with a library would let its styles leak into the app.
-                  The text is saved with the chat and works even when the
-                  saved file is gone. */}
+              {/* A browser cannot show a Word file as is. So the viewer shows
+                  the text that was read from it for the model, with the saved
+                  pictures put back where their marks are. The text is saved
+                  with the chat, so it still works when the saved file is gone. */}
               {viewerAttachment.mime === DOCX_MIME ? (
                 <div className={styles["attachment-viewer-text"]}>
-                  {viewerAttachment.text || "Dokumentet kan ikke vises."}
+                  {viewerAttachment.text ? (
+                    <DocxView
+                      text={viewerAttachment.text}
+                      images={viewerDocxImages}
+                    />
+                  ) : (
+                    "Dokumentet kan ikke vises."
+                  )}
                 </div>
               ) : !viewer.url ? (
                 <p>Filen kan ikke længere vises.</p>

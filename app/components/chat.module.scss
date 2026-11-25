@@ -168,6 +168,13 @@
   text-align: left;
 }
 
+// pictures from a Word file, shown inline where their marks were
+.attachment-viewer-docx-image {
+  display: block;
+  max-width: 100%;
+  margin: 12px 0;
+}
+
 .attachment-viewer-frame {
   width: 100%;
   height: 100%;
