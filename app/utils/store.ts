@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { combine, persist, createJSONStorage } from "zustand/middleware";
 import { Updater } from "../typing";
 import { deepClone } from "./clone";
-import { migrationAwareStorage } from "./idb-migration";
+import { migrationAwareStorage, blockSaving } from "./idb-migration";
 
 type SecondParam<T> = T extends (
   _f: infer _F,
@@ -24,6 +24,24 @@ type SetStoreState<T> = (
   replace?: boolean | undefined,
 ) => void;
 
+// Resolves when a store has been read from the browser's storage. That takes a
+// moment with IndexedDB, and what is set before it is replaced by the saved
+// state when it arrives.
+export function hydrated(store: {
+  persist: {
+    hasHydrated(): boolean;
+    onFinishHydration(fn: () => void): () => void;
+  };
+}): Promise<void> {
+  return new Promise((resolve) => {
+    if (store.persist.hasHydrated()) return resolve();
+    const stop = store.persist.onFinishHydration(() => {
+      stop();
+      resolve();
+    });
+  });
+}
+
 export function createPersistStore<T extends object, M>(
   state: T,
   methods: (
@@ -33,7 +51,7 @@ export function createPersistStore<T extends object, M>(
   persistOptions: SecondParam<typeof persist<T & M & MakeUpdater<T>>>,
 ) {
   // eslint-disable-next-line no-param-reassign
-  if (typeof window !== "undefined" && window.localStorage) {
+  if (typeof window !== "undefined") {
     persistOptions.storage = createJSONStorage(() => migrationAwareStorage);
   }
 
@@ -51,9 +69,11 @@ export function createPersistStore<T extends object, M>(
     const storeCallback = storeOnRehydrate?.(preHydrationState);
     return (hydratedState: any, error?: unknown) => {
       if (error) {
+        // not saved until a reload, so the defaults do not replace the data
+        blockSaving(options.name);
         console.error(
           `[store:${options.name}] rehydration failed — persisted data was NOT loaded, ` +
-            `the store is running on defaults and may overwrite it`,
+            `the store is running on defaults and is not saved until a reload`,
           error,
         );
       }

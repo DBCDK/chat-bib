@@ -504,7 +504,11 @@ export function ImagePreviewer(props: {
                     className={styles["message-images"]}
                     style={
                       {
-                        "--image-count": getMessageImages(m).length,
+                        // at most 3 in a row like in the chat
+                        "--image-count": Math.min(
+                          getMessageImages(m).length,
+                          3,
+                        ),
                       } as React.CSSProperties
                     }
                   >

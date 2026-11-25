@@ -1,4 +1,15 @@
-import { trimTopic, getMessageTextContent } from "../utils";
+import {
+  trimTopic,
+  getMessageTextContent,
+  getMessageFiles,
+  getMessageContentForApi,
+  withoutPagePdfs,
+  isVisionModel,
+  MATERIAL_TOKEN_BUDGET,
+} from "../utils";
+import { loadFileImages } from "../utils/file-store";
+import { GEMMA_REQUEST_TOO_LONG } from "../utils/gemma-request-budget";
+import { clearChatStorage } from "../utils/idb-migration";
 
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
@@ -18,12 +29,12 @@ import {
 import { SearchSpeed } from "../constant";
 import {
   ClientApi,
+  ChatOptions,
   RequestMessage,
   MultimodalContent,
   FileAttachment,
 } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
-import { prettyObject } from "../utils/format";
 import { estimateTokenLength } from "../utils/token";
 import { nanoid } from "nanoid";
 import { createPersistStore } from "../utils/store";
@@ -140,6 +151,152 @@ function countMessages(msgs: ChatMessage[]) {
     (pre, cur) => pre + estimateTokenLength(getMessageTextContent(cur)),
     0,
   );
+}
+
+// The pictures from a file are saved in IndexedDB next to the file. They are
+// not in the chat because the chat is saved again for every word of an answer.
+// Before a request they are read back and put on a copy of the messages.
+// getMessageContentForApi then leaves out what there is no room for.
+async function withFilePictures(
+  messages: ChatMessage[],
+  signal: AbortSignal,
+): Promise<ChatMessage[]> {
+  // Only a file with picture marks in its text has saved pictures.
+  const firstPictures = messages.findIndex((message) =>
+    getMessageFiles(message).some(
+      (file) => file.id && file.text?.includes("[Billede "),
+    ),
+  );
+  if (firstPictures < 0) return messages;
+  const out = messages.slice();
+  const done = new Set<string>();
+  let readTime = 5000;
+  // Read the newest files first and stop when the request is full. Then not
+  // every file is read into memory. Room is counted the same way as when the
+  // request is built. So every picture that fits is read.
+  const budget = { remaining: MATERIAL_TOKEN_BUDGET };
+  const seenFileTexts = new Set<string>();
+  for (
+    let i = out.length - 1;
+    i >= firstPictures && budget.remaining > 0;
+    i -= 1
+  ) {
+    if (signal.aborted) throw new Error("aborted");
+    const message = out[i];
+    if (typeof message.content === "string") continue;
+    const content = message.content.slice();
+    for (let j = 0; j < content.length; j += 1) {
+      if (signal.aborted) throw new Error("aborted");
+      const file = content[j].file;
+      if (!file?.id || done.has(file.id)) continue;
+      if (file.imageTokens?.every((tokens) => tokens > budget.remaining))
+        continue;
+      done.add(file.id);
+      if (!file.text?.includes("[Billede ")) continue;
+      // A chat restored from a backup can already hold all its pictures. Then
+      // there is nothing to read.
+      if (file.images?.length && file.images.length >= (file.imageCount ?? 0))
+        continue;
+      let images: string[] | null = null;
+      if (readTime > 0) {
+        // All reads together get five seconds. Loading the tokenizer and
+        // counting run between the reads and do not use up that time.
+        const start = performance.now();
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+          images = await Promise.race([
+            loadFileImages(file.id),
+            new Promise<null>((give) => {
+              timeout = setTimeout(() => give(null), readTime);
+            }),
+          ]);
+        } finally {
+          readTime -= performance.now() - start;
+          clearTimeout(timeout);
+        }
+      }
+      // A backup can already hold some of the pictures. Keep whichever set
+      // has more so no page that was there is lost.
+      const inline = file.images ?? [];
+      if (images && images.length > inline.length) {
+        content[j] = { ...content[j], file: { ...file, images } };
+      } else if (inline.length === 0 && file.pdfPageCount) {
+        if (signal.aborted) throw new Error("aborted");
+        // A PDF is sent only as page pictures. With none at all it would be
+        // left out as if there was no room. So stop instead. The saved copy
+        // is kept for the next try. failureNote turns this into a Danish note.
+        throw new Error("pdf pages unreadable");
+      }
+    }
+    out[i] = { ...message, content };
+    if (signal.aborted) throw new Error("aborted");
+    // This is the oldest message with pictures. Nothing older has to be read
+    // so its room does not need to be counted.
+    if (i === firstPictures) break;
+    getMessageContentForApi(out[i], true, seenFileTexts, budget);
+  }
+  return out;
+}
+
+// Turns a failed answer into a Danish note for the pupil. The error itself is
+// logged where it is caught and never shown.
+function failureNote(error: Error): string {
+  switch (error.message) {
+    case "timeout":
+      return "(Svaret kom ikke i tide. Prøv igen.)";
+    case "empty response from server":
+      return "(Der kom ikke noget svar. Prøv igen.)";
+    case "stream failed":
+      return "(Forbindelsen blev afbrudt. Prøv igen.)";
+    case "unauthorized":
+      // The app has no login. The page gets its access token when it loads.
+      // So a reload is all a pupil can do. The locale has a text for this but
+      // it asks for an API key.
+      return "(Du har ikke adgang lige nu. Genindlæs siden, og prøv igen.)";
+    case "pdf pages unreadable":
+      return "Siderne i en vedhæftet PDF kunne ikke indlæses. Prøv igen. Hvis det ikke hjælper, så start en ny chat og vedhæft filen igen.";
+    // This is already written in Danish for the pupil.
+    case GEMMA_REQUEST_TOO_LONG:
+      return error.message;
+    default:
+      return Locale.Store.Error;
+  }
+}
+
+// Ends an answer that failed or was stopped. Returns true for a stop. A stop
+// is the pupil's choice and not a failure. It gets a note only if no text came.
+function endWithNote(botMessage: ChatMessage, error: Error): boolean {
+  // A stop is reported as exactly "aborted". Other errors can contain that
+  // word. So the whole message must match.
+  const isAborted = error.message === "aborted";
+  if (isAborted) {
+    if (!botMessage.content) botMessage.content = "(Svaret blev stoppet.)";
+  } else {
+    botMessage.content +=
+      (botMessage.content ? "\n\n" : "") + failureNote(error);
+  }
+  botMessage.streaming = false;
+  return isAborted;
+}
+
+// Finds where the short term history starts. The limit counts messages that
+// can be sent. A failed row does not take a slot. Without this a retry after
+// a failure loses the question and its files when the limit is small.
+function shortTermMemoryStart(
+  messages: ChatMessage[],
+  historyMessageCount: number,
+): number {
+  let counted = 0;
+  let start = messages.length;
+  for (
+    let i = messages.length - 1;
+    i >= 0 && counted < historyMessageCount;
+    i -= 1
+  ) {
+    if (!messages[i]?.isError) counted += 1;
+    start = i;
+  }
+  return start;
 }
 
 function fillTemplateWith(input: string, modelConfig: ModelConfig) {
@@ -334,14 +491,14 @@ export const useChatStore = createPersistStore(
         var systemPrompts: ChatMessage[] = [];
         systemPrompts = shouldInjectSystemPrompts
           ? [
-            createMessage({
-              role: MessageRole.System,
-              content: fillTemplateWith("", {
-                ...modelConfig,
-                template: DEFAULT_SYSTEM_TEMPLATE,
+              createMessage({
+                role: MessageRole.System,
+                content: fillTemplateWith("", {
+                  ...modelConfig,
+                  template: DEFAULT_SYSTEM_TEMPLATE,
+                }),
               }),
-            }),
-          ]
+            ]
           : [];
 
         const memoryPrompt = undefined as any; // disable cross-child memory for now
@@ -349,9 +506,9 @@ export const useChatStore = createPersistStore(
         const longTermMemoryPrompts: ChatMessage[] = [];
         const longTermMemoryStartIndex = 0;
 
-        const shortTermMemoryStartIndex = Math.max(
-          0,
-          totalMessageCount - modelConfig.historyMessageCount,
+        const shortTermMemoryStartIndex = shortTermMemoryStart(
+          messages,
+          modelConfig.historyMessageCount,
         );
 
         const memoryStartIndex = shouldSendLongTermMemory
@@ -498,14 +655,7 @@ export const useChatStore = createPersistStore(
             ChatControllerPool.remove(target.id, botMessage.id);
           },
           onError(error) {
-            const isAborted = error.message.includes("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
+            const isAborted = endWithNote(botMessage, error);
             userMessage.isError = !isAborted;
             botMessage.isError = !isAborted;
             set((state) => ({ sessions: state.sessions.slice() }));
@@ -605,7 +755,9 @@ export const useChatStore = createPersistStore(
         get().selectSession(limit(i + delta));
       },
 
-      deleteSession(index: number) {
+      // silent is true when the store removes an empty chat by itself. The user
+      // did not delete anything then. So no toast is shown.
+      deleteSession(index: number, silent = false) {
         const deletingLastSession = get().sessions.length === 1;
         const deletedSession = get().sessions.at(index);
 
@@ -634,16 +786,18 @@ export const useChatStore = createPersistStore(
           get().newSession();
         }
 
-        showToast(
-          Locale.Home.DeleteToast,
-          {
-            text: Locale.Home.Revert,
-            onClick() {
-              set(() => restoreState);
+        if (!silent) {
+          showToast(
+            Locale.Home.DeleteToast,
+            {
+              text: Locale.Home.Revert,
+              onClick() {
+                set(() => restoreState);
+              },
             },
-          },
-          5000,
-        );
+            5000,
+          );
+        }
       },
 
       currentSession() {
@@ -665,7 +819,7 @@ export const useChatStore = createPersistStore(
           session?.mask?.context?.[0]?.content === "" &&
           session.messages.length == 0
         ) {
-          get().deleteSession(index);
+          get().deleteSession(index, true);
         }
 
         return session;
@@ -729,14 +883,7 @@ export const useChatStore = createPersistStore(
 
         // save user's and bot's message
         get().updateCurrentSession((session) => {
-          const savedUserMessage = {
-            ...userMessage,
-            content: mContent,
-          };
-          session.messages = session.messages.concat([
-            savedUserMessage,
-            botMessage,
-          ]);
+          session.messages = session.messages.concat([userMessage, botMessage]);
         });
 
         var api: ClientApi;
@@ -746,8 +893,7 @@ export const useChatStore = createPersistStore(
           api = new ClientApi(ModelProvider.GPT);
         }
 
-        // make request
-        api.llm.chat({
+        const options: ChatOptions = {
           messages: sendMessages,
           config: { ...modelConfig, stream: true },
           onUpdate(message) {
@@ -768,15 +914,11 @@ export const useChatStore = createPersistStore(
             ChatControllerPool.remove(session.id, botMessage.id);
           },
           onError(error) {
-            const isAborted = error.message.includes("aborted");
-            botMessage.content +=
-              "\n\n" +
-              prettyObject({
-                error: true,
-                message: error.message,
-              });
-            botMessage.streaming = false;
-            userMessage.isError = !isAborted;
+            const isAborted = endWithNote(botMessage, error);
+            // Only a message that is too long is left out of later requests.
+            // It can never be sent. After any other failure the pupil can try
+            // again and the question and its files are still there.
+            userMessage.isError = error.message === GEMMA_REQUEST_TOO_LONG;
             botMessage.isError = !isAborted;
             get().updateCurrentSession((session) => {
               session.messages = session.messages.concat();
@@ -796,7 +938,26 @@ export const useChatStore = createPersistStore(
               controller,
             );
           },
-        });
+        };
+        const preparation = new AbortController();
+        options.onController?.(preparation);
+        try {
+          // Read pictures only for a model that can use them. A failed count
+          // ends the waiting answer the same way a failed request does.
+          if (
+            !modelConfig.model.startsWith("dbc") &&
+            isVisionModel(modelConfig.model)
+          ) {
+            options.messages = await withFilePictures(
+              sendMessages,
+              preparation.signal,
+            );
+          }
+          if (preparation.signal.aborted) throw new Error("aborted");
+          api.llm.chat(options);
+        } catch (error) {
+          options.onError?.(error as Error);
+        }
       },
 
       getMemoryPrompt() {
@@ -829,14 +990,14 @@ export const useChatStore = createPersistStore(
         var systemPrompts: ChatMessage[] = [];
         systemPrompts = shouldInjectSystemPrompts
           ? [
-            createMessage({
-              role: MessageRole.System,
-              content: fillTemplateWith("", {
-                ...modelConfig,
-                template: DEFAULT_SYSTEM_TEMPLATE,
+              createMessage({
+                role: MessageRole.System,
+                content: fillTemplateWith("", {
+                  ...modelConfig,
+                  template: DEFAULT_SYSTEM_TEMPLATE,
+                }),
               }),
-            }),
-          ]
+            ]
           : [];
         if (shouldInjectSystemPrompts) {
           console.log(
@@ -856,9 +1017,9 @@ export const useChatStore = createPersistStore(
         const longTermMemoryStartIndex = session.lastSummarizeIndex;
 
         // short term memory
-        const shortTermMemoryStartIndex = Math.max(
-          0,
-          totalMessageCount - modelConfig.historyMessageCount,
+        const shortTermMemoryStartIndex = shortTermMemoryStart(
+          messages,
+          modelConfig.historyMessageCount,
         );
 
         // lets concat send messages, including 4 parts:
@@ -928,8 +1089,8 @@ export const useChatStore = createPersistStore(
           api = new ClientApi(ModelProvider.GPT);
         }
 
-        // remove error messages if any
-        const messages = session.messages;
+        // A title or summary never loads PDF pages. See withoutPagePdfs.
+        const messages = withoutPagePdfs(session.messages);
 
         // should summarize topic after chating more than 10 or 50 words
         const SUMMARIZE_MIN_LEN = env.APP === "skolegpt" ? 10 : 50;
@@ -954,8 +1115,8 @@ export const useChatStore = createPersistStore(
             onFinish(message) {
               get().updateCurrentSession(
                 (session) =>
-                (session.topic =
-                  message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
+                  (session.topic =
+                    message.length > 0 ? trimTopic(message) : DEFAULT_TOPIC),
               );
             },
           });
@@ -1037,9 +1198,19 @@ export const useChatStore = createPersistStore(
         set(() => ({ sessions }));
       },
 
-      clearAllData() {
-        localStorage.clear();
-        location.reload();
+      async clearAllData() {
+        try {
+          await clearChatStorage();
+          location.reload();
+        } catch {
+          // Nothing is saved in this tab once a delete has started (see
+          // "wiping" in idb-migration.ts), so the user has to reload.
+          showToast(
+            "Kunne ikke slette alle data, og intet bliver gemt nu. Genindlæs siden og prøv igen.",
+            { text: "Genindlæs", onClick: () => location.reload() },
+            60000,
+          );
+        }
       },
     };
 
@@ -1056,7 +1227,7 @@ export const useChatStore = createPersistStore(
         let mask = chatStore.sessions[0].mask;
         if (mask.avatar == "gpt-bot" && mask.context.length == 0) {
           chatStore.newSession();
-          chatStore.deleteSession(1);
+          chatStore.deleteSession(1, true);
         }
       }
     }

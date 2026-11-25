@@ -24,7 +24,7 @@ import {
   useAppConfig,
   useChatStore,
 } from "../store";
-import { MultimodalContent, ROLES } from "../client/api";
+import { ROLES } from "../client/api";
 import {
   Input,
   List,
@@ -33,6 +33,7 @@ import {
   Popover,
   Select,
   showConfirm,
+  showToast,
 } from "./ui-lib";
 import { Avatar, AvatarPicker } from "./emoji";
 import Locale, { AllLangs, ALL_LANG_OPTIONS, Lang } from "../locales";
@@ -41,12 +42,7 @@ import QRCode from "react-qr-code";
 
 import chatStyle from "./chat.module.scss";
 import { useEffect, useRef, useState } from "react";
-import {
-  copyToClipboard,
-  downloadAs,
-  getMessageImages,
-  readFromFile,
-} from "../utils";
+import { copyToClipboard, downloadAs, readFromFile } from "../utils";
 import { MessageRole, Updater } from "../typing";
 import { ModelConfigList } from "./model-config";
 import { FileName, Path } from "../constant";
@@ -60,6 +56,22 @@ import {
 } from "@hello-pangea/dnd";
 import { getMessageTextContent } from "../utils";
 import { InputRange } from "./input-range";
+import { addFilePicturesToExport } from "../utils/attachment-export";
+
+async function downloadMasks(masks: Mask | Mask[], filename: string) {
+  try {
+    const copy = JSON.parse(JSON.stringify(masks)) as typeof masks;
+    const list = Array.isArray(copy) ? copy : [copy];
+    await addFilePicturesToExport(
+      list.flatMap((mask) =>
+        Array.isArray(mask?.context) ? mask.context : [],
+      ),
+    );
+    await downloadAs(JSON.stringify(copy), filename);
+  } catch {
+    showToast("Eksporten kunne ikke gemmes. Prøv igen.");
+  }
+}
 
 // drag and drop helper function
 function reorder<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -377,6 +389,14 @@ export function MaskConfig(props: {
   );
 }
 
+// The transcript editor shows these roles to the pupil. The option value stays
+// the English role that the API needs.
+const ROLE_LABELS: Record<string, string> = {
+  system: "System",
+  user: "Bruger",
+  assistant: "Assistent",
+};
+
 function ContextPromptItem(props: {
   index: number;
   prompt: ChatMessage;
@@ -384,6 +404,9 @@ function ContextPromptItem(props: {
   remove: () => void;
 }) {
   const [focusingInput, setFocusingInput] = useState(false);
+  // An answer that is still being written is locked here. Editing it would swap
+  // the object that the running request writes to and the answer would be lost.
+  const locked = props.prompt.streaming;
 
   return (
     <div className={chatStyle["context-prompt-row"]}>
@@ -395,6 +418,7 @@ function ContextPromptItem(props: {
           <Select
             value={props.prompt.role}
             className={chatStyle["context-role"]}
+            disabled={locked}
             onChange={(e) =>
               props.update({
                 ...props.prompt,
@@ -404,7 +428,7 @@ function ContextPromptItem(props: {
           >
             {ROLES.map((r) => (
               <option key={r} value={r}>
-                {r}
+                {ROLE_LABELS[r] ?? r}
               </option>
             ))}
           </Select>
@@ -415,6 +439,7 @@ function ContextPromptItem(props: {
         type="text"
         className={chatStyle["context-content"]}
         rows={focusingInput ? 5 : 1}
+        readOnly={locked}
         onFocus={() => setFocusingInput(true)}
         onBlur={() => {
           setFocusingInput(false);
@@ -457,16 +482,20 @@ export function ContextPrompts(props: {
 
   const updateContextPrompt = (i: number, prompt: ChatMessage) => {
     props.updateContext((context) => {
-      const images = getMessageImages(context[i]);
-      context[i] = prompt;
-      if (images.length > 0) {
-        const text = getMessageTextContent(context[i]);
-        const newContext: MultimodalContent[] = [{ type: "text", text }];
-        for (const img of images) {
-          newContext.push({ type: "image_url", image_url: { url: img } });
+      const previous = context[i].content;
+      // The row only edits text. Keep the pictures and files that were on the
+      // message and in their order so editing a question does not drop its PDF.
+      // A role change keeps the content as it is.
+      if (typeof prompt.content === "string" && Array.isArray(previous)) {
+        const rest = previous.filter((part) => part.type !== "text");
+        if (rest.length > 0) {
+          prompt = {
+            ...prompt,
+            content: [{ type: "text", text: prompt.content }, ...rest],
+          };
         }
-        context[i].content = newContext;
       }
+      context[i] = prompt;
     });
   };
 
@@ -691,7 +720,10 @@ export function MaskPage() {
   const closeMaskModal = () => setEditingMaskId(undefined);
 
   const downloadAll = () => {
-    downloadAs(JSON.stringify(masks.filter((v) => !v.builtin)), FileName.Masks);
+    downloadMasks(
+      masks.filter((v) => !v.builtin),
+      FileName.Masks,
+    );
   };
 
   const importFromFile = () => {
@@ -710,7 +742,7 @@ export function MaskPage() {
         if (importMasks.name) {
           maskStore.create(importMasks);
         }
-      } catch { }
+      } catch {}
     });
   };
 
@@ -880,10 +912,7 @@ export function MaskPage() {
                 key="export"
                 bordered
                 onClick={() =>
-                  downloadAs(
-                    JSON.stringify(editingMask),
-                    `${editingMask.name}.json`,
-                  )
+                  downloadMasks(editingMask, `${editingMask.name}.json`)
                 }
               />,
               <IconButton

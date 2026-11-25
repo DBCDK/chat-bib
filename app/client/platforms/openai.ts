@@ -1,4 +1,6 @@
 "use client";
+
+import { assertGemmaRequestFits } from "../../utils/gemma-request-budget";
 import {
   ApiPath,
   DEFAULT_API_HOST,
@@ -16,13 +18,14 @@ import {
   LLMModel,
   LLMUsage,
   MultimodalContent,
+  RequestMessage,
 } from "../api";
+import { watchRequest } from "../controller";
 import Locale from "../../locales";
 import {
   EventStreamContentType,
   fetchEventSource,
 } from "@fortaine/fetch-event-source";
-import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
 import { makeAzurePath } from "@/app/azure";
 import { foldContentsForApi, isVisionModel } from "@/app/utils";
@@ -38,10 +41,7 @@ export interface OpenAIListModelResponse {
 }
 
 interface RequestPayload {
-  messages: {
-    role: "system" | "user" | "assistant";
-    content: string | MultimodalContent[];
-  }[];
+  messages: RequestMessage[];
   stream?: boolean;
   model: string;
   temperature: number;
@@ -58,10 +58,19 @@ function mergeSystemPrompts(messages: RequestPayload["messages"]) {
   const systemPrompts = messages.filter((m) => m.role === "system");
   if (systemPrompts.length <= 1) return messages;
 
-  const mergedSystemPrompt = systemPrompts
-    .map((m) => m.content)
-    .filter((content): content is string => typeof content === "string")
-    .join("\n\n");
+  const contents = systemPrompts.map((m) => m.content);
+  const mergedSystemPrompt = contents.every(
+    (content): content is string => typeof content === "string",
+  )
+    ? contents.join("\n\n")
+    : contents.flatMap<MultimodalContent>((content, index) => {
+        // A system message with a file has text and pictures. Keep them all.
+        const parts: MultimodalContent[] =
+          typeof content === "string"
+            ? [{ type: "text", text: content }]
+            : content;
+        return index === 0 ? parts : [{ type: "text", text: "\n\n" }, ...parts];
+      });
 
   return [
     {
@@ -124,54 +133,63 @@ export class ChatGPTApi implements LLMApi {
 
   async chat(options: ChatOptions) {
     const visionModel = isVisionModel(options.config.model);
-    const contents = foldContentsForApi(options.messages, visionModel);
-    const messages = options.messages.map((v, i) => ({
-      role: v.role,
-      content: contents[i],
-    }));
-
     const modelConfig = {
       ...useAppConfig.getState().modelConfig,
       ...useChatStore.getState().currentSession().mask.modelConfig,
       ...{
         model: options.config.model,
       },
+      // The pupil may have changed chat while the file pictures were read.
+      ...(env.APP === "skolegpt" ? options.config : {}),
     };
 
-    // some models (like skolegpt-v3) can't read images. if the request has an
-    // image, send it to a model that can, set in env.IMAGE_MODEL.
-    const hasImage = messages.some(
-      (m) =>
-        Array.isArray(m.content) &&
-        m.content.some((part) => part.type === "image_url"),
-    );
-    const model =
-      hasImage && env.IMAGE_MODEL
-        ? (env.IMAGE_MODEL as string)
-        : modelConfig.model;
-
-    const requestPayload: RequestPayload = {
-      messages: mergeSystemPrompts(messages),
-      stream: options.config.stream,
-      model,
-      temperature: modelConfig.temperature,
-      presence_penalty: modelConfig.presence_penalty,
-      frequency_penalty: modelConfig.frequency_penalty,
-      top_p: modelConfig.top_p,
-      // max_tokens: Math.max(modelConfig.max_tokens, 1024),
-      // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
-    };
-
-    // add max_tokens to vision model
-    if (visionModel && modelConfig.model.includes("preview")) {
-      requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
-    }
-
-    const shouldStream = !!options.config.stream;
     const controller = new AbortController();
+    const watch = watchRequest(options, controller, REQUEST_TIMEOUT_MS);
     options.onController?.(controller);
-
     try {
+      const contents = foldContentsForApi(options.messages, visionModel);
+      if (controller.signal.aborted) throw new Error("aborted");
+      const messages = options.messages.map((v, i) => ({
+        role: v.role,
+        content: contents[i],
+      }));
+
+      // some models (like skolegpt-v3) can't read images. if the request has an
+      // image, send it to a model that can, set in env.IMAGE_MODEL.
+      const hasImage = messages.some(
+        (m) =>
+          Array.isArray(m.content) &&
+          m.content.some((part) => part.type === "image_url"),
+      );
+      const model =
+        hasImage && env.IMAGE_MODEL
+          ? (env.IMAGE_MODEL as string)
+          : modelConfig.model;
+
+      const requestPayload: RequestPayload = {
+        messages: mergeSystemPrompts(messages),
+        stream: options.config.stream,
+        model,
+        temperature: modelConfig.temperature,
+        presence_penalty: modelConfig.presence_penalty,
+        frequency_penalty: modelConfig.frequency_penalty,
+        top_p: modelConfig.top_p,
+        // max_tokens: Math.max(modelConfig.max_tokens, 1024),
+        // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
+      };
+
+      if (env.APP === "skolegpt" && model === "google/gemma-4-26B-A4B-it") {
+        assertGemmaRequestFits(requestPayload.messages);
+        if (controller.signal.aborted) throw new Error("aborted");
+      }
+
+      // add max_tokens to vision model
+      if (visionModel && modelConfig.model.includes("preview")) {
+        requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
+      }
+
+      const shouldStream = !!options.config.stream;
+
       const chatPath = this.path(OpenaiPath.ChatPath);
       const chatPayload = {
         method: "POST",
@@ -181,24 +199,16 @@ export class ChatGPTApi implements LLMApi {
       };
 
       // make a fetch request
-      const requestTimeoutId = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT_MS,
-      );
+      watch.progress();
 
       if (shouldStream) {
         let responseText = "";
         let remainText = "";
-        let finished = false;
 
         // animate response to make it looks smooth
         function animateResponseText() {
-          if (finished || controller.signal.aborted) {
-            responseText += remainText;
+          if (watch.finished || controller.signal.aborted) {
             console.log("[Response Animation] finished");
-            if (responseText?.length === 0) {
-              options.onError?.(new Error("empty response from server"));
-            }
             return;
           }
 
@@ -216,26 +226,23 @@ export class ChatGPTApi implements LLMApi {
         // start animaion
         animateResponseText();
 
-        const finish = () => {
-          if (!finished) {
-            finished = true;
-            options.onFinish(responseText + remainText);
-          }
-        };
+        const finish = (failure?: string) =>
+          watch.finish(responseText + remainText, failure);
 
-        controller.signal.onabort = finish;
+        controller.signal.onabort = () => finish();
 
         fetchEventSource(chatPath, {
           ...chatPayload,
           async onopen(res) {
-            clearTimeout(requestTimeoutId);
+            // The response headers arrived. That is progress.
+            watch.progress();
             const contentType = res.headers.get("content-type");
             console.log(
               "[OpenAI] request response content type: ",
               contentType,
             );
 
-            if (contentType?.startsWith("text/plain")) {
+            if (res.ok && contentType?.startsWith("text/plain")) {
               responseText = await res.clone().text();
               return finish();
             }
@@ -247,28 +254,16 @@ export class ChatGPTApi implements LLMApi {
                 ?.startsWith(EventStreamContentType) ||
               res.status !== 200
             ) {
-              const responseTexts = [responseText];
-              let extraInfo = await res.clone().text();
-              try {
-                const resJson = await res.clone().json();
-                extraInfo = prettyObject(resJson);
-              } catch {}
-
-              if (res.status === 401) {
-                responseTexts.push(Locale.Error.Unauthorized);
-              }
-
-              if (extraInfo) {
-                responseTexts.push(extraInfo);
-              }
-
-              responseText = responseTexts.join("\n\n");
-
-              return finish();
+              // Not a stream. The body is an error page. The pupil gets a short
+              // note about the failure instead.
+              console.error("[Request] http error", res.status);
+              return finish(
+                res.status === 401 ? "unauthorized" : "stream failed",
+              );
             }
           },
           onmessage(msg) {
-            if (msg.data === "[DONE]" || finished) {
+            if (msg.data === "[DONE]" || watch.finished) {
               return finish();
             }
             const text = msg.data;
@@ -282,6 +277,11 @@ export class ChatGPTApi implements LLMApi {
 
               if (delta) {
                 remainText += delta;
+              }
+              // Anything in the delta is progress. Thinking counts too and has
+              // a field of its own. An empty delta does not count.
+              if (Object.values(choices[0]?.delta ?? {}).some(Boolean)) {
+                watch.progress();
               }
 
               if (
@@ -304,22 +304,23 @@ export class ChatGPTApi implements LLMApi {
             finish();
           },
           onerror(e) {
-            options.onError?.(e);
+            // The connection broke. The pupil gets a short note. The error
+            // itself is logged for us.
+            console.error("[Request] stream failed", e);
+            finish("stream failed");
             throw e;
           },
           openWhenHidden: true,
         });
       } else {
         const res = await fetch(chatPath, chatPayload);
-        clearTimeout(requestTimeoutId);
-
         const resJson = await res.json();
         const message = this.extractMessage(resJson);
-        options.onFinish(message);
+        watch.finish(message);
       }
     } catch (e) {
       console.log("[Request] failed to make a chat request", e);
-      options.onError?.(e as Error);
+      watch.finish("", (e as Error).message);
     }
   }
   async usage() {

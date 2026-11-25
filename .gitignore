@@ -12,6 +12,9 @@
 /.next/
 /out/
 /public/styles/*.css
+# copied from the pdfjs-dist package at build time, see package.json copy:pdfjs-assets
+/public/pdfjs-cmaps/
+/public/pdfjs-wasm/
 
 # production
 /build

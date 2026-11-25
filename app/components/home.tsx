@@ -29,7 +29,15 @@ import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
-import { useAccessStore } from "../store";
+import { useAccessStore, useChatStore, useUpdateStore } from "../store";
+import { useMaskStore } from "../store/mask";
+import { usePromptStore } from "../store/prompt";
+import { hydrated } from "../utils/store";
+import { deletionPending, loadFailed } from "../utils/idb-migration";
+import { showConfirm } from "./ui-lib";
+import { IconButton } from "./button";
+import ResetIcon from "../icons/reload.svg";
+import ClearIcon from "../icons/clear.svg";
 import { initializeApollo } from "../client/apolloClient";
 import { ApolloProvider } from "@apollo/client";
 import { env } from "../utils/appsettings";
@@ -128,13 +136,85 @@ function useHtmlLang() {
 
 const useHasHydrated = () => {
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setHasHydrated(true);
+    // Saved state must arrive before edits, model requests or URL actions.
+    const stores = [
+      useChatStore,
+      useMaskStore,
+      useAppConfig,
+      useAccessStore,
+      usePromptStore,
+      useUpdateStore,
+    ];
+    let open = true;
+    const timers = [
+      setTimeout(() => {
+        if (
+          stores.some((store) => {
+            const name = store.persist.getOptions().name;
+            return name !== undefined && loadFailed(name);
+          })
+        )
+          setFailed(true);
+      }, 5000),
+      setTimeout(() => setFailed(true), 30000),
+    ];
+    Promise.all(stores.map(hydrated)).then(() => {
+      timers.forEach(clearTimeout);
+      if (open) setHasHydrated(true);
+    });
+    return () => {
+      open = false;
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
-  return hasHydrated;
+  return { hasHydrated, failed };
 };
+
+// Shown when the saved chats and assistants could not be read. Nothing is
+// saved over them (see idb-migration.ts), so a reload can still bring them
+// back. Deleting everything is the way out if they are broken.
+function LoadFailed() {
+  return (
+    <div className={styles["loading-content"]}>
+      <div className="error" role="alert">
+        <p>
+          {deletionPending()
+            ? "Sletningen af dine data er ikke afsluttet. Vælg “Slet alle data” for at fuldføre den."
+            : "Dine gemte data kunne ikke indlæses."}
+        </p>
+        <p>
+          Hjælper det ikke at genindlæse eller slette, kan du rydde sidens data
+          i browserens indstillinger.
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <IconButton
+            icon={<ResetIcon />}
+            text="Genindlæs"
+            onClick={() => location.reload()}
+            bordered
+          />
+          <IconButton
+            icon={<ClearIcon />}
+            text="Slet alle data"
+            onClick={async () => {
+              const sure = await showConfirm(
+                "Vil du slette alle chats, assistenter, filer og indstillinger?",
+              );
+              if (sure) {
+                await useChatStore.getState().clearAllData();
+              }
+            }}
+            bordered
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const loadAsyncGoogleFont = () => {
   const linkEl = document.createElement("link");
@@ -223,6 +303,7 @@ export function useLoadData() {
   api = new ClientApi(ModelProvider.GPT);
   useEffect(() => {
     (async () => {
+      await Promise.all([hydrated(useAppConfig), hydrated(useAccessStore)]);
       const models = await api.llm.models();
       config.mergeModels(models);
     })();
@@ -239,8 +320,9 @@ export function Home() {
     useAccessStore.getState().fetch();
   }, []);
 
-  if (!useHasHydrated()) {
-    return <Loading />;
+  const { hasHydrated, failed } = useHasHydrated();
+  if (!hasHydrated) {
+    return failed ? <LoadFailed /> : <Loading />;
   }
 
   return (

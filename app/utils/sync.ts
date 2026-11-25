@@ -9,6 +9,7 @@ import { usePromptStore } from "../store/prompt";
 import { StoreKey } from "../constant";
 import { merge } from "./merge";
 import { downloadAs } from "../utils";
+import { addFilePicturesToExport } from "./attachment-export";
 
 type NonFunctionKeys<T> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? never : K;
@@ -129,10 +130,25 @@ export function getLocalAppState() {
   return appState;
 }
 
-export function exportLocalAppState() {
-  const state = getLocalAppState();
+export async function exportLocalAppState() {
+  // The backup must hold the file pictures too. They are saved in IndexedDB
+  // and would be lost when the data is cleared. They go on a copy of the state.
+  const state = JSON.parse(JSON.stringify(getLocalAppState())) as AppState;
+  // This also runs after a crash. Then the saved state can be broken.
+  const arrayOrEmpty = <T>(value: T[] | undefined): T[] =>
+    Array.isArray(value) ? value : [];
+  const messages = [
+    ...arrayOrEmpty(state[StoreKey.Chat]?.sessions).flatMap((session) => [
+      ...arrayOrEmpty(session?.messages),
+      ...arrayOrEmpty(session?.mask?.context),
+    ]),
+    ...Object.values(state[StoreKey.Mask]?.masks ?? {}).flatMap((mask) =>
+      arrayOrEmpty(mask?.context),
+    ),
+  ];
+  await addFilePicturesToExport(messages);
   const fileName = `Backup-${new Date().toLocaleString()}.json`;
-  downloadAs(JSON.stringify(state), fileName);
+  await downloadAs(JSON.stringify(state), fileName);
 }
 
 export function setLocalAppState(appState: AppState) {

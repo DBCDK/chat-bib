@@ -1,4 +1,6 @@
 "use client";
+
+import { env } from "../../utils/appsettings";
 import {
   ApiPath,
   DEFAULT_API_HOST,
@@ -18,6 +20,7 @@ import {
   LLMUsage,
   MultimodalContent,
 } from "../api";
+import { watchRequest } from "../controller";
 import Locale from "../../locales";
 
 import { getClientConfig } from "@/app/config/client";
@@ -96,22 +99,6 @@ export class DBCApi implements LLMApi {
 
   async chat(options: ChatOptions) {
     const visionModel = isVisionModel(options.config.model);
-    // the search (rag) part only handles text, so leave images out here
-    // (keepImages = false). Images go in a separate field below and are only
-    // sent to gemma (see llmClient).
-    const contents = foldContentsForApi(options.messages, false);
-    const messages = options.messages.map((v, i) => {
-      const message: Message = {
-        role: v.role,
-        content: contents[i] as string,
-      };
-      const images = getMessageImages(v);
-      if (images.length > 0) {
-        message.images = images;
-      }
-      return message;
-    });
-
     const conversationId =
       options.conversationIdOverride ||
       useChatStore.getState().currentSession().id;
@@ -125,28 +112,46 @@ export class DBCApi implements LLMApi {
       useChatStore.getState().currentSession().dbcSearchSpeed ||
       SearchSpeed.Fast;
 
-    const requestPayload: RequestPayload = {
-      messages,
-      stream: options.config.stream,
-      model: modelConfig.model,
-      temperature: modelConfig.temperature,
-      presence_penalty: modelConfig.presence_penalty,
-      frequency_penalty: modelConfig.frequency_penalty,
-      top_p: modelConfig.top_p,
-      // max_tokens: Math.max(modelConfig.max_tokens, 1024),
-      // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
-    };
-
-    // add max_tokens to vision model
-    if (visionModel && modelConfig.model.includes("preview")) {
-      requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
-    }
-
-    const shouldStream = !!options.config.stream;
     const controller = new AbortController();
+    const watch = watchRequest(options, controller, REQUEST_TIMEOUT_MS);
     options.onController?.(controller);
-
     try {
+      // the search (rag) part only handles text, so leave images out here
+      // (keepImages = false). Images go in a separate field below and are only
+      // sent to gemma (see llmClient).
+      const contents = foldContentsForApi(options.messages, false);
+      if (controller.signal.aborted) throw new Error("aborted");
+      const messages = options.messages.map((v, i) => {
+        const message: Message = {
+          role: v.role,
+          content: contents[i] as string,
+        };
+        const images = getMessageImages(v);
+        if (images.length > 0) {
+          message.images = images;
+        }
+        return message;
+      });
+
+      const requestPayload: RequestPayload = {
+        messages,
+        stream: options.config.stream,
+        model: modelConfig.model,
+        temperature: modelConfig.temperature,
+        presence_penalty: modelConfig.presence_penalty,
+        frequency_penalty: modelConfig.frequency_penalty,
+        top_p: modelConfig.top_p,
+        // max_tokens: Math.max(modelConfig.max_tokens, 1024),
+        // Please do not ask me why not send max_tokens, no reason, this param is just shit, I dont want to explain anymore.
+      };
+
+      // add max_tokens to vision model
+      if (visionModel && modelConfig.model.includes("preview")) {
+        requestPayload["max_tokens"] = Math.max(modelConfig.max_tokens, 4000);
+      }
+
+      const shouldStream = !!options.config.stream;
+
       const chatPath = "/api/dbc/generate_stream";
 
       const llmRequest: LLMRequest = {
@@ -170,23 +175,18 @@ export class DBCApi implements LLMApi {
       };
 
       // make a fetch request
-      const requestTimeoutId = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT_MS,
-      );
+      watch.progress();
 
       if (shouldStream) {
         let responseText = "";
         let remainText = "";
-        let finished = false;
+
+        const finish = (failure?: string) =>
+          watch.finish(responseText + remainText, failure);
 
         // animate response to make it looks smooth
         function animateResponseText() {
-          if (finished || controller.signal.aborted) {
-            responseText += remainText;
-            if (responseText?.length === 0) {
-              options.onError?.(new Error("empty response from server"));
-            }
+          if (watch.finished || controller.signal.aborted) {
             return;
           }
 
@@ -207,55 +207,67 @@ export class DBCApi implements LLMApi {
         // start animaion
         animateResponseText();
 
-        const response = await fetch("/api/dbc/generate_stream", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(llmRequest),
-        });
+        try {
+          const response = await fetch("/api/dbc/generate_stream", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(llmRequest),
+            signal: controller.signal,
+          });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+          if (!response.ok) {
+            finish(response.status === 401 ? "unauthorized" : "stream failed");
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          // The response headers arrived. That is progress.
+          watch.progress();
 
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
 
-        function getToken(line: string) {
-          try {
-            const jsonObj = JSON.parse(line?.replace("data: ", ""));
-            if (!jsonObj?.token?.special) {
-              return jsonObj?.token?.text || "";
-            }
-          } catch (e) {}
-          return "";
-        }
-        while (true) {
-          const { done, value } = (await reader?.read()) || {};
-          if (done) break;
+          function getToken(line: string) {
+            try {
+              const jsonObj = JSON.parse(line?.replace("data: ", ""));
+              if (!jsonObj?.token?.special) {
+                return jsonObj?.token?.text || "";
+              }
+            } catch (e) {}
+            return "";
+          }
+          while (true) {
+            // A reply without a body has no reader. Treat that as the end.
+            // Otherwise this loop would never stop.
+            const { done, value } = (await reader?.read()) || { done: true };
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
+            buffer += decoder.decode(value, { stream: true });
 
-          let newlineIndex;
-          while ((newlineIndex = buffer.indexOf("\n")) >= 0) {
-            const line = buffer.slice(0, newlineIndex + 1).trim();
-            buffer = buffer.slice(newlineIndex + 1);
+            let newlineIndex;
+            while ((newlineIndex = buffer.indexOf("\n")) >= 0) {
+              const line = buffer.slice(0, newlineIndex + 1).trim();
+              buffer = buffer.slice(newlineIndex + 1);
 
-            if (line) {
-              remainText += getToken(line);
+              if (line) {
+                const token = getToken(line);
+                remainText += token;
+                // Text for the pupil is progress.
+                if (token) watch.progress();
+              }
             }
           }
-        }
 
-        if (buffer.trim()) {
-          remainText += getToken(buffer.trim());
-        }
+          if (buffer.trim()) {
+            remainText += getToken(buffer.trim());
+          }
 
-        if (!finished) {
-          finished = true;
-          options.onFinish(responseText + remainText);
+          finish();
+        } catch (e) {
+          // Keep the text that arrived. The outer catch logs the error.
+          finish("stream failed");
+          throw e;
         }
       } else {
         const res = await fetch(chatPath, {
@@ -264,16 +276,15 @@ export class DBCApi implements LLMApi {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(llmRequest),
+          signal: controller.signal,
         });
-        clearTimeout(requestTimeoutId);
-
         const resJson = await res.json();
         const message = this.extractMessage(resJson);
-        options.onFinish(message);
+        watch.finish(message);
       }
     } catch (e) {
       console.log("[Request] failed to make a chat request", e);
-      options.onError?.(e as Error);
+      watch.finish("", (e as Error).message);
     }
   }
   async usage() {
