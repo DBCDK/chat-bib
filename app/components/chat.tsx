@@ -38,6 +38,10 @@ import EditIcon from "../icons/rename.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 import CancelIcon from "../icons/cancel.svg";
 import PlusIcon from "../icons/plus.svg";
+import WarningIcon from "../icons/warning.svg";
+import RetryIcon from "../icons/retry.svg";
+import InfoIcon from "../icons/info.svg";
+import AttachIcon from "../icons/attach.svg";
 import PluginIcon from "../icons/plugin.svg";
 import LightIcon from "../icons/light.svg";
 import DarkIcon from "../icons/dark.svg";
@@ -113,6 +117,7 @@ import {
   MALICIOUS_ANSWER,
   MAX_ATTACHED_IMAGES,
   Path,
+  REQUEST_TIMEOUT_MS,
   UNFINISHED_INPUT,
 } from "../constant";
 import { Avatar } from "./emoji";
@@ -755,6 +760,31 @@ function pdfCoverageWarnings(
   });
 }
 
+// Opens what the server said, so it can go in a fault report.
+function ErrorInfo(props: { info: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className={styles["chat-message-error-info"]}
+        title={Locale.Chat.NoResponse.ShowInfo}
+        aria-label={Locale.Chat.NoResponse.ShowInfo}
+        onClick={() => setOpen(!open)}
+      >
+        <InfoIcon />
+      </button>
+      {open && (
+        <div className={styles["chat-message-error-code"]}>
+          <span className={styles["chat-message-error-code-label"]}>
+            {Locale.Chat.NoResponse.InfoLabel}
+          </span>{" "}
+          {props.info}
+        </div>
+      )}
+    </>
+  );
+}
+
 function _Chat() {
   type RenderMessage = ChatMessage & { preview?: boolean };
 
@@ -976,6 +1006,21 @@ function _Chat() {
     { leading: true, trailing: true },
   );
 
+  // INPUT_HINTS_ON_CLICK: the placeholder shows the keyboard shortcuts once the
+  // field is clicked. Not on focus, since the field gets focus on page load.
+  const [showInputHints, setShowInputHints] = useState(false);
+  let inputPlaceholder = Locale.Chat.Input(submitKey);
+  if (env.INPUT_HINTS_ON_CLICK) {
+    const keyboardHints = [
+      `${submitKey} sender`,
+      submitKey === SubmitKey.Enter && "Shift + Enter ny linje",
+      "/ søg i prompts",
+    ];
+    inputPlaceholder = showInputHints
+      ? keyboardHints.filter(Boolean).join(" · ")
+      : `Spørg ${env.APP_TITLE}`;
+  }
+
   // auto grow input
   const [inputRows, setInputRows] = useState(1);
   const measure = useDebouncedCallback(
@@ -1166,20 +1211,31 @@ function _Chat() {
 
   useEffect(() => {
     chatStore.updateCurrentSession((session) => {
+      const stopTiming = Date.now() - REQUEST_TIMEOUT_MS;
       session.messages.forEach((m) => {
-        // A reply is only written while its request runs. One still marked as
-        // streaming with no running request is left over from a closed or
-        // reloaded tab and nothing will finish it. End it here so it does not
-        // write for ever. A reply whose request is still running is left alone.
-        const stillRunning =
-          ChatControllerPool.controllers[
-            ChatControllerPool.key(session.id, m.id)
-          ];
-        if (m.role !== "assistant" || !m.streaming || stillRunning) return;
-        m.streaming = false;
-        if (m.content.length === 0) {
+        if (m.retrying) {
+          // Still trying in the background after the user went to another
+          // chat and came back. Leave it alone.
+          const key = ChatControllerPool.key(session.id, m.id);
+          if (ChatControllerPool.controllers[key]) return;
+
+          // A try only runs while the page is open, so this one was cut off.
+          m.retrying = false;
+          m.streaming = false;
           m.isError = true;
-          m.content = Locale.Store.Error;
+          m.content = Locale.Chat.NoResponse.Failed;
+        }
+
+        // check if should stop all stale messages
+        if (m.isError || new Date(m.date).getTime() < stopTiming) {
+          if (m.streaming) {
+            m.streaming = false;
+          }
+
+          if (m.content.length === 0) {
+            m.isError = true;
+            m.content = Locale.Chat.NoResponse.Failed;
+          }
         }
       });
 
@@ -1283,8 +1339,9 @@ function _Chat() {
     const textContent = getMessageTextContent(userMessage);
     const images = getMessageImages(userMessage);
     const imageNames = getMessageImageNames(userMessage);
+    // Without the files the model answers about a document it never got.
     chatStore
-      .onUserInput(textContent, images, undefined, imageNames)
+      .onUserInput(textContent, images, getMessageFiles(userMessage), imageNames)
       .then(() => setIsLoading(false));
     inputRef.current?.focus();
   };
@@ -1760,7 +1817,9 @@ function _Chat() {
               className={`window-header-main-title ${styles["chat-body-main-title"]}`}
               onClickCapture={() => setIsEditingMessage(true)}
             >
-              {!session.topic ? DEFAULT_TOPIC : session.topic}
+              {env.SHOW_MASK_NAME_IN_HEADER
+                ? session.mask.name
+                : session.topic || DEFAULT_TOPIC}
             </div>
             <div className="window-header-sub-title">
               {Locale.Chat.SubTitle(session.messages.length)}
@@ -2060,6 +2119,9 @@ function _Chat() {
                 !(message.preview || message.content.length === 0) &&
                 !isContext;
               const showTyping = message.preview || message.streaming;
+              // when the answer should wear the box that says it went wrong
+              const showNoAnswer =
+                (message.retrying || message.isError) && !isUser;
               // the files/images to show under this message (read them once)
               const msgImages = getMessageImages(message);
               const msgImageNames = getMessageImageNames(message);
@@ -2159,13 +2221,32 @@ function _Chat() {
                           </div>
                         )}
                       </div>
-                      <div className={styles["chat-message-item"]}>
+                      <div
+                        className={
+                          styles["chat-message-item"] +
+                          (showNoAnswer
+                            ? " " + styles["chat-message-item-warning"]
+                            : "")
+                        }
+                      >
+                        {showNoAnswer && (
+                          <WarningIcon
+                            className={styles["chat-message-warning-icon"]}
+                          />
+                        )}
+                        {message.retrying && (
+                          <div className={styles["chat-message-retrying"]}>
+                            {Locale.Chat.NoResponse.Retrying}
+                            <LoadingIcon />
+                          </div>
+                        )}
                         <Markdown
                           content={getMessageTextContent(message)}
                           loading={
                             (message.preview || message.streaming) &&
                             message.content.length === 0 &&
-                            !isUser
+                            !isUser &&
+                            !message.retrying
                           }
                           // onContextMenu={(e) => onRightClick(e, message)}
                           onDoubleClickCapture={() => {
@@ -2176,6 +2257,9 @@ function _Chat() {
                           parentRef={scrollRef}
                           defaultShow={i >= messages.length - 6}
                         />
+                        {message.errorInfo && (
+                          <ErrorInfo info={message.errorInfo} />
+                        )}
                         {msgImages.length == 1 && (
                           <img
                             className={styles["chat-message-item-image"]}
@@ -2243,6 +2327,23 @@ function _Chat() {
                           </div>
                         )}
                       </div>
+
+                      {message.isError && !isUser && (
+                        <div className={styles["chat-message-tools"]}>
+                          <IconButton
+                            text={Locale.Chat.Actions.Retry}
+                            icon={<RetryIcon />}
+                            bordered
+                            onClick={() => onResend(message)}
+                          />
+                          <IconButton
+                            text={Locale.Home.NewChat}
+                            icon={<PlusIcon />}
+                            bordered
+                            onClick={() => chatStore.newSession()}
+                          />
+                        </div>
+                      )}
 
                       {env.ENABLE_TTSASR && !isUser && (
                         <div className={styles["chat-message-tools"]}>
@@ -2357,7 +2458,12 @@ function _Chat() {
                 </div>
               )}
               {env.ENABLE_TTSASR && (
-                <RecorderIcon onTranscribed={onInput} pinned={hasAttachments} />
+                <RecorderIcon
+                  onTranscribed={onInput}
+                  className={
+                    hasAttachments ? styles["chat-input-icon-pinned"] : undefined
+                  }
+                />
               )}
               <label
                 className={`${styles["chat-input-panel-inner"]} ${
@@ -2536,17 +2642,7 @@ function _Chat() {
         </div>
       )}
       {env.CHAT_DISCLAIMER && (
-        <div
-          style={{
-            marginTop: -15,
-            marginBottom: 5,
-            textAlign: "center",
-            fontSize: 10,
-            color: "#666",
-          }}
-        >
-          {env.CHAT_DISCLAIMER}
-        </div>
+        <div className={styles["chat-disclaimer"]}>{env.CHAT_DISCLAIMER}</div>
       )}
       {showExport && (
         <ExportMessageModal onClose={() => setShowExport(false)} />

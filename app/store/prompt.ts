@@ -147,8 +147,7 @@ export const usePromptStore = createPersistStore(
       return newState as any;
     },
 
-    // Runs when the saved prompts have been read, so the search gets them too.
-    // With IndexedDB the read takes a moment.
+    // Add user prompts to search only after their saved values have loaded.
     onRehydrateStorage: () => (_state, error) => {
       if (error) return;
       const style = env.STYLE ?? "chatbib";

@@ -24,9 +24,8 @@ type SetStoreState<T> = (
   replace?: boolean | undefined,
 ) => void;
 
-// Resolves when a store has been read from the browser's storage. That takes a
-// moment with IndexedDB, and what is set before it is replaced by the saved
-// state when it arrives.
+// Wait for saved data before making changes. Loading it later could erase
+// a new chat or a settings change.
 export function hydrated(store: {
   persist: {
     hasHydrated(): boolean;
@@ -55,13 +54,8 @@ export function createPersistStore<T extends object, M>(
     persistOptions.storage = createJSONStorage(() => migrationAwareStorage);
   }
 
-  // Make hydration failures visible. Zustand runs hydration as a promise chain
-  // and hands any rejection — including anything thrown by `migrate` — to the
-  // callback returned by `onRehydrateStorage`. When a store does not define
-  // one that callback is `undefined`, so the error is discarded without ever
-  // reaching the console: the store silently falls back to its defaults and
-  // then overwrites the persisted data on the next write. Wrap whatever the
-  // store already declared instead of replacing it.
+  // Zustand reports errors from loading saved data or updating its format here.
+  // Stop saving so default values cannot replace data that failed to load.
   const options = persistOptions as any;
   const storeOnRehydrate = options.onRehydrateStorage;
   // eslint-disable-next-line no-param-reassign
@@ -69,7 +63,6 @@ export function createPersistStore<T extends object, M>(
     const storeCallback = storeOnRehydrate?.(preHydrationState);
     return (hydratedState: any, error?: unknown) => {
       if (error) {
-        // not saved until a reload, so the defaults do not replace the data
         blockSaving(options.name);
         console.error(
           `[store:${options.name}] rehydration failed — persisted data was NOT loaded, ` +

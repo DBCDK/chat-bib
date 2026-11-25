@@ -148,7 +148,7 @@ export async function exportLocalAppState() {
   ];
   await addFilePicturesToExport(messages);
   const fileName = `Backup-${new Date().toLocaleString()}.json`;
-  await downloadAs(JSON.stringify(state), fileName);
+  return downloadAs(JSON.stringify(state), fileName);
 }
 
 export function setLocalAppState(appState: AppState) {

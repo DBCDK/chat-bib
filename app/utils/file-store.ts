@@ -33,6 +33,8 @@ async function saveGuarded(
     await files()("readwrite", (store) => {
       const finished = promisifyRequest(store.transaction);
       const deleted = store.get(DELETED);
+      // Check the deletion marker in the same transaction as the save.
+      // Another tab must not clear the files between this check and the save.
       deleted.onsuccess = () => {
         if (
           wiping ||

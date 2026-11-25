@@ -15,7 +15,7 @@ export const GEMMA_REQUEST_TOO_LONG =
 // Rough token count for a whole request. Text is estimated and each picture is
 // added at its own cost. The estimate runs a little high on real text so the
 // check stops before the model reaches its real limit.
-function requestTokens(messages: RequestMessage[]): number {
+function requestTokens(messages: Pick<RequestMessage, "content">[]): number {
   let tokens = 0;
   for (const message of messages) {
     if (typeof message.content === "string") {
@@ -33,7 +33,9 @@ function requestTokens(messages: RequestMessage[]): number {
 // Stops a request that would not fit the model context. The clients call this
 // with the final messages after file text is folded in and system prompts are
 // merged.
-export function assertGemmaRequestFits(messages: RequestMessage[]): void {
+export function assertGemmaRequestFits(
+  messages: Pick<RequestMessage, "content">[],
+): void {
   if (requestTokens(messages) > GEMMA_INPUT_TOKEN_BUDGET)
     throw new Error(GEMMA_REQUEST_TOO_LONG);
 }

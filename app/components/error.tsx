@@ -6,7 +6,7 @@ import { ISSUE_URL } from "../constant";
 import Locale from "../locales";
 import { showConfirm, showToast } from "./ui-lib";
 import { exportLocalAppState } from "../utils/sync";
-import { useChatStore } from "../store";
+import { useChatStore } from "../store/chat";
 
 interface IErrorBoundaryState {
   hasError: boolean;
@@ -61,7 +61,7 @@ export class ErrorBoundary extends React.Component<any, IErrorBoundaryState> {
               text="Clear All Data"
               onClick={async () => {
                 if (await showConfirm(Locale.Settings.Danger.Reset.Confirm)) {
-                  await this.clearAndSaveData();
+                  this.clearAndSaveData();
                 }
               }}
               bordered

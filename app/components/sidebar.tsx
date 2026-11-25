@@ -4,6 +4,7 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
+import ChatSettingsIcon from "../icons/chat-settings.svg";
 import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
@@ -12,10 +13,12 @@ import DeleteIcon from "../icons/delete.svg";
 import MaskIcon from "../icons/mask.svg";
 import PluginIcon from "../icons/plugin.svg";
 import DragIcon from "../icons/drag.svg";
+import EyeOffIcon from "../icons/eye-off.svg";
 
 import Locale from "../locales";
 
 import { useAppConfig, useChatStore } from "../store";
+import { isSystemPromptHidden } from "../store/mask";
 
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -149,6 +152,9 @@ export function SideBar(props: { className?: string }) {
     ? currentChat?.mask?.context?.[0]?.content
     : undefined;
   const editableSystemPrompt = !currentChat?.mask?.builtin;
+  const systemPromptHidden = currentChat?.mask
+    ? isSystemPromptHidden(currentChat.mask, config.hiddenSystemPromptMaskIds ?? [])
+    : false;
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     chatStore.updateCurrentSession((session) => {
       session.mask.context[0].content = e.target.value;
@@ -165,22 +171,41 @@ export function SideBar(props: { className?: string }) {
         transition: isMobileScreen && isIOSMobile ? "none" : undefined,
       }}
     >
-      <div className={styles["sidebar-header"]} data-tauri-drag-region>
-        <div className={styles["sidebar-logo"] + " no-dark"}>
-          <Link to={Path.Home}>
-            <img
-              src={env.APP_LOGO ?? "/chatbib/dbclogo.png"}
-              style={{ width: "100px", cursor: "pointer" }}
-            />
-          </Link>
-        </div>
+      <div
+        className={`${styles["sidebar-header"]} ${
+          env.SIDEBAR_INLINE_LOGO ? styles["sidebar-header-inline"] : ""
+        }`}
+        data-tauri-drag-region
+      >
+        {env.SIDEBAR_INLINE_LOGO ? (
+          env.APP_LOGO && (
+            <Link
+              to={Path.Home}
+              className={styles["sidebar-logo-inline"] + " no-dark"}
+              aria-label="Gå til forsiden"
+            >
+              <img src={env.APP_LOGO} alt="" />
+            </Link>
+          )
+        ) : (
+          <div className={styles["sidebar-logo"] + " no-dark"}>
+            <Link to={Path.Home}>
+              <img
+                src={env.APP_LOGO ?? "/chatbib/dbclogo.png"}
+                style={{ width: "100px", cursor: "pointer" }}
+              />
+            </Link>
+          </div>
+        )}
         <div>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
             {env.APP_TITLE ?? "ChatBib"}
           </div>
-          <div className={styles["sidebar-sub-title"]}>
-            {env.APP_TAGLINE ?? "Bibliotekernes AI-chat"}
-          </div>
+          {!env.SIDEBAR_INLINE_LOGO && (
+            <div className={styles["sidebar-sub-title"]}>
+              {env.APP_TAGLINE ?? "Bibliotekernes AI-chat"}
+            </div>
+          )}
         </div>
       </div>
       {env.SYSTEM_PROMPT_IN_SIDEBAR ? (
@@ -188,7 +213,17 @@ export function SideBar(props: { className?: string }) {
         !shouldNarrow && (
           <div className={styles["system-prompt-preview"]}>
             <div className={styles["system-prompt-label"]}>
-              Systemprompt
+              <div className={styles["system-prompt-label-row"]}>
+                <span>Systemprompt</span>
+                {systemPromptHidden && (
+                  <div
+                    className={styles["system-prompt-eye"]}
+                    title="Systemprompten er skjult"
+                  >
+                    <EyeOffIcon />
+                  </div>
+                )}
+              </div>
               {!editableSystemPrompt && (
                 <div
                   style={{
@@ -204,13 +239,15 @@ export function SideBar(props: { className?: string }) {
               )}
             </div>
 
-            <textarea
-              style={{ opacity: editableSystemPrompt ? 1 : 0.7 }}
-              disabled={!editableSystemPrompt}
-              value={currentSystemPrompt as string}
-              onChange={handlePromptChange}
-              className={styles["system-prompt-textarea"]}
-            />
+            {!systemPromptHidden && (
+              <textarea
+                style={{ opacity: editableSystemPrompt ? 1 : 0.7 }}
+                disabled={!editableSystemPrompt}
+                value={currentSystemPrompt as string}
+                onChange={handlePromptChange}
+                className={styles["system-prompt-textarea"]}
+              />
+            )}
           </div>
         )
       ) : (
@@ -273,7 +310,11 @@ export function SideBar(props: { className?: string }) {
         {env.SHOW_SETTINGS && (
           <div className={styles["sidebar-action"]}>
             <Link to={Path.Settings}>
-              <IconButton icon={<SettingsIcon />} shadow />
+              {env.SIDEBAR_LARGE_BUTTONS ? (
+                <IconButton icon={<ChatSettingsIcon />} size={4} shadow />
+              ) : (
+                <IconButton icon={<SettingsIcon />} shadow />
+              )}
             </Link>
           </div>
         )}
@@ -286,7 +327,9 @@ export function SideBar(props: { className?: string }) {
           </div> 
         </div> */}
         <IconButton
-          className={styles.newChatButton}
+          className={`${styles.newChatButton} ${
+            env.SIDEBAR_LARGE_BUTTONS ? styles["newChatButton-large"] : ""
+          }`}
           size={4}
           //    icon={<AddIcon  />}
           text={shouldNarrow ? undefined : Locale.Home.NewChat}

@@ -69,6 +69,21 @@ const da = {
     Typing: "Skriver…",
     TooManyImages: (max: number) =>
       `Du kan højst vedhæfte ${max} billeder ad gangen. De sidste kom ikke med.`,
+    // shown when no answer came back
+    NoResponse: {
+      // the moving dots are drawn after this line, so it ends without a period
+      Retrying: "Der kom ikke noget svar. Prøver igen",
+      Failed: "Der kom ikke noget svar. Prøv igen eller start en ny chat.",
+      // asking again sends the same too long text
+      TooLong:
+        "Beskeden eller chatten er for lang. Prøv at gøre beskeden kortere eller start en ny chat.",
+      // the request never got as far as the server
+      Offline:
+        "Du ser ud til at være offline. Tjek din forbindelse og prøv igen.",
+      // tooltip on the sign in the corner
+      ShowInfo: "Vis mere information",
+      InfoLabel: "Fejlbesked:",
+    },
     Input: (submitKey: string) => {
       return "Send besked til ChatBib";
       var inputHints = `${submitKey} for at sende`;
@@ -345,6 +360,7 @@ const da = {
   },
   Store: {
     DefaultTopic: "Ny samtale",
+    DefaultMaskName: "Ny samtale",
     BotHello: "Hej! Hvordan kan jeg hjælpe dig i dag?",
     Error: "Noget gik galt, prøv venligst igen senere.",
     Prompt: {
@@ -399,12 +415,27 @@ const da = {
         `Rediger promptskabelon ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Klon",
+      Save: "Gem og luk",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
+      // only with MASK_GUIDED_EDITOR (SkoleGPT): asked when the window is
+      // closed with X, Escape or a click outside and there are changes
+      UnsavedTitle: "Gem ændringer?",
+      UnsavedText: "Du har ændringer, der ikke er gemt. Vil du gemme dem?",
+      Discard: "Gem ikke",
+      SaveChanges: "Gem ændringer",
     },
     Config: {
       Avatar: "Bot-avatar",
+      // AvatarHint, the placeholders, SystemPrompt and Advanced are only shown
+      // with MASK_GUIDED_EDITOR (SkoleGPT)
+      AvatarHint: "Vælg ikon",
       Name: "Bot-navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug global konfiguration",
         SubTitle: "Brug global konfiguration i denne chat",

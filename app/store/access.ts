@@ -82,7 +82,7 @@ export const useAccessStore = createPersistStore(
         .filter((m) => m && m.length > 0)
         .join(",");
     },
-    async fetch(): Promise<void> {
+    async fetch() {
       if (fetchState > 0 || getClientConfig()?.buildMode === "export") return;
       fetchState = 1;
       await hydrated(useAccessStore);

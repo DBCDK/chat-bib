@@ -78,6 +78,21 @@ const da = {
     Typing: "Skriver…",
     TooManyImages: (max: number) =>
       `Du kan højst vedhæfte ${max} billeder ad gangen. De sidste kom ikke med.`,
+    // shown when no answer came back
+    NoResponse: {
+      // the moving dots are drawn after this line, so it ends without a period
+      Retrying: "Der kom ikke noget svar. Prøver igen",
+      Failed: "Der kom ikke noget svar. Prøv igen eller start en ny chat.",
+      // asking again sends the same too long text
+      TooLong:
+        "Beskeden eller chatten er for lang. Prøv at gøre beskeden kortere eller start en ny chat.",
+      // the request never got as far as the server
+      Offline:
+        "Du ser ud til at være offline. Tjek din forbindelse og prøv igen.",
+      // tooltip on the sign in the corner
+      ShowInfo: "Vis mere information",
+      InfoLabel: "Fejlbesked:",
+    },
     Input: (submitKey: string) => {
       let inputHints = `${submitKey} for at sende`;
       if (submitKey === String(SubmitKey.Enter)) {
@@ -556,7 +571,8 @@ const da = {
     },
   },
   Store: {
-    DefaultTopic: "Nyoprettet Assistent",
+    DefaultTopic: "Ny chat",
+    DefaultMaskName: "Nyoprettet Assistent",
     BotHello: "Hej! Hvordan kan jeg hjælpe dig i dag?",
     Error: "Noget gik galt. Prøv igen senere.",
     Prompt: {
@@ -665,15 +681,28 @@ const da = {
     },
     EditModal: {
       Title: (readonly: boolean) =>
-        `Rediger assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
+        `Byg din egen assistent ${readonly ? "(skrivebeskyttet)" : ""}`,
       Download: "Download",
       Clone: "Opret kopi",
+      Save: "Gem assistent",
       ShareSkoletube: "Del på SkoleTube",
       ShareLink: "Del via link",
+      // asked when the window is closed with X, Escape or a click outside
+      // and there are changes
+      UnsavedTitle: "Gem ændringer?",
+      UnsavedText: "Du har ændringer, der ikke er gemt. Vil du gemme dem?",
+      Discard: "Gem ikke",
+      SaveChanges: "Gem ændringer",
     },
     Config: {
-      Avatar: "Assistent ikon",
+      Avatar: "Assistentens ikon",
+      AvatarHint: "Vælg ikon",
       Name: "Assistentens navn",
+      NamePlaceholder: "F.eks. Matte-Makker",
+      SystemPrompt: "Systemprompt (Hvad skal din assistent kunne?)",
+      SystemPromptPlaceholder:
+        "F.eks. Du er en venlig lektiehjælper i matematik i 5. klasse ...",
+      Advanced: "Avancerede indstillinger",
       Sync: {
         Title: "Brug globale indstillinger",
         SubTitle: "Gældende for denne chat",

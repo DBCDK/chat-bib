@@ -118,7 +118,7 @@ export function useTts() {
         },
         body: JSON.stringify({
           input: sentence,
-          model: "CoRal-project/roest-v3-chatterbox-500m-triton",
+          model: "CoRal-project/roest-v3-chatterbox-500m",
           response_format: "wav",
         }),
       });
@@ -196,7 +196,7 @@ export function useTts() {
         // first chunk, which would silently trip the non-streaming fallback.
         body: JSON.stringify({
           input: text,
-          model: "CoRal-project/roest-v3-chatterbox-500m-triton",
+          model: "CoRal-project/roest-v3-chatterbox-500m",
           response_format: "wav",
           stream: true,
         }),

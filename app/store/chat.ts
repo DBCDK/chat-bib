@@ -14,14 +14,16 @@ import { clearChatStorage } from "../utils/idb-migration";
 import Locale, { getLang } from "../locales";
 import { showToast } from "../components/ui-lib";
 import { ModelConfig, ModelType, useAppConfig } from "./config";
-import { createEmptyMask, Mask, useMaskStore } from "./mask";
+import { createEmptyMask, DEFAULT_MASK_NAME, Mask, useMaskStore } from "./mask";
 import { BUILTIN_MASKS } from "../masks";
 import {
   DEFAULT_INPUT_TEMPLATE,
   DEFAULT_MODELS,
   DEFAULT_SYSTEM_TEMPLATE,
   KnowledgeCutOffDate,
+  MAX_CHAT_RETRIES,
   ModelProvider,
+  RETRY_DELAY_MS,
   StoreKey,
   SUMMARIZE_MODEL,
   VISIBLE_DBC_LLM_ENDPOINT_MODELS,
@@ -33,6 +35,9 @@ import {
   RequestMessage,
   MultimodalContent,
   FileAttachment,
+  AbortedError,
+  RetryableError,
+  TooLongError,
 } from "../client/api";
 import { ChatControllerPool } from "../client/controller";
 import { estimateTokenLength } from "../utils/token";
@@ -51,10 +56,20 @@ import {
 export type ChatMessage = RequestMessage & {
   date: string;
   streaming?: boolean;
+  // true while we are sending the same question again after a failed try
+  retrying?: boolean;
   isError?: boolean;
+  // what the server said, opened by the sign in the corner
+  errorInfo?: string;
   id: string;
   model?: ModelType;
 };
+
+// The browser only says this for certain when it is false, so it is used
+// to explain a failure and never to stop us trying.
+function isOffline() {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
 
 export function createMessage(override: Partial<ChatMessage>): ChatMessage {
   return {
@@ -100,6 +115,20 @@ export const BOT_HELLO: ChatMessage = createMessage({
   role: MessageRole.Assistant,
   content: BOT_HELLO_CONTENT,
 });
+
+// A chat's name is set to the first few words of the first user's prompt until a name is generated for the chat.
+function getFirstMessageTopic(session: ChatSession, maxLength = 50) {
+  const first = session.messages.find((m) => m.role === MessageRole.User);
+  const text = first
+    ? getMessageTextContent(first).replace(/\s+/g, " ").trim()
+    : "";
+  if (!env.SHOW_FIRST_MESSAGE_AS_TOPIC || !text) return DEFAULT_TOPIC;
+  if (text.length <= maxLength) return text;
+  // cut at the last whole word so a name never ends in half a word
+  const cut = text.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut) + "\u2026";
+}
 
 function getRequestContextPrompts(session: ChatSession) {
   return session.mask.context.filter(
@@ -755,8 +784,8 @@ export const useChatStore = createPersistStore(
         get().selectSession(limit(i + delta));
       },
 
-      // silent is true when the store removes an empty chat by itself. The user
-      // did not delete anything then. So no toast is shown.
+      // Pass silent when the app removes an empty chat on its own. The user
+      // did not delete anything so they should not be told a chat was deleted.
       deleteSession(index: number, silent = false) {
         const deletingLastSession = get().sessions.length === 1;
         const deletedSession = get().sessions.at(index);
@@ -814,8 +843,8 @@ export const useChatStore = createPersistStore(
         if (
           env.CLEANUP_EMPTY_SESSIONS &&
           sessions.length === 1 &&
-          session?.topic === "Nyoprettet Assistent" &&
-          session?.mask?.name === DEFAULT_TOPIC &&
+          session?.topic === DEFAULT_TOPIC &&
+          session?.mask?.name === DEFAULT_MASK_NAME &&
           session?.mask?.context?.[0]?.content === "" &&
           session.messages.length == 0
         ) {
@@ -879,11 +908,20 @@ export const useChatStore = createPersistStore(
         // get recent messages
         const recentMessages = get().getMessagesWithMemory();
         const sendMessages = recentMessages.concat(userMessage);
-        const messageIndex = get().currentSession().messages.length + 1;
 
         // save user's and bot's message
         get().updateCurrentSession((session) => {
-          session.messages = session.messages.concat([userMessage, botMessage]);
+          const savedUserMessage = {
+            ...userMessage,
+            content: mContent,
+          };
+          session.messages = session.messages.concat([
+            savedUserMessage,
+            botMessage,
+          ]);
+          if (session.topic === DEFAULT_TOPIC) {
+            session.topic = getFirstMessageTopic(session);
+          }
         });
 
         var api: ClientApi;
@@ -893,70 +931,174 @@ export const useChatStore = createPersistStore(
           api = new ClientApi(ModelProvider.GPT);
         }
 
-        const options: ChatOptions = {
-          messages: sendMessages,
-          config: { ...modelConfig, stream: true },
-          onUpdate(message) {
-            botMessage.streaming = true;
-            if (message) {
-              botMessage.content = message;
-            }
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-          },
-          onFinish(message) {
-            botMessage.streaming = false;
-            if (message) {
-              botMessage.content = message;
-              get().onNewMessage(botMessage);
-            }
-            ChatControllerPool.remove(session.id, botMessage.id);
-          },
-          onError(error) {
-            const isAborted = endWithNote(botMessage, error);
-            // Only a message that is too long is left out of later requests.
-            // It can never be sent. After any other failure the pupil can try
-            // again and the question and its files are still there.
-            userMessage.isError = error.message === GEMMA_REQUEST_TOO_LONG;
-            botMessage.isError = !isAborted;
-            get().updateCurrentSession((session) => {
-              session.messages = session.messages.concat();
-            });
-            ChatControllerPool.remove(
-              session.id,
-              botMessage.id ?? messageIndex,
-            );
+        // A busy server often answers with nothing, and it usually passes, so
+        // ask again a few times before telling the user.
+        let attempt = 0;
 
-            console.error("[Chat] failed ", error);
-          },
-          onController(controller) {
-            // collect controller for stop/retry
-            ChatControllerPool.addController(
-              session.id,
-              botMessage.id ?? messageIndex,
-              controller,
-            );
-          },
+        // The user can delete the question or resend the answer while we wait.
+        const stillInChat = () =>
+          [userMessage.id, botMessage.id].every((id) =>
+            get()
+              .sessions.find((s) => s.id === session.id)
+              ?.messages.some((m) => m.id === id),
+          );
+
+        // Put the answer back in a finished state and redraw the chat.
+        const settle = () => {
+          botMessage.streaming = false;
+          botMessage.retrying = false;
+          ChatControllerPool.remove(session.id, botMessage.id);
+          get().updateCurrentSession((session) => {
+            session.messages = session.messages.concat();
+          });
         };
-        const preparation = new AbortController();
-        options.onController?.(preparation);
-        try {
-          // Read pictures only for a model that can use them. A failed count
-          // ends the waiting answer the same way a failed request does.
-          if (
-            !modelConfig.model.startsWith("dbc") &&
-            isVisionModel(modelConfig.model)
-          ) {
-            options.messages = await withFilePictures(
-              sendMessages,
-              preparation.signal,
-            );
+
+        // Take the empty answer out of the chat it was asked in. The user may
+        // have gone to another chat or deleted this one and pressed undo.
+        const dropEmptyAnswer = () => {
+          if (botMessage.content.length > 0) return;
+          session.messages = session.messages.filter(
+            (m) => m.id !== botMessage.id,
+          );
+          set(() => ({ sessions: get().sessions }));
+        };
+
+        const tryAgainLater = () => {
+          attempt += 1;
+          botMessage.content = "";
+          botMessage.isError = false;
+          botMessage.streaming = true;
+          botMessage.retrying = true;
+
+          // Wait longer each time. Asking straight away lands in the same queue.
+          // The question may be deleted while we wait so look again first.
+          const timer = setTimeout(() => {
+            if (stillInChat()) {
+              send();
+            } else {
+              dropEmptyAnswer();
+              settle();
+            }
+          }, RETRY_DELAY_MS * attempt);
+
+          // Keeps the stop button working while we wait.
+          const waiting = new AbortController();
+          waiting.signal.addEventListener("abort", () => {
+            clearTimeout(timer);
+            dropEmptyAnswer();
+            settle();
+          });
+          ChatControllerPool.addController(session.id, botMessage.id, waiting);
+
+          get().updateCurrentSession((session) => {
+            session.messages = session.messages.concat();
+          });
+        };
+
+        const onChatError = (error: Error) => {
+          // The user pressed stop or the question is gone. Keep what came
+          // through and say nothing.
+          if (error instanceof AbortedError || !stillInChat()) {
+            dropEmptyAnswer();
+            settle();
+            return;
           }
-          if (preparation.signal.aborted) throw new Error("aborted");
-          api.llm.chat(options);
-        } catch (error) {
-          options.onError?.(error as Error);
+
+          // Only when nothing came back. Text that did arrive has already
+          // named the chat, so asking again would name it twice.
+          if (
+            error instanceof RetryableError &&
+            attempt < MAX_CHAT_RETRIES &&
+            botMessage.content.length === 0
+          ) {
+            console.warn("[Chat] no answer, trying again ", error.message);
+            tryAgainLater();
+            return;
+          }
+
+          if (botMessage.content.length === 0) {
+            // A chat that is too big fails the same way every time, and a
+            // device with no network never reached the server at all.
+            botMessage.content = isOffline()
+              ? Locale.Chat.NoResponse.Offline
+              : error instanceof TooLongError
+                ? Locale.Chat.NoResponse.TooLong
+                : Locale.Chat.NoResponse.Failed;
+          }
+          botMessage.isError = true;
+          botMessage.errorInfo = error.message;
+          settle();
+
+          console.error("[Chat] failed ", error);
+        };
+
+        // make request. The messages that get sent are held in a variable so a
+        // vision model can first get the pictures from any attached PDF or Word
+        // file folded into them.
+        let messagesToSend = sendMessages;
+        const send = () =>
+          api.llm.chat({
+            messages: messagesToSend,
+            config: { ...modelConfig, stream: true },
+            onUpdate(message) {
+              botMessage.streaming = true;
+              botMessage.retrying = false;
+              if (message) {
+                botMessage.content = message;
+                // An answer turned up after all. The page marks a slow one as
+                // a fault while we are still waiting.
+                botMessage.isError = false;
+                botMessage.errorInfo = undefined;
+              }
+              get().updateCurrentSession((session) => {
+                session.messages = session.messages.concat();
+              });
+            },
+            onFinish(message) {
+              botMessage.streaming = false;
+              if (message) {
+                botMessage.retrying = false;
+                botMessage.content = message;
+                botMessage.isError = false;
+                botMessage.errorInfo = undefined;
+                get().onNewMessage(botMessage);
+              }
+              ChatControllerPool.remove(session.id, botMessage.id);
+            },
+            onError: onChatError,
+            onController(controller) {
+              // collect controller for stop/retry
+              ChatControllerPool.addController(
+                session.id,
+                botMessage.id,
+                controller,
+              );
+            },
+          });
+
+        // Read the pictures only for a model that can use them. The stop button
+        // works while they load, and they are loaded once, not on every retry.
+        if (
+          !modelConfig.model.startsWith("dbc") &&
+          isVisionModel(modelConfig.model)
+        ) {
+          const preparation = new AbortController();
+          ChatControllerPool.addController(
+            session.id,
+            botMessage.id,
+            preparation,
+          );
+          withFilePictures(sendMessages, preparation.signal)
+            .then((withPictures) => {
+              if (preparation.signal.aborted) {
+                throw new AbortedError("stopped by user");
+              }
+              messagesToSend = withPictures;
+              send();
+            })
+            .catch(onChatError);
+        } else {
+          send();
         }
       },
 
@@ -1097,15 +1239,19 @@ export const useChatStore = createPersistStore(
 
         if (
           config.enableAutoGenerateTitle &&
-          session.topic === DEFAULT_TOPIC &&
+          (session.topic === DEFAULT_TOPIC ||
+            session.topic === getFirstMessageTopic(session)) &&
           countMessages(messages) >= SUMMARIZE_MIN_LEN
         ) {
-          const topicMessages = messages.concat(
-            createMessage({
-              role: MessageRole.System,
-              content: Locale.Store.Prompt.Topic,
-            }),
-          );
+          // Or the chat gets named after our own text about the failure.
+          const topicMessages = messages
+            .filter((msg) => !msg.isError)
+            .concat(
+              createMessage({
+                role: MessageRole.System,
+                content: Locale.Store.Prompt.Topic,
+              }),
+            );
           api.llm.chat({
             messages: topicMessages,
             config: {

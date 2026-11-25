@@ -16,6 +16,8 @@ import { ModelProvider, Path, SlotID } from "../constant";
 import { ErrorBoundary } from "./error";
 
 import { getISOLang, getLang } from "../locales";
+import { useAssistentFromUrl } from "../utils/assistent-from-url";
+import { useScrollbarOnScroll } from "../utils/scrollbar";
 
 import {
   BrowserRouter as Router,
@@ -34,8 +36,8 @@ import { useMaskStore } from "../store/mask";
 import { usePromptStore } from "../store/prompt";
 import { hydrated } from "../utils/store";
 import { deletionPending, loadFailed } from "../utils/idb-migration";
-import { showConfirm } from "./ui-lib";
 import { IconButton } from "./button";
+import { showConfirm } from "./ui-lib";
 import ResetIcon from "../icons/reload.svg";
 import ClearIcon from "../icons/clear.svg";
 import { initializeApollo } from "../client/apolloClient";
@@ -139,7 +141,7 @@ const useHasHydrated = () => {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    // Saved state must arrive before edits, model requests or URL actions.
+    // Wait for saved data before allowing edits or starting chats from a URL.
     const stores = [
       useChatStore,
       useMaskStore,
@@ -148,7 +150,7 @@ const useHasHydrated = () => {
       usePromptStore,
       useUpdateStore,
     ];
-    let open = true;
+    let active = true;
     const timers = [
       setTimeout(() => {
         if (
@@ -156,17 +158,18 @@ const useHasHydrated = () => {
             const name = store.persist.getOptions().name;
             return name !== undefined && loadFailed(name);
           })
-        )
+        ) {
           setFailed(true);
+        }
       }, 5000),
       setTimeout(() => setFailed(true), 30000),
     ];
     Promise.all(stores.map(hydrated)).then(() => {
       timers.forEach(clearTimeout);
-      if (open) setHasHydrated(true);
+      if (active) setHasHydrated(true);
     });
     return () => {
-      open = false;
+      active = false;
       timers.forEach(clearTimeout);
     };
   }, []);
@@ -174,43 +177,35 @@ const useHasHydrated = () => {
   return { hasHydrated, failed };
 };
 
-// Shown when the saved chats and assistants could not be read. Nothing is
-// saved over them (see idb-migration.ts), so a reload can still bring them
-// back. Deleting everything is the way out if they are broken.
 function LoadFailed() {
   return (
-    <div className={styles["loading-content"]}>
-      <div className="error" role="alert">
-        <p>
-          {deletionPending()
-            ? "Sletningen af dine data er ikke afsluttet. Vælg “Slet alle data” for at fuldføre den."
-            : "Dine gemte data kunne ikke indlæses."}
-        </p>
-        <p>
-          Hjælper det ikke at genindlæse eller slette, kan du rydde sidens data
-          i browserens indstillinger.
-        </p>
-        <div style={{ display: "flex", gap: 10 }}>
-          <IconButton
-            icon={<ResetIcon />}
-            text="Genindlæs"
-            onClick={() => location.reload()}
-            bordered
-          />
-          <IconButton
-            icon={<ClearIcon />}
-            text="Slet alle data"
-            onClick={async () => {
-              const sure = await showConfirm(
+    <div className={styles["loading-content"]} role="alert">
+      <p>
+        {deletionPending()
+          ? "Sletningen af dine data er ikke afsluttet. Vælg “Slet alle data” for at fuldføre den."
+          : "Dine gemte data kunne ikke indlæses. Prøv at genindlæse siden."}
+      </p>
+      <div style={{ display: "flex", gap: 10 }}>
+        <IconButton
+          icon={<ResetIcon />}
+          text="Genindlæs"
+          onClick={() => location.reload()}
+          bordered
+        />
+        <IconButton
+          icon={<ClearIcon />}
+          text="Slet alle data"
+          onClick={async () => {
+            if (
+              await showConfirm(
                 "Vil du slette alle chats, assistenter, filer og indstillinger?",
-              );
-              if (sure) {
-                await useChatStore.getState().clearAllData();
-              }
-            }}
-            bordered
-          />
-        </div>
+              )
+            ) {
+              await useChatStore.getState().clearAllData();
+            }
+          }}
+          bordered
+        />
       </div>
     </div>
   );
@@ -232,6 +227,7 @@ const loadAsyncGoogleFont = () => {
 };
 
 function Screen() {
+  const loadingAssistent = useAssistentFromUrl();
   const config = useAppConfig();
   const location = useLocation();
   const isHome = !env.HOMEPAGE_IS_MASKLIST && location.pathname === Path.Home;
@@ -247,6 +243,12 @@ function Screen() {
       loadAsyncGoogleFont();
     }
   }, []);
+
+  // Vis kun en loader, mens en assistent fra ?assistent= indlæses,
+  // så forsiden ikke blinker, før chatten åbner
+  if (loadingAssistent) {
+    return <Loading />;
+  }
 
   return (
     <div
@@ -315,6 +317,7 @@ export function Home() {
   useSwitchTheme();
   useLoadData();
   useHtmlLang();
+  useScrollbarOnScroll();
 
   useEffect(() => {
     useAccessStore.getState().fetch();

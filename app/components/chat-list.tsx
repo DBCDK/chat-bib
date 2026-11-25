@@ -1,4 +1,5 @@
 import DeleteIcon from "../icons/delete.svg";
+import TrashIcon from "../icons/trash.svg";
 import BotIcon from "../icons/bot.svg";
 
 import styles from "./home.module.scss";
@@ -19,6 +20,7 @@ import { Mask } from "../store/mask";
 import { useRef, useEffect } from "react";
 import { showConfirm } from "./ui-lib";
 import { useMobileScreen } from "../utils";
+import { env } from "../utils/appsettings";
 
 export function ChatItem(props: {
   onClick?: () => void;
@@ -93,14 +95,18 @@ export function ChatItem(props: {
           )}
 
           <div
-            className={styles["chat-item-delete"]}
+            className={
+              env.TRASH_DELETE_ICON
+                ? `${styles["chat-item-delete"]} ${styles["chat-item-delete-trash"]} no-dark`
+                : styles["chat-item-delete"]
+            }
             onClickCapture={(e) => {
               props.onDelete?.();
               e.preventDefault();
               e.stopPropagation();
             }}
           >
-            <DeleteIcon />
+            {env.TRASH_DELETE_ICON ? <TrashIcon /> : <DeleteIcon />}
           </div>
         </div>
       )}
@@ -163,8 +169,10 @@ export function ChatList(props: { narrow?: boolean }) {
                   selectSession(i);
                 }}
                 onDelete={async () => {
+                  const askFirst =
+                    env.CONFIRM_DELETE_CHAT || props.narrow || isMobileScreen;
                   if (
-                    (!props.narrow && !isMobileScreen) ||
+                    !askFirst ||
                     (await showConfirm(Locale.Home.DeleteChat))
                   ) {
                     chatStore.deleteSession(i);
