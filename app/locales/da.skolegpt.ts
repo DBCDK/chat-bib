@@ -76,6 +76,8 @@ const da = {
     },
     Rename: "Omdøb chat",
     Typing: "Skriver…",
+    TooManyImages: (max: number) =>
+      `Du kan højst vedhæfte ${max} billeder ad gangen. De sidste kom ikke med.`,
     // shown when no answer came back
     NoResponse: {
       // the moving dots are drawn after this line, so it ends without a period

@@ -23,6 +23,20 @@ export interface FileAttachment {
   url?: string;
   text?: string;
   preview?: string;
+  // The pictures inside the file. A Word file has its own pictures and a PDF
+  // has one picture per page. A new upload keeps them out of the chat. They
+  // are put on the copy sent to the model or a backup. See withFilePictures.
+  images?: string[];
+  // How many pictures the file has. This number is saved with the chat. The
+  // attach button uses it to tell if there is room for one more file.
+  imageCount?: number;
+  // What each picture costs in Gemma tokens. Saved with the chat so the
+  // pictures do not have to be loaded just to count them.
+  imageTokens?: number[];
+  // How many pages the PDF has. A PDF with this field is sent as page
+  // pictures. Older PDFs also hold text and do not have this field.
+  pdfPageCount?: number;
+  warning?: string;
 }
 
 export interface MultimodalContent {
@@ -33,6 +47,8 @@ export interface MultimodalContent {
     // the image's file name, kept for the screen (hover text + preview title).
     // removed before we send the request to the model in getMessageContentForApi.
     name?: string;
+    // Gemma image cost. Removed before the request is sent to the model.
+    tokens?: number;
   };
   file?: FileAttachment;
 }

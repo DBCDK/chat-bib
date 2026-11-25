@@ -1,4 +1,6 @@
 "use client";
+
+import { assertGemmaRequestFits } from "../../utils/gemma-request-budget";
 import {
   ApiPath,
   DEFAULT_API_HOST,
@@ -174,6 +176,12 @@ export class ChatGPTApi implements LLMApi {
     options.onController?.(controller);
 
     try {
+      // Gemma has a fixed context. Stop a request that would not fit before it
+      // is sent, so a large attachment gets a clear message instead of a
+      // silent empty answer.
+      if (env.APP === "skolegpt" && model === "google/gemma-4-26B-A4B-it") {
+        assertGemmaRequestFits(requestPayload.messages);
+      }
       const chatPath = this.path(OpenaiPath.ChatPath);
       const chatPayload = {
         method: "POST",

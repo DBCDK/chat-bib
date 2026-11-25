@@ -1,3 +1,8 @@
+import {
+  getAttachmentCoverage,
+  type AttachmentCoverage,
+} from "../utils/message-content";
+import { imageTokensFromUrl } from "../utils/gemma-image-tokens";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -73,11 +78,17 @@ import {
   getMessageFiles,
   isVisionModel,
   trackMatomoEvent,
+  isAttachmentBudgetFull,
 } from "../utils";
 
 import { compressImage } from "@/app/utils/chat";
-import { fileToAttachment, isImageFile, FILE_ACCEPT } from "../utils/attachment";
-import { loadFileBlob, deleteFileBlob } from "../utils/file-store";
+import {
+  fileToAttachment,
+  isImageFile,
+  FILE_ACCEPT,
+  DOCX_MIME,
+} from "../utils/attachment";
+import { loadFileBlob, loadFileImages, deleteFileBlob } from "../utils/file-store";
 
 import dynamic from "next/dynamic";
 
@@ -104,6 +115,7 @@ import {
   type DbcLlmEndpointModel,
   LAST_INPUT_KEY,
   MALICIOUS_ANSWER,
+  MAX_ATTACHED_IMAGES,
   Path,
   REQUEST_TIMEOUT_MS,
   UNFINISHED_INPUT,
@@ -458,8 +470,7 @@ function useScrollToBottom(
 
 export function ChatActions(props: {
   uploadImage: () => void;
-  setAttachImages: (images: string[]) => void;
-  setUploading: (uploading: boolean) => void;
+  clearImages: () => void;
   showPromptModal: () => void;
   scrollToBottom: () => void;
   showPromptHints: () => void;
@@ -523,8 +534,7 @@ export function ChatActions(props: {
   useEffect(() => {
     const show = isVisionModel(currentModel);
     if (!show) {
-      props.setAttachImages([]);
-      props.setUploading(false);
+      props.clearImages();
     }
 
     // if current model is not available
@@ -661,6 +671,10 @@ export function EditMessageModal(props: { onClose: () => void }) {
   const chatStore = useChatStore();
   const session = chatStore.currentSession();
   const [messages, setMessages] = useState(session.messages.slice());
+  // Ids present when the editor opened. New messages will not be in here.
+  const [originalIds] = useState(
+    () => new Set(session.messages.map((message) => message.id)),
+  );
 
   return (
     <div className="modal-mask">
@@ -682,9 +696,14 @@ export function EditMessageModal(props: { onClose: () => void }) {
             icon={<ConfirmIcon />}
             key="ok"
             onClick={() => {
-              chatStore.updateCurrentSession(
-                (session) => (session.messages = messages),
-              );
+              chatStore.updateCurrentSession((session) => {
+                // A question and its answer can arrive while this editor is open.
+                // Keep those new messages so pressing OK does not delete them.
+                const added = session.messages.filter(
+                  (message) => !originalIds.has(message.id),
+                );
+                session.messages = messages.concat(added);
+              });
               props.onClose();
             }}
           />,
@@ -726,6 +745,21 @@ function fileTypeLabel(file: { mime: string; name: string }): string {
   return ext.slice(0, 4) || "FIL";
 }
 
+function pdfCoverageWarnings(
+  files: FileAttachment[],
+  coverage: AttachmentCoverage,
+): string[] {
+  // One entry per file so the positions match. No warning gives "".
+  return files.map((file, index) => {
+    if (!file.pdfPageCount) return "";
+    const pages = coverage.files[index]?.images ?? 0;
+    if (pages >= file.pdfPageCount) return "";
+    return pages > 0
+      ? `${file.name}: SkoleGPT kan kun se de første ${pages} af ${file.pdfPageCount} sider.`
+      : `${file.name}: SkoleGPT kan ikke se nogen sider fra filen. Fjern andre vedhæftninger for at få plads.`;
+  });
+}
+
 // Opens what the server said, so it can go in a fault report.
 function ErrorInfo(props: { info: string }) {
   const [open, setOpen] = useState(false);
@@ -751,6 +785,30 @@ function ErrorInfo(props: { info: string }) {
   );
 }
 
+// Shows a Word file's text and puts each saved picture back where its
+// "[Billede N]" mark is. A mark whose picture was not saved stays as text.
+function DocxView(props: { text: string; images: string[] }) {
+  const parts = props.text.split(/(\[Billede \d+\])/g);
+  return (
+    <>
+      {parts.map((part, index) => {
+        const match = /^\[Billede (\d+)\]$/.exec(part);
+        const image = match ? props.images[Number(match[1]) - 1] : undefined;
+        return image ? (
+          <img
+            key={index}
+            className={styles["attachment-viewer-docx-image"]}
+            src={image}
+            alt=""
+          />
+        ) : (
+          <span key={index}>{part}</span>
+        );
+      })}
+    </>
+  );
+}
+
 function _Chat() {
   type RenderMessage = ChatMessage & { preview?: boolean };
 
@@ -761,8 +819,7 @@ function _Chat() {
   // attachments are only turned on for SkoleGPT, and only on models that can
   // read them. other apps never see the attach button, drag-drop or paste.
   const canAttach =
-    !!env.ENABLE_ATTACHMENTS &&
-    isVisionModel(session.mask.modelConfig.model);
+    !!env.ENABLE_ATTACHMENTS && isVisionModel(session.mask.modelConfig.model);
 
   // This reads new chat answers out loud by itself, but only for skolegpt,
   // and only once the user turns on the auto read button in the chat
@@ -854,38 +911,116 @@ function _Chat() {
   const [hitBottom, setHitBottom] = useState(true);
   const isMobileScreen = useMobileScreen();
   const navigate = useNavigate();
-  const [attachImages, setAttachImages] = useState<string[]>([]);
-  // filenames aligned by index with attachImages (used for hover title + preview)
-  const [attachImageNames, setAttachImageNames] = useState<string[]>([]);
-  const [attachFiles, setAttachFiles] = useState<FileAttachment[]>([]);
+  const [attachments, setAttachments] = useState({
+    images: [] as string[],
+    imageNames: [] as string[],
+    files: [] as FileAttachment[],
+  });
+  const attachmentsRef = useRef(attachments);
+  const {
+    images: attachImages,
+    imageNames: attachImageNames,
+    files: attachFiles,
+  } = attachments;
+  // Set the ref right away so uploads and removals see each other's changes.
+  function updateAttachments(next: typeof attachments) {
+    attachmentsRef.current = next;
+    setAttachments(next);
+  }
+  const uploadQueue = useRef(Promise.resolve());
+  const reading = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      // In development React runs this cleanup and then mounts again. Wait a
+      // moment and only delete the draft's files if the chat is really closed.
+      queueMicrotask(() => {
+        if (mounted.current) return;
+        for (const file of attachmentsRef.current.files) {
+          if (file.id) void deleteFileBlob(file.id);
+        }
+      });
+    };
+  }, []);
   const [uploading, setUploading] = useState(false);
+  const [attachmentNotice, setAttachmentNotice] = useState<{
+    source: typeof attachments;
+    messages: string[];
+    error?: string;
+  }>();
+  useEffect(() => {
+    if (!attachments.files.some((file) => file.pdfPageCount)) {
+      setAttachmentNotice(undefined);
+      return;
+    }
+    if (env.APP !== "skolegpt" || uploading) return;
+    // Count again when a file or picture is added or removed. That changes how
+    // many PDF pages fit. An old count must not be shown for a newer draft.
+    const coverage = getAttachmentCoverage(
+      attachments.files,
+      attachments.images.map(imageTokensFromUrl),
+    );
+    setAttachmentNotice({
+      source: attachments,
+      messages: pdfCoverageWarnings(attachments.files, coverage),
+    });
+  }, [attachments, uploading]);
   const [isDragging, setIsDragging] = useState(false);
   const [viewerAttachment, setViewerAttachment] =
     useState<FileAttachment | null>(null);
-  // The link the viewer shows for the open attachment. For files kept in
-  // IndexedDB we look the file up by its id and make a temporary link here; for
-  // older files and images we just use the link that's already stored.
-  const [viewerUrl, setViewerUrl] = useState<string>("");
+  // The link the viewer shows for the open file and whether that file is a
+  // PDF. Both are set together. So the sandbox setting of one file is never
+  // used with the link of another.
+  const [viewer, setViewer] = useState({ url: "", isPdf: false });
+  // The saved pictures of the open Word file, read back so they can be put
+  // where their marks are in the text.
+  const [viewerDocxImages, setViewerDocxImages] = useState<string[]>([]);
   useEffect(() => {
-    if (!viewerAttachment) {
-      setViewerUrl("");
-      return;
+    setViewer({ url: "", isPdf: false });
+    setViewerDocxImages([]);
+    if (!viewerAttachment) return;
+    const { url, id, mime } = viewerAttachment;
+    // a Word file is shown as its text with its saved pictures put back in
+    if (mime === DOCX_MIME) {
+      if (!id) return;
+      let cancelled = false;
+      loadFileImages(id).then((images) => {
+        if (!cancelled) setViewerDocxImages(images ?? []);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
-    if (viewerAttachment.url) {
-      setViewerUrl(viewerAttachment.url);
-      return;
-    }
-    if (!viewerAttachment.id) {
-      setViewerUrl("");
+    // only open data and blob links. Never a link to another site
+    if (url && !/^(data|blob):/.test(url)) return;
+    // a picture is shown with <img> and that cannot run code
+    if (url && mime.startsWith("image/")) {
+      setViewer({ url, isPdf: false });
       return;
     }
     let objectUrl = "";
     let cancelled = false;
-    loadFileBlob(viewerAttachment.id).then((blob) => {
-      if (cancelled || !blob) return;
-      objectUrl = URL.createObjectURL(blob);
-      setViewerUrl(objectUrl);
-    });
+    const load = url
+      ? fetch(url).then((response) => response.blob())
+      : id
+        ? loadFileBlob(id)
+        : Promise.resolve(null);
+    load
+      .then((blob) => {
+        if (cancelled || !blob) return;
+        // Besides PDF and Word the app only takes text files. So anything
+        // that is not a PDF is shown as plain text. A csv file with its own
+        // type would be downloaded and the sandbox blocks that. An imported
+        // assistant can label an html file as a PDF. It is then served as a
+        // PDF and cannot run as a web page.
+        const isPdf = mime === "application/pdf";
+        const type = isPdf ? "application/pdf" : "text/plain;charset=utf-8";
+        objectUrl = URL.createObjectURL(blob.slice(0, blob.size, type));
+        setViewer({ url: objectUrl, isPdf });
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -1012,12 +1147,23 @@ function _Chat() {
   };
 
   const doSubmit = (userInput: string) => {
+    const {
+      images: attachImages,
+      imageNames: attachImageNames,
+      files: attachFiles,
+    } = attachmentsRef.current;
     if (
       userInput.trim() === "" &&
       attachImages.length === 0 &&
       attachFiles.length === 0
     )
       return;
+    // A file that is still being read would miss this message and be sent
+    // with the next one. So the pupil has to wait for it.
+    if (reading.current > 0) {
+      showToast("Vent til filen er læst ind, og send så igen.");
+      return;
+    }
     const matchCommand = chatCommands.match(userInput);
     if (matchCommand.matched) {
       setUserInput("");
@@ -1048,9 +1194,7 @@ function _Chat() {
       );
     }
     Promise.resolve(p).then(() => setIsLoading(false));
-    setAttachImages([]);
-    setAttachImageNames([]);
-    setAttachFiles([]);
+    updateAttachments({ images: [], imageNames: [], files: [] });
     localStorage.setItem(LAST_INPUT_KEY, userInput);
     setUserInput("");
     setPromptHints([]);
@@ -1456,33 +1600,126 @@ function _Chat() {
     processFiles(files);
   }
 
-  // used by the attach button and drag-and-drop: images get shrunk (max 3),
-  // other files get their text read out
+  // A batch waits for the one before it so both cannot take the same room.
   async function processFiles(files: File[]) {
-    if (files.length === 0) return;
+    const isCurrent = () => {
+      const current = useChatStore.getState().currentSession();
+      return (
+        mounted.current &&
+        current.id === session.id &&
+        isVisionModel(current.mask.modelConfig.model)
+      );
+    };
+    if (files.length === 0 || !isCurrent()) return;
+    // A chat with several models only sends pictures. Leave documents out
+    // here. Otherwise they would look attached and then be lost on send.
+    let incoming = files;
+    if (useChatStore.getState().currentSession().multiLlmChildren?.length) {
+      incoming = files.filter(isImageFile);
+      if (incoming.length < files.length)
+        showToast(
+          "Dokumenter kan ikke bruges i en chat med flere modeller. Du kan stadig vedhæfte billeder.",
+        );
+      if (incoming.length === 0) return;
+    }
+    const previous = uploadQueue.current;
+    let release!: () => void;
+    uploadQueue.current = new Promise<void>((resolve) => (release = resolve));
+    reading.current += 1;
     setUploading(true);
     try {
-      const images = [...attachImages];
-      const imageNames = [...attachImageNames];
-      const docs = [...attachFiles];
-      for (const file of files) {
-        if (isImageFile(file)) {
-          const dataUrl = await compressImage(file, 256 * 1024);
-          if (images.length < 3) {
-            images.push(dataUrl);
-            imageNames.push(file.name || "");
+      await previous;
+      const problems: string[] = [];
+      let skippedImages = 0;
+      let skippedFiles = false;
+      let fullDraft: typeof attachments | undefined;
+      // Read pictures first so only successful uploads take room from the files.
+      for (const file of [
+        ...incoming.filter(isImageFile),
+        ...incoming.filter((file) => !isImageFile(file)),
+      ]) {
+        if (!isCurrent()) return;
+        let unattached: FileAttachment | undefined;
+        // One file that cannot be read must not stop the others.
+        try {
+          if (isImageFile(file)) {
+            if (attachmentsRef.current.images.length >= MAX_ATTACHED_IMAGES) {
+              skippedImages += 1;
+              continue;
+            }
+            const dataUrl = await compressImage(file, 256 * 1024);
+            if (!isCurrent()) return;
+            const current = attachmentsRef.current;
+            updateAttachments({
+              ...current,
+              images: [...current.images, dataUrl],
+              imageNames: [...current.imageNames, file.name || ""],
+            });
+          } else {
+            let checked: typeof attachments;
+            let full: boolean;
+            checked = attachmentsRef.current;
+            full =
+              checked === fullDraft ||
+              (env.APP === "skolegpt"
+                ? isAttachmentBudgetFull(
+                    checked.files,
+                    checked.images.map(imageTokensFromUrl),
+                  )
+                : isAttachmentBudgetFull(checked.files, checked.images.length));
+            if (!isCurrent()) return;
+            if (full) {
+              fullDraft = checked;
+              skippedFiles = true;
+              continue;
+            }
+            const result = await fileToAttachment(file);
+            unattached = result;
+            if (!isCurrent()) return;
+            if (env.APP === "skolegpt") {
+              checked = attachmentsRef.current;
+              const coverage = getAttachmentCoverage(
+                [...checked.files, result],
+                checked.images.map(imageTokensFromUrl),
+              );
+              const included =
+                coverage.files[checked.files.length]?.included ?? false;
+              if (!included) {
+                problems.push(
+                  `${file.name} kunne ikke vedhæftes. Der er ikke plads til ${result.pdfPageCount ? "flere sider" : "filens indhold"}. Send de vedhæftede filer først, eller fjern en af dem.`,
+                );
+                continue;
+              }
+            }
+            updateAttachments({
+              ...attachmentsRef.current,
+              files: [...attachmentsRef.current.files, result],
+            });
+            unattached = undefined;
+            if (result.warning) problems.push(result.warning);
           }
-        } else {
-          docs.push(await fileToAttachment(file));
+        } catch (e: any) {
+          problems.push(e?.message || "Kunne ikke vedhæfte filen.");
+        } finally {
+          // The file was saved before it was checked. If it did not get into
+          // the draft then delete the saved file and its pictures again.
+          if (unattached?.id) void deleteFileBlob(unattached.id);
         }
       }
-      setAttachImages(images);
-      setAttachImageNames(imageNames);
-      setAttachFiles(docs);
-    } catch (e: any) {
-      showToast(e?.message || "Kunne ikke vedhæfte filen.");
+      if (!isCurrent()) return;
+      if (skippedFiles) {
+        problems.push(
+          "Der er ikke plads til flere filer. Send de vedhæftede først, eller fjern en af dem.",
+        );
+      }
+      if (skippedImages > 0) {
+        problems.push(Locale.Chat.TooManyImages(MAX_ATTACHED_IMAGES));
+      }
+      if (problems.length > 0) showToast(problems.join(" "), undefined, 9000);
     } finally {
-      setUploading(false);
+      release();
+      reading.current -= 1;
+      if (mounted.current && reading.current === 0) setUploading(false);
     }
   }
 
@@ -1490,7 +1727,8 @@ function _Chat() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept =
-      "image/png, image/jpeg, image/webp, image/heic, image/heif," + FILE_ACCEPT;
+      "image/png, image/jpeg, image/webp, image/heic, image/heif," +
+      FILE_ACCEPT;
     fileInput.multiple = true;
     fileInput.onchange = (event: any) =>
       processFiles(Array.from(event.target.files || []));
@@ -1944,28 +2182,27 @@ function _Chat() {
                           <div className={styles["chat-message-edit"]}>
                             <IconButton
                               icon={<EditIcon />}
+                              disabled={message.streaming}
                               onClick={async () => {
                                 const newMessage = await showPrompt(
                                   Locale.Chat.Actions.Edit,
                                   getMessageTextContent(message),
                                   10,
                                 );
-                                let newContent: string | MultimodalContent[] =
-                                  newMessage;
-                                const images = getMessageImages(message);
-                                if (images.length > 0) {
-                                  newContent = [
-                                    { type: "text", text: newMessage },
-                                  ];
-                                  for (let i = 0; i < images.length; i++) {
-                                    newContent.push({
-                                      type: "image_url",
-                                      image_url: {
-                                        url: images[i],
-                                      },
-                                    });
-                                  }
-                                }
+                                // Only the text is edited. The pictures and
+                                // files on the message stay as they are.
+                                const rest = Array.isArray(message.content)
+                                  ? message.content.filter(
+                                      (part) => part.type !== "text",
+                                    )
+                                  : [];
+                                const newContent: string | MultimodalContent[] =
+                                  rest.length > 0
+                                    ? [
+                                        { type: "text", text: newMessage },
+                                        ...rest,
+                                      ]
+                                    : newMessage;
                                 chatStore.updateCurrentSession((session) => {
                                   const m = session.mask.context
                                     .concat(session.messages)
@@ -2077,7 +2314,9 @@ function _Chat() {
                             className={styles["chat-message-item-images"]}
                             style={
                               {
-                                "--image-count": msgImages.length,
+                                // at most 3 in a row. More pictures go on the
+                                // next row so they do not all get smaller
+                                "--image-count": Math.min(msgImages.length, 3),
                               } as React.CSSProperties
                             }
                           >
@@ -2211,8 +2450,13 @@ function _Chat() {
             {
               <ChatActions
                 uploadImage={uploadImage}
-                setAttachImages={setAttachImages}
-                setUploading={setUploading}
+                clearImages={() =>
+                  updateAttachments({
+                    ...attachmentsRef.current,
+                    images: [],
+                    imageNames: [],
+                  })
+                }
                 showPromptModal={() => setShowPromptModal(true)}
                 scrollToBottom={scrollToBottom}
                 hitBottom={hitBottom}
@@ -2230,159 +2474,208 @@ function _Chat() {
                 setShowFeedback={setShowFeedback}
               />
             }
-            <label
-              className={`${styles["chat-input-panel-inner"]} ${
-                hasAttachments ? styles["chat-input-panel-inner-attach"] : ""
-              }`}
-              htmlFor="chat-input"
-            >
-              {hasAttachments && (
-                <div className={styles["attach-list"]}>
-                  {attachImages.map((image, index) => (
-                    <div className={styles["attach-item"]} key={`img-${index}`}>
-                      <img
-                        className={styles["attach-item-image"]}
-                        src={image}
-                        alt=""
-                        title={attachImageNames[index] || undefined}
-                        onClick={() =>
-                          openImageViewer(image, attachImageNames[index])
-                        }
-                      />
-                      <button
-                        type="button"
-                        className={styles["attach-remove"]}
-                        title="Fjern"
-                        onClick={() => {
-                          setAttachImages(
-                            attachImages.filter((_, i) => i !== index),
-                          );
-                          setAttachImageNames(
-                            attachImageNames.filter((_, i) => i !== index),
-                          );
-                        }}
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
-                  ))}
-                  {attachFiles.map((file, index) => (
-                    <div className={styles["attach-item"]} key={`file-${index}`}>
+              <label
+                className={`${styles["chat-input-panel-inner"]} ${
+                  hasAttachments ? styles["chat-input-panel-inner-attach"] : ""
+                }`}
+                htmlFor="chat-input"
+              >
+                {hasAttachments && (
+                  <div className={styles["attach-list"]}>
+                    {attachImages.map((image, index) => (
                       <div
-                        className={styles["attach-item-file"]}
-                        title={file.name}
-                        onClick={() => setViewerAttachment(file)}
+                        className={styles["attach-item"]}
+                        key={`img-${index}`}
                       >
-                        {file.preview ? (
-                          <>
-                            <img
-                              className={styles["attach-item-file-preview"]}
-                              src={file.preview}
-                              alt=""
-                            />
-                            <span className={styles["attach-item-file-badge"]}>
-                              {fileTypeLabel(file)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className={styles["attach-item-file-label"]}>
-                            {fileTypeLabel(file)}
-                          </span>
-                        )}
+                        <img
+                          className={styles["attach-item-image"]}
+                          src={image}
+                          alt=""
+                          title={attachImageNames[index] || undefined}
+                          onClick={() =>
+                            openImageViewer(image, attachImageNames[index])
+                          }
+                        />
+                        <button
+                          type="button"
+                          className={styles["attach-remove"]}
+                          title="Fjern"
+                          onClick={() => {
+                            const current = attachmentsRef.current;
+                            updateAttachments({
+                              ...current,
+                              images: current.images.filter(
+                                (_, i) => i !== index,
+                              ),
+                              imageNames: current.imageNames.filter(
+                                (_, i) => i !== index,
+                              ),
+                            });
+                          }}
+                        >
+                          <PlusIcon />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className={styles["attach-remove"]}
-                        title="Fjern"
-                        onClick={() => {
-                          if (file.id) deleteFileBlob(file.id);
-                          setAttachFiles(
-                            attachFiles.filter((_, i) => i !== index),
-                          );
-                        }}
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className={styles["chat-input-field"]}>
-                {canAttach && (
-                  <div
-                    className={styles["chat-input-attach"]}
-                    onClick={(e) => {
-                      // the button is inside the input's <label>; don't let
-                      // the click also focus the text field
-                      e.preventDefault();
-                      if (!uploading) uploadImage();
-                    }}
-                    role="button"
-                    aria-label="Vedhæft fil"
-                    title={Locale.Chat.InputActions.UploadImage}
-                  >
-                    {uploading ? (
-                      <LoadingButtonIcon style={{ width: 24, height: 24 }} />
-                    ) : (
-                      <AttachIcon style={{ width: 24, height: 24 }} />
-                    )}
+                    ))}
+                    {attachFiles.map((file, index) => {
+                      const warning =
+                        !uploading &&
+                        attachmentNotice?.source === attachments &&
+                        attachmentNotice.messages[index];
+                      return (
+                        <div
+                          className={styles["attach-item"]}
+                          key={file.id || `file-${index}`}
+                        >
+                          <div
+                            className={styles["attach-item-file"]}
+                            title={file.name}
+                            onClick={() => setViewerAttachment(file)}
+                          >
+                            {file.preview ? (
+                              <>
+                                <img
+                                  className={styles["attach-item-file-preview"]}
+                                  src={file.preview}
+                                  alt=""
+                                />
+                                <span
+                                  className={styles["attach-item-file-badge"]}
+                                >
+                                  {fileTypeLabel(file)}
+                                </span>
+                              </>
+                            ) : (
+                              <span
+                                className={styles["attach-item-file-label"]}
+                              >
+                                {fileTypeLabel(file)}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className={styles["attach-remove"]}
+                            title="Fjern"
+                            onClick={() => {
+                              if (file.id) deleteFileBlob(file.id);
+                              updateAttachments({
+                                ...attachmentsRef.current,
+                                files: attachmentsRef.current.files.filter(
+                                  (attached) => attached !== file,
+                                ),
+                              });
+                            }}
+                          >
+                            <PlusIcon />
+                          </button>
+                          {warning && (
+                            <button
+                              type="button"
+                              className={styles["attach-warning"]}
+                              title={warning}
+                              aria-label={warning}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                showToast(warning, undefined, 9000);
+                              }}
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true"
+                                focusable="false"
+                              >
+                                <path d="M10.3 4.3a2 2 0 0 1 3.4 0l7.4 12.8a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3Z" />
+                                <path d="M12 9v4m0 3h.01" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {!uploading &&
+                      attachmentNotice?.source === attachments &&
+                      attachmentNotice.error && (
+                        <div className={styles["attach-notice"]} role="status">
+                          {attachmentNotice.error}
+                        </div>
+                      )}
                   </div>
                 )}
-                <textarea
-                  id="chat-input"
-                  ref={inputRef}
-                  className={styles["chat-input"]}
-                  placeholder={inputPlaceholder}
-                  onBlur={() => setShowInputHints(false)}
-                  onInput={(e) => onInput(e.currentTarget.value)}
-                  value={userInput}
-                  onKeyDown={onInputKeyDown}
-                  onFocus={() => {
-                    if (
-                      !(
-                        session.multiLlmChildren &&
-                        session.multiLlmChildren.length > 0
-                      )
-                    ) {
-                      scrollToBottom();
-                    }
-                  }}
+                <div className={styles["chat-input-field"]}>
+                  {canAttach && (
+                    <div
+                      className={styles["chat-input-attach"]}
+                      onClick={(e) => {
+                        // the button sits inside the input's label, so stop the
+                        // click from also focusing the text field
+                        e.preventDefault();
+                        if (!uploading) uploadImage();
+                      }}
+                      role="button"
+                      aria-label="Vedhæft fil"
+                      title={Locale.Chat.InputActions.UploadImage}
+                    >
+                      {uploading ? (
+                        <LoadingButtonIcon style={{ width: 24, height: 24 }} />
+                      ) : (
+                        <AttachIcon style={{ width: 24, height: 24 }} />
+                      )}
+                    </div>
+                  )}
+                  <textarea
+                    id="chat-input"
+                    ref={inputRef}
+                    className={styles["chat-input"]}
+                    placeholder={Locale.Chat.Input(submitKey)}
+                    onInput={(e) => onInput(e.currentTarget.value)}
+                    value={userInput}
+                    onKeyDown={onInputKeyDown}
+                    onFocus={() => {
+                      if (
+                        !(
+                          session.multiLlmChildren &&
+                          session.multiLlmChildren.length > 0
+                        )
+                      ) {
+                        scrollToBottom();
+                      }
+                    }}
+                    onClick={() => {
+                      if (
+                        !(
+                          session.multiLlmChildren &&
+                          session.multiLlmChildren.length > 0
+                        )
+                      ) {
+                        scrollToBottom();
+                      }
+                    }}
+                    onPaste={handlePaste}
+                    rows={inputRows}
+                    autoFocus={autoFocus}
+                    style={{
+                      fontSize: config.fontSize,
+                    }}
+                  />
+                </div>
+                {env.ENABLE_TTSASR && (
+                  <RecorderIcon
+                    onTranscribed={onInput}
+                    className={styles["chat-input-mic"]}
+                  />
+                )}
+                <IconButton
+                  icon={<SendArrowIcon />}
+                  className={`${styles["chat-input-send"]} ${
+                    userInput.trim() ? styles["chat-input-send-active"] : ""
+                  }`}
+                  type="primary"
                   onClick={() => {
-                    setShowInputHints(true);
-                    if (
-                      !(
-                        session.multiLlmChildren &&
-                        session.multiLlmChildren.length > 0
-                      )
-                    ) {
-                      scrollToBottom();
-                    }
-                  }}
-                  onPaste={handlePaste}
-                  rows={inputRows}
-                  autoFocus={autoFocus}
-                  style={{
-                    fontSize: config.fontSize,
+                    doSubmit(userInput);
                   }}
                 />
-              </div>
-              {env.ENABLE_TTSASR && (
-                <RecorderIcon
-                  onTranscribed={onInput}
-                  className={styles["chat-input-mic"]}
-                />
-              )}
-              <IconButton
-                icon={<SendArrowIcon />}
-                className={`${styles["chat-input-send"]} ${
-                  userInput.trim() ? styles["chat-input-send-active"] : ""
-                }`}
-                type="primary"
-                onClick={() => {
-                  doSubmit(userInput);
-                }}
-              />
-            </label>
+              </label>
           </div>
         </div>
       )}
@@ -2416,15 +2709,33 @@ function _Chat() {
             onClose={() => setViewerAttachment(null)}
           >
             <div className={styles["attachment-viewer"]}>
-              {!viewerUrl ? (
+              {/* A browser cannot show a Word file as is. So the viewer shows
+                  the text that was read from it for the model, with the saved
+                  pictures put back where their marks are. The text is saved
+                  with the chat, so it still works when the saved file is gone. */}
+              {viewerAttachment.mime === DOCX_MIME ? (
+                <div className={styles["attachment-viewer-text"]}>
+                  {viewerAttachment.text ? (
+                    <DocxView
+                      text={viewerAttachment.text}
+                      images={viewerDocxImages}
+                    />
+                  ) : (
+                    "Dokumentet kan ikke vises."
+                  )}
+                </div>
+              ) : !viewer.url ? (
                 <p>Filen kan ikke længere vises.</p>
               ) : viewerAttachment.mime.startsWith("image/") ? (
-                <img src={viewerUrl} alt="" />
+                <img src={viewer.url} alt="" />
               ) : (
                 <iframe
                   className={styles["attachment-viewer-frame"]}
-                  src={viewerUrl}
+                  src={viewer.url}
                   title={viewerAttachment.name}
+                  // An attached web page must not run code on our page. A PDF
+                  // is not sandboxed because Chrome cannot show one that way.
+                  sandbox={viewer.isPdf ? undefined : ""}
                 />
               )}
             </div>
@@ -2437,6 +2748,5 @@ function _Chat() {
 
 export function Chat() {
   const chatStore = useChatStore();
-  const sessionIndex = chatStore.currentSessionIndex;
-  return <_Chat key={sessionIndex}></_Chat>;
+  return <_Chat key={chatStore.currentSession().id}></_Chat>;
 }
