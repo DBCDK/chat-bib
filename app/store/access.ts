@@ -11,7 +11,7 @@ import {
   SKOLEGPT_REPLACEMENT_MODEL,
   SKOLEGPT_RETIRED_MODEL_ALIASES,
 } from "../utils/appsettings";
-import { createPersistStore } from "../utils/store";
+import { createPersistStore, hydrated } from "../utils/store";
 import { ensure } from "../utils/clone";
 import { DEFAULT_CONFIG } from "./config";
 
@@ -82,9 +82,10 @@ export const useAccessStore = createPersistStore(
         .filter((m) => m && m.length > 0)
         .join(",");
     },
-    fetch() {
+    async fetch() {
       if (fetchState > 0 || getClientConfig()?.buildMode === "export") return;
       fetchState = 1;
+      await hydrated(useAccessStore);
       fetch("/api/config", {
         method: "post",
         body: null,

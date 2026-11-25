@@ -147,7 +147,9 @@ export const usePromptStore = createPersistStore(
       return newState as any;
     },
 
-    onRehydrateStorage(state) {
+    // Add user prompts to search only after their saved values have loaded.
+    onRehydrateStorage: () => (_state, error) => {
+      if (error) return;
       const style = env.STYLE ?? "chatbib";
       const PROMPT_URL = `/${style}/prompts.json`;
       type PromptList = Array<[string, string]>;

@@ -31,7 +31,15 @@ import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
 import { ClientApi } from "../client/api";
-import { useAccessStore } from "../store";
+import { useAccessStore, useChatStore, useUpdateStore } from "../store";
+import { useMaskStore } from "../store/mask";
+import { usePromptStore } from "../store/prompt";
+import { hydrated } from "../utils/store";
+import { deletionPending, loadFailed } from "../utils/idb-migration";
+import { IconButton } from "./button";
+import { showConfirm } from "./ui-lib";
+import ResetIcon from "../icons/reload.svg";
+import ClearIcon from "../icons/clear.svg";
 import { initializeApollo } from "../client/apolloClient";
 import { ApolloProvider } from "@apollo/client";
 import { env } from "../utils/appsettings";
@@ -130,13 +138,78 @@ function useHtmlLang() {
 
 const useHasHydrated = () => {
   const [hasHydrated, setHasHydrated] = useState<boolean>(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setHasHydrated(true);
+    // Wait for saved data before allowing edits or starting chats from a URL.
+    const stores = [
+      useChatStore,
+      useMaskStore,
+      useAppConfig,
+      useAccessStore,
+      usePromptStore,
+      useUpdateStore,
+    ];
+    let active = true;
+    const timers = [
+      setTimeout(() => {
+        if (
+          stores.some((store) => {
+            const name = store.persist.getOptions().name;
+            return name !== undefined && loadFailed(name);
+          })
+        ) {
+          setFailed(true);
+        }
+      }, 5000),
+      setTimeout(() => setFailed(true), 30000),
+    ];
+    Promise.all(stores.map(hydrated)).then(() => {
+      timers.forEach(clearTimeout);
+      if (active) setHasHydrated(true);
+    });
+    return () => {
+      active = false;
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
-  return hasHydrated;
+  return { hasHydrated, failed };
 };
+
+function LoadFailed() {
+  return (
+    <div className={styles["loading-content"]} role="alert">
+      <p>
+        {deletionPending()
+          ? "Sletningen af dine data er ikke afsluttet. Vælg “Slet alle data” for at fuldføre den."
+          : "Dine gemte data kunne ikke indlæses. Prøv at genindlæse siden."}
+      </p>
+      <div style={{ display: "flex", gap: 10 }}>
+        <IconButton
+          icon={<ResetIcon />}
+          text="Genindlæs"
+          onClick={() => location.reload()}
+          bordered
+        />
+        <IconButton
+          icon={<ClearIcon />}
+          text="Slet alle data"
+          onClick={async () => {
+            if (
+              await showConfirm(
+                "Vil du slette alle chats, assistenter, filer og indstillinger?",
+              )
+            ) {
+              await useChatStore.getState().clearAllData();
+            }
+          }}
+          bordered
+        />
+      </div>
+    </div>
+  );
+}
 
 const loadAsyncGoogleFont = () => {
   const linkEl = document.createElement("link");
@@ -232,6 +305,7 @@ export function useLoadData() {
   api = new ClientApi(ModelProvider.GPT);
   useEffect(() => {
     (async () => {
+      await Promise.all([hydrated(useAppConfig), hydrated(useAccessStore)]);
       const models = await api.llm.models();
       config.mergeModels(models);
     })();
@@ -249,8 +323,9 @@ export function Home() {
     useAccessStore.getState().fetch();
   }, []);
 
-  if (!useHasHydrated()) {
-    return <Loading />;
+  const { hasHydrated, failed } = useHasHydrated();
+  if (!hasHydrated) {
+    return failed ? <LoadFailed /> : <Loading />;
   }
 
   return (

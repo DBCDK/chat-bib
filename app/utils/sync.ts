@@ -132,7 +132,7 @@ export function getLocalAppState() {
 export function exportLocalAppState() {
   const state = getLocalAppState();
   const fileName = `Backup-${new Date().toLocaleString()}.json`;
-  downloadAs(JSON.stringify(state), fileName);
+  return downloadAs(JSON.stringify(state), fileName);
 }
 
 export function setLocalAppState(appState: AppState) {
