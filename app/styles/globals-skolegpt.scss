@@ -62,6 +62,7 @@
   --button-text-color: #eef4e4; // Grøn-100
   --button-hover-color: var(--black); // Sort-900
   --danger-color: #e54846; // Rød-500, slet-ikon
+  --warning-bg: #fcefde; // Orange-100, advarsler (fx ved upload)
   --theme-color: var(--gray);
   --card-color: #f2f1ef; // Sort-100
   --chat-input-bg: #ffffff; // Hvid, baggrund i chat-input
@@ -114,6 +115,7 @@
   --button-text-color: #eef4e4; // Grøn-100
   --button-hover-color: #b4440b; // Orange-700 (--black er lys i mørkt tema)
   --danger-color: #e54846; // Rød-500, slet-ikon
+  --warning-bg: rgba(240, 90, 35, 0.14); // Orange-500, svag på mørk baggrund
 
   // chat-input som før i mørk tilstand. Skal sættes her, ellers arves
   // værdierne fra lys tilstand på :root
